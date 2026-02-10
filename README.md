@@ -1,2 +1,9 @@
-# Site-web-RDS
-Plateforme web pour simplifier la recherche de stages CESI : gestion d'entreprises, offres par compétences, candidatures (CV/LM), wish-lists. Rôles : admin, pilote, étudiant. Stack : PHP POO MVC, MySQL, HTML5/CSS3/JS responsive (mobile-first, burger menu). Auth sécurisée, SEO, tests unitaires. Projet Scrum en groupe de 4.
+# root
+
+## manuel installation
+
+```bash
+docker compose up -d
+```
+
+le CDN est mis sous `cdn.localhost:8080`, et le vhost PROD sous `prod.localhost:8080`.
