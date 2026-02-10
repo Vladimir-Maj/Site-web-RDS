@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   web:
     build: .
@@ -7,10 +9,10 @@ services:
       - "8080:80"
     volumes:
       - ./www:/var/www/html
-    networks:
-      - lamp-network
     depends_on:
       - db
+    networks:
+      - lamp-network
 
   db:
     image: mysql:8.0
@@ -23,6 +25,7 @@ services:
       MYSQL_PASSWORD: password
     volumes:
       - db_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
     networks:
       - lamp-network
 
