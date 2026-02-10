@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Toutes les Offres - prosit 1</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Raleway:wght@400;500;600;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="http://cdn.localhost:8080/styles.css"/>
+</head>
+<body>
+<script type="module" src="http://cdn.localhost:8080/assets/scripts/load_head_foot.js"></script>
+<header></header>
+
+<!-- ━━━ MAIN ━━━ -->
+<div class="page-wrapper">
+    <main>
+
+        <!-- Page Title -->
+        <div class="page-header">
+            <div>
+                <h1>Offres de Stage</h1>
+                <p>Ensemble des offres enregistrées dans le système</p>
+            </div>
+            <a href="editor.html" class="btn btn-primary">+ Nouvelle offre</a>
+        </div>
+
+        <!-- Notice -->
+        <div class="notice notice-info">
+            <span class="notice-icon">(ℹ)</span>
+            <p>Cette page affiche les <strong>9 offres</strong> actuellement actives. Utilisez la page <a
+                    href="search.html" style="color:#4f46e5; text-decoration:underline;">Recherche</a> pour
+                filtrer.</p>
+        </div>
+
+        <!-- Offer Cards -->
+        <div class="offer-list">
+            <div class="card offer-card">
+                <div class="card-header">
+                    <div>
+                        <h3>{{STAGE_NAME}}</h3>
+                        <div class="card-meta">
+                            <span><i class="icon">📍</i>{{STAGE_POSITION}}</span>
+                            <span><i class="icon">🏢</i>{{STAGE_COMPANY}}</span>
+                            <span><i class="icon">📅</i>{{STAGE_DATE}}</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-green">{{STAGE_STATUS}}</span>
+                </div>
+                <div class="card-body">
+                    <p>{{STAGE_DESC}}</p>
+                    <div class="card-actions">
+                        <a href="editor.html" class="btn btn-outline">Éditer</a>
+                        <a href="#" class="btn btn-ghost">Détails</a>
+                        <a href="#" class="btn btn-danger">Supprimer</a>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- Card 1 -->
+            <div class="card offer-card">
+                <div class="card-header">
+                    <div>
+                        <h3>Développeur Full-Stack — Été 2025</h3>
+                        <div class="card-meta">
+                            <span><i class="icon">📍</i> Paris, 75001</span>
+                            <span><i class="icon">🏢</i> Acme Technologies</span>
+                            <span><i class="icon">📅</i> juin – août 2025</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-green">Ouverte</span>
+                </div>
+                <div class="card-body">
+                    <p>Participez au développement de notre plateforme SaaS en Node.js &amp; React. Environnement agile,
+                        encadrement senior.</p>
+                    <div class="card-actions">
+                        <a href="editor.html" class="btn btn-outline">Éditer</a>
+                        <a href="#" class="btn btn-ghost">Détails</a>
+                        <a href="#" class="btn btn-danger">Supprimer</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div class="card offer-card">
+                <div class="card-header">
+                    <div>
+                        <h3>Analyste de Données — Automne 2025</h3>
+                        <div class="card-meta">
+                            <span><i class="icon">📍</i> Lyon, 69001</span>
+                            <span><i class="icon">🏢</i> DataVision Corp</span>
+                            <span><i class="icon">📅</i> sept. – nov. 2025</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-green">Ouverte</span>
+                </div>
+                <div class="card-body">
+                    <p>Analyse de données métier avec Python, Pandas et des outils de visualisation. Ideal pour un
+                        étudiant en M1/M2 data.</p>
+                    <div class="card-actions">
+                        <a href="editor.html" class="btn btn-outline">Éditer</a>
+                        <a href="#" class="btn btn-ghost">Détails</a>
+                        <a href="#" class="btn btn-danger">Supprimer</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div class="card offer-card">
+                <div class="card-header">
+                    <div>
+                        <h3>Designer UX/UI — Été 2025</h3>
+                        <div class="card-meta">
+                            <span><i class="icon">📍</i> Toulouse, 31000</span>
+                            <span><i class="icon">🏢</i> CreatifLab</span>
+                            <span><i class="icon">📅</i> juin – juillet 2025</span>
+                        </div>
+                    </div>
+                    <span class="tag tag-amber">En cours de validation</span>
+                </div>
+                <div class="card-body">
+                    <p>Conception d'interfaces utilisateur pour une application mobile santé. Maîtrise de Figma
+                        requise.</p>
+                    <div class="card-actions">
+                        <a href="editor.html" class="btn btn-outline">Éditer</a>
+                        <a href="#" class="btn btn-ghost">Détails</a>
+                        <a href="#" class="btn btn-danger">Supprimer</a>
+                    </div>
+                </div>
+            </div>
+        </div><!-- /offer-list -->
+    </main>
+</div><!-- /page-wrapper -->
+
+<footer></footer>
+</body>
+</html>
