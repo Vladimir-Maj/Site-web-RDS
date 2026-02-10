@@ -45,7 +45,7 @@ $cardTemplate = file_exists($templatePath) ? file_get_contents($templatePath) : 
 <div class="page-wrapper">
     <main>
 
-        <div class="page-header">
+        <div class="page-inner-element-group">
             <div>
                 <h1>Offres de Stage</h1>
                 <p>Ensemble des offres enregistrées dans le système</p>
