@@ -1,3 +1,3 @@
 DirectoryIndex home.html index.php
 
-RedirectMatch 301 ^/$ /home.html
+DirectoryIndex home.php

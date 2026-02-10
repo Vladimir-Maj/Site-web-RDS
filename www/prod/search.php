@@ -1,21 +1,45 @@
 <?php
-require_once 'db_connect.php'; // Your PDO connection
+require_once 'db_connect.php';
 require_once 'OfferRepository.php';
 
 $repo = new OfferRepository($pdo);
 
-// Just collect the raw data
+/**
+ * 1. INITIALIZE SEARCH VARIABLES
+ * Prevents "Undefined variable" and "Deprecated" errors in the form
+ */
+$keyword = $_GET['q-title']   ?? '';
+$city    = $_GET['q-city']    ?? '';
+$company = $_GET['q-company'] ?? '';
+$sort    = $_GET['sort']      ?? 'recent';
+
 $filters = [
-        'keyword' => $_GET['q-title'] ?? '',
-        'sort'    => $_GET['sort'] ?? 'recent'
+        'keyword' => $keyword,
+        'city'    => $city,
+        'company' => $company,
+        'sort'    => $sort
 ];
 
-// Ask the repo for results
+/**
+ * 2. FETCH DATA
+ */
 $offers = $repo->search($filters);
 $count = count($offers);
+
+/**
+ * 3. TEMPLATE LOADING
+ * Mirrors the logic from your home.php to stay consistent
+ */
+$templatePath = __DIR__ . '/../cdn/assets/elements/card_template.html';
+if (file_exists($templatePath)) {
+    $cardTemplate = file_get_contents($templatePath);
+} else {
+    // Fallback if the file is missing so strtr() doesn't fail
+    $cardTemplate = '<div class="card"><h3>{{STAGE_NAME}}</h3><p>{{STAGE_COMPANY}}</p></div>';
+}
 ?>
 
-    <!DOCTYPE html>
+<!DOCTYPE html>
     <html lang="fr">
     <head>
         <meta charset="UTF-8"/>
@@ -144,12 +168,12 @@ $count = count($offers);
     <!--            </div>-->
     <!--        </div>-->
 
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.9rem;">
+            <div class="page-inner-element-group">
                 <p class="text-sm text-muted">
                     <strong><?php echo $count; ?> résultat<?php echo ($count > 1 ? 's' : ''); ?></strong> trouvé<?php echo ($count > 1 ? 's' : ''); ?>
                 </p>
 
-                <select name="sort" onchange="this.form.submit()" style="font-family:var(--font-body);font-size:.82rem;padding:.35rem .7rem;border:1px solid var(--clr-border);border-radius:var(--radius);background:#fff;outline:none;cursor:pointer;">
+                <select name="sort" onchange="this.form.submit()" >
                     <option value="relevance" <?php echo ($_GET['sort'] ?? '') == 'relevance' ? 'selected' : ''; ?>>Trier par : Pertinence</option>
                     <option value="recent"    <?php echo ($_GET['sort'] ?? '') == 'recent' ? 'selected' : ''; ?>>Trier par : Date (récent)</option>
                     <option value="city"      <?php echo ($_GET['sort'] ?? '') == 'city' ? 'selected' : ''; ?>>Trier par : Ville (A→Z)</option>
