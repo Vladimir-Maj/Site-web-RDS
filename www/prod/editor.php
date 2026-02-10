@@ -1,45 +1,33 @@
 <?php
-// 1. DATABASE CONNECTION
-$host = 'db'; $db = 'sql_db'; $user = 'user'; $pass = 'password';
+require_once 'db_connect.php';
+require_once 'OfferRepository.php';
+
+$repo = new OfferRepository($pdo);
 
 try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-]);
+    // 1. Fetch companies using the repo
+    $companies = $repo->getAllCompanies();
 
-// Fetch companies for the dropdown
-$companiesStmt = $pdo->query("SELECT id, name FROM companies ORDER BY name ASC");
-$companies = $companiesStmt->fetchAll(PDO::FETCH_ASSOC);
+    // 2. Handle form submission
+    if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+        $offerData = [
+                'title'       => $_POST['title'] ?? '',
+                'company_id'  => $_POST['company_id'] ?? null,
+                'location'    => $_POST['location'] ?? '',
+                'description' => $_POST['description'] ?? '',
+                'state'       => $_POST['state'] ?? 'draft'
+        ];
 
-// 2. HANDLE FORM SUBMISSION
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-// Sanitize and collect data
-$title = $_POST['title'] ?? '';
-$company_id = $_POST['company_id'] ?? null;
-$location = $_POST['location'] ?? '';
-$description = $_POST['description'] ?? '';
-$state = $_POST['state'] ?? 'draft';
-
-if (!empty($title) && !empty($company_id)) {
-$sql = "INSERT INTO offers (title, company_id, location, description, state)
-VALUES (:title, :company_id, :location, :description, :state)";
-
-$stmt = $pdo->prepare($sql);
-$stmt->execute([
-':title'       => $title,
-':company_id'  => $company_id,
-':location'    => $location,
-':description' => $description,
-':state'       => $state
-]);
-
-// Success! Redirect to home
-header("Location: home.php");
-exit();
-}
-}
+        // Basic validation
+        if (!empty($offerData['title']) && !empty($offerData['company_id'])) {
+            if ($repo->create($offerData)) {
+                header("Location: home.php");
+                exit();
+            }
+        }
+    }
 } catch (Exception $e) {
-$error = $e->getMessage();
+    $error = $e->getMessage();
 }
 ?>
 

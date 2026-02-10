@@ -1,39 +1,26 @@
 <?php
 /**
- * 1. DATABASE CONNECTION & DATA FETCHING
+ * 1. REPOSITORIES & DATA FETCHING
  */
-$host = 'db';
-$db = 'sql_db';
-$user = 'user';
-$pass = 'password';
+require_once __DIR__ . '/db_connect.php';
+require_once __DIR__ . '/OfferRepository.php';
+
+$repo = new OfferRepository($pdo);
 
 try {
-    $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
-    $pdo = new PDO($dsn, $user, $pass, [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-    ]);
-
-    // Fetch offers joined with company names
-    $query = "SELECT offers.*, companies.name AS company_name 
-              FROM offers 
-              JOIN companies ON offers.company_id = companies.id 
-              ORDER BY created_at DESC";
-
-    $stmt = $pdo->query($query);
-    $offers = $stmt->fetchAll();
+    // We use the Repository to get our data
+    $offers = $repo->findAll();
 
     $count = count($offers);
     $plural = $count > 1 ? 's' : '';
 
-} catch (PDOException $e) {
-    // Basic error handling for development
-    die("Erreur de connexion : " . $e->getMessage());
+} catch (Exception $e) {
+    // Error handling using the centralized connection
+    die("Erreur lors de la récupération des offres : " . $e->getMessage());
 }
 
 /**
  * 2. TEMPLATE LOADING
- * We use the internal file path to bypass network issues
  */
 $templatePath = __DIR__ . '/../cdn/assets/elements/card_template.html';
 $cardTemplate = file_exists($templatePath) ? file_get_contents($templatePath) : "";
@@ -70,7 +57,7 @@ $cardTemplate = file_exists($templatePath) ? file_get_contents($templatePath) : 
             <span class="notice-icon">(ℹ)</span>
             <p>Cette page affiche les <strong><?php echo $count; ?> offre<?php echo $plural; ?></strong> actuellement
                 actives. Utilisez la page <a
-                        href="search.html" style="color:#4f46e5; text-decoration:underline;">Recherche</a> pour
+                        href="search.php" style="color:#4f46e5; text-decoration:underline;">Recherche</a> pour
                 filtrer.</p>
         </div>
 
@@ -107,7 +94,6 @@ $cardTemplate = file_exists($templatePath) ? file_get_contents($templatePath) : 
             }
             ?>
         </div>
-
     </main>
 </div>
 <footer></footer>
