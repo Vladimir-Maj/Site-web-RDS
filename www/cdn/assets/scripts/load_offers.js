@@ -2,7 +2,11 @@
     const offerListEl = document.querySelector('.offer-list');
 
     // 1. Define the CDN Base
-    const cdnBase = 'http://cdn.localhost:8080/';
+    // Use the global config if available, otherwise default to HTTPS for security
+    const cdnBase = (window.APP_CONFIG && window.APP_CONFIG.cdnUrl)
+        ? window.APP_CONFIG.cdnUrl + '/'
+        : 'https://cdn.stageflow.fr/';
+
     const assetsBase = cdnBase + 'assets/';
 
     // Map state -> tag class
@@ -13,8 +17,10 @@
     };
 
     try {
-        // 2. Load the card template using the absolute CDN path
-        const templateHtml = await fetch(assetsBase + 'elements/card_template.html').then(r => r.text());
+        // 2. Load the card template using the secure CDN path
+        // Added a timestamp to the URL to prevent caching issues during development
+        const templateHtml = await fetch(assetsBase + 'elements/card_template.html?v=' + Date.now())
+            .then(r => r.text());
 
         // 3. Update JSON paths to use absolute CDN URLs
         const jsonFiles = [
@@ -24,7 +30,10 @@
         ];
 
         const dataList = await Promise.all(
-            jsonFiles.map(path => fetch(path).then(r => r.json()))
+            jsonFiles.map(path => fetch(path).then(r => {
+                if (!r.ok) throw new Error(`Failed to load ${path}`);
+                return r.json();
+            }))
         );
 
         const offers = dataList.flat();
@@ -46,12 +55,13 @@
             tempDiv.innerHTML = cardHtml;
             const cardEl = tempDiv.firstElementChild;
 
-            // Check if element exists before appending
+            // Check if container exists before appending
             if (offerListEl) {
                 offerListEl.appendChild(cardEl);
             }
         });
     } catch (err) {
+        // Improved error logging to help identify if it's a CORS or 404 issue
         console.error("Error loading offer data from CDN:", err);
     }
 })();

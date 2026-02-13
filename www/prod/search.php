@@ -1,195 +1,175 @@
 <?php
-require_once 'db_connect.php'; // Your PDO connection
-require_once 'OfferRepository.php';
+// 1. Core Configuration & Logic
+require_once 'util/config.php';
+require_once 'util/db_connect.php';
+require_once 'util/OfferRepository.php';
+
+// Assuming these classes exist in your project
+// require_once 'OfferHelper.php';
+// require_once 'OfferRenderer.php';
 
 $repo = new OfferRepository($pdo);
+$error = null;
 
-// Just collect the raw data
+// Filter handling logic
 $filters = [
-        'keyword' => $_GET['q-title'] ?? '',
-        'sort'    => $_GET['sort'] ?? 'recent'
+        'keyword'          => $_GET['keyword'] ?? '',
+        'location'         => $_GET['location'] ?? '',
+        'job_type'         => $_GET['job_type'] ?? '',
+        'experience_level' => $_GET['experience_level'] ?? '',
+        'remote_type'      => $_GET['remote_type'] ?? '',
+        'min_salary'       => $_GET['min_salary'] ?? '',
+        'only_active'      => isset($_GET['only_active']),
+        'sort'             => $_GET['sort'] ?? 'recent'
 ];
 
-// Ask the repo for results
-$offers = $repo->search($filters);
-$count = count($offers);
+try {
+    // You would normally call your repo here:
+    // $offers = $repo->search($filters);
+    // $count = count($offers);
+
+    // Placeholders for variables used in the HTML below
+    $locations = $locations ?? [];
+    $jobTypes = $jobTypes ?? [];
+    $expLevels = ['junior', 'mid', 'senior', 'lead'];
+    $offers = $offers ?? [];
+    $count = $count ?? 0;
+
+} catch (Exception $e) {
+    $error = $e->getMessage();
+}
+
+// 2. Fetch Header from CDN (Server-Side)
+$headerUrl = CDN_URL . "/assets/elements/header.html";
+$localHeaderPath = '/var/www/html/cdn/assets/elements/header.html';
+
+$context = stream_context_create([
+        "ssl" => [
+                "verify_peer" => false,
+                "verify_peer_name" => false,
+        ],
+]);
+
+// Attempt to load locally first (fastest/most reliable in Docker)
+if (file_exists($localHeaderPath)) {
+    $headerHtml = file_get_contents($localHeaderPath);
+} else {
+    // Fallback to URL if local path isn't mapped
+    $headerHtml = @file_get_contents($headerUrl, false, $context) ?: "";
+}
+
+// If both failed, we ensure $headerHtml is at least an empty string to avoid errors
+if ($headerHtml === false) { $headerHtml = ""; }
+
+// Highlight the current page in navigation
+$headerHtml = str_replace('data-page="search.php"', 'data-page="search.php" class="active"', $headerHtml);
 ?>
 
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8"/>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>Recherche — prosit 1</title>
-        <link rel="stylesheet" href="http://cdn.localhost:8080/styles.css"/>
-    </head>
-    <body>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Trouver une offre — SF Prosit</title>
 
-    <!-- ━━━ HEADER ━━━ -->
-    <header>
-        <div class="header-inner">
-            <a href="home.php" class="logo"><span>SF</span> prosit 1</a>
-            <nav>
-                <a href="home.php">Index</a>
-                <a href="search.html" class="active">Recherche</a>
-                <a href="editor.php">Créer</a>
-                <a href="legals.html">Légal</a>
-            </nav>
+    <script>
+        window.APP_CONFIG = { cdnUrl: "<?php echo CDN_URL; ?>" };
+    </script>
+
+    <link rel="icon" type="image/x-icon" href="<?php echo CDN_URL; ?>/favicon.ico">
+    <link rel="stylesheet" href="<?php echo CDN_URL; ?>/styles.css"/>
+
+    <style>
+        .form-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+        .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+        .label-group { font-weight: bold; color: var(--clr-primary); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px; display: block; }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <?php echo $headerHtml; ?>
+</header>
+
+<div class="page-wrapper">
+    <main>
+        <div class="page-header">
+            <h1>Trouver une offre</h1>
+            <a href="editor.php" class="btn btn-primary">+ Publier</a>
         </div>
-    </header>
 
-    <!-- ━━━ MAIN ━━━ -->
-    <div class="page-wrapper">
-        <main>
+        <section class="card" style="margin-bottom: 2rem; padding: 1.5rem;">
+            <form method="GET" action="search.php" class="filter-form">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
 
-            <!-- Page Title -->
-            <div class="page-header">
-                <div>
-                    <h1>Recherche d'Offres</h1>
-                    <p>Filtrez et trouvez l'offre de stage qui vous correspond</p>
+                    <div class="form-group">
+                        <label>Mot-clé</label>
+                        <input type="text" name="keyword" placeholder="Poste, techno..." value="<?= htmlspecialchars($filters['keyword']) ?>">
+                    </div>
+
+                    <div class="form-group">
+                        <label>Ville</label>
+                        <select name="location">
+                            <option value="">Toutes les villes</option>
+                            <?php foreach ($locations as $loc): ?>
+                                <option value="<?= htmlspecialchars($loc['location']) ?>" <?= $filters['location'] === $loc['location'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($loc['location']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Type de contrat</label>
+                        <select name="job_type">
+                            <option value="">Tous types</option>
+                            <?php foreach ($jobTypes as $jt): ?>
+                                <option value="<?= htmlspecialchars($jt['job_type']) ?>" <?= $filters['job_type'] === $jt['job_type'] ? 'selected' : '' ?>>
+                                    <?= class_exists('OfferHelper') ? OfferHelper::formatJobType($jt['job_type']) : $jt['job_type'] ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+
                 </div>
-            </div>
 
-            <!-- Search Form -->
-            <form action="search.php" method="GET">
-                <div class="search-bar">
-                    <div class="form-group" style="flex:2; min-width:220px;">
-                        <label for="q-title">Titre ou mot-clé</label>
-                        <input type="text" name="q-title" id="q-title" value="<?php echo htmlspecialchars($keyword); ?>" placeholder="Ex : développeur..." />
+                <div style="margin-top: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
+                    <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                        <input type="checkbox" name="only_active" value="1" <?= $filters['only_active'] ? 'checked' : '' ?>>
+                        Offres actives uniquement
+                    </label>
+
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="submit" class="btn btn-primary">Filtrer</button>
+                        <a href="search.php" class="btn btn-ghost">Réinitialiser</a>
                     </div>
-                    <div class="form-group">
-                        <label for="q-city">Ville</label>
-                        <input type="text" name="q-city" id="q-city" value="<?php echo htmlspecialchars($city); ?>" placeholder="Paris..." />
-                    </div>
-                    <div class="form-group">
-                        <label for="q-company">Entreprise</label>
-                        <input type="text" name="q-company" id="q-company" value="<?php echo htmlspecialchars($company); ?>" placeholder="Nom entreprise" />
-                    </div>
-                    <button type="submit" class="btn btn-primary">Rechercher</button>
                 </div>
             </form>
+        </section>
 
-
-            <!-- Extended Filters -->
-    <!--        <div class="card" style="margin-bottom:1.8rem;">-->
-    <!--            <div class="card-header" style="align-items:center;">-->
-    <!--                <h3>Filtres avancés</h3>-->
-    <!--            </div>-->
-    <!--            <div class="card-body">-->
-    <!--                <div class="form-grid">-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-domain">Domaine</label>-->
-    <!--                        <select id="f-domain">-->
-    <!--                            <option value="">Tous les domaines</option>-->
-    <!--                            <option>Informatique</option>-->
-    <!--                            <option>Data / IA</option>-->
-    <!--                            <option>Design</option>-->
-    <!--                            <option>Marketing</option>-->
-    <!--                            <option>Finance / Comptabilité</option>-->
-    <!--                            <option>Recherche &amp; Sciences</option>-->
-    <!--                            <option>Management / Projet</option>-->
-    <!--                            <option>Embedded / IoT</option>-->
-    <!--                        </select>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-status">Statut</label>-->
-    <!--                        <select id="f-status">-->
-    <!--                            <option value="">Tous les statuts</option>-->
-    <!--                            <option>Ouverte</option>-->
-    <!--                            <option>En cours de validation</option>-->
-    <!--                            <option>Brouillon</option>-->
-    <!--                            <option>Clôturée</option>-->
-    <!--                        </select>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-start">Début (au plus tôt)</label>-->
-    <!--                        <input type="date" id="f-start"/>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-end">Fin (au plus tard)</label>-->
-    <!--                        <input type="date" id="f-end"/>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-duration">Durée minimale</label>-->
-    <!--                        <select id="f-duration">-->
-    <!--                            <option value="">Sans contrainte</option>-->
-    <!--                            <option>1 mois</option>-->
-    <!--                            <option>2 mois</option>-->
-    <!--                            <option>3 mois</option>-->
-    <!--                            <option>6 mois</option>-->
-    <!--                        </select>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                    <div class="form-group">-->
-    <!--                        <label for="f-level">Niveau étudiant</label>-->
-    <!--                        <select id="f-level">-->
-    <!--                            <option value="">Tous niveaux</option>-->
-    <!--                            <option>L1 – L2</option>-->
-    <!--                            <option>L3 – M1</option>-->
-    <!--                            <option>M2</option>-->
-    <!--                            <option>École d'ingénieur</option>-->
-    <!--                        </select>-->
-    <!--                    </div>-->
-    <!---->
-    <!--                </div>-->
-    <!--                <div class="form-actions">-->
-    <!--                    <button type="button" class="btn btn-ghost">Réinitialiser</button>-->
-    <!--                    <button type="button" class="btn btn-primary">Appliquer les filtres</button>-->
-    <!--                </div>-->
-    <!--            </div>-->
-    <!--        </div>-->
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:.9rem;">
-                <p class="text-sm text-muted">
-                    <strong><?php echo $count; ?> résultat<?php echo ($count > 1 ? 's' : ''); ?></strong> trouvé<?php echo ($count > 1 ? 's' : ''); ?>
-                </p>
-
-                <select name="sort" onchange="this.form.submit()" style="font-family:var(--font-body);font-size:.82rem;padding:.35rem .7rem;border:1px solid var(--clr-border);border-radius:var(--radius);background:#fff;outline:none;cursor:pointer;">
-                    <option value="relevance" <?php echo ($_GET['sort'] ?? '') == 'relevance' ? 'selected' : ''; ?>>Trier par : Pertinence</option>
-                    <option value="recent"    <?php echo ($_GET['sort'] ?? '') == 'recent' ? 'selected' : ''; ?>>Trier par : Date (récent)</option>
-                    <option value="city"      <?php echo ($_GET['sort'] ?? '') == 'city' ? 'selected' : ''; ?>>Trier par : Ville (A→Z)</option>
-                    <option value="company"   <?php echo ($_GET['sort'] ?? '') == 'company' ? 'selected' : ''; ?>>Trier par : Entreprise (A→Z)</option>
-                </select>
-            </div>
-
-            <div class="offer-list">
-                <?php
-                if ($count > 0) {
-                    foreach ($offers as $offer) {
-                        $replacements = [
-                                '{{STAGE_ID}}' => $offer['id'],
-                                '{{STAGE_NAME}}' => htmlspecialchars($offer['title']),
-                                '{{STAGE_POSITION}}' => htmlspecialchars($offer['location']),
-                                '{{STAGE_COMPANY}}' => htmlspecialchars($offer['company_name']),
-                                '{{STAGE_DATE}}' => date('M Y', strtotime($offer['created_at'])),
-                                '{{STAGE_DESC}}' => htmlspecialchars(substr($offer['description'], 0, 150)) . '...',
-                                '{{STAGE_STATUS}}' => strtoupper($offer['state']),
-                                '{{STAGE_TAG_CLASS}}' => ($offer['state'] === 'open' ? 'tag-green' : 'tag-amber')
-                        ];
-                        echo strtr($cardTemplate, $replacements);
-                    }
-                } else {
-                    echo "<p>Aucun résultat pour cette recherche.</p>";
-                }
-                ?>
-            </div>
-
-            <!-- /offer-list -->
-        </main>
-    </div><!-- /page-wrapper -->
-
-    <!-- ━━━ FOOTER ━━━ -->
-    <footer>
-        <div class="footer-inner">
-            <span>Gestion d'Offres de Stage</span>
-            <span><a href="legals.html">Conditions &amp; Mentions légales</a></span>
+        <div class="results-meta" style="margin-bottom: 1rem;">
+            <p><strong><?= $count ?></strong> offre<?= $count > 1 ? 's' : '' ?> trouvée<?= $count > 1 ? 's' : '' ?></p>
         </div>
-    </footer>
 
-    </body>
-    </html>
+        <div class="offer-list">
+            <?php if ($count > 0): ?>
+                <?php foreach ($offers as $offer): ?>
+                    <?= class_exists('OfferRenderer') ? OfferRenderer::render($offer, 'rich') : '<div class="card">Offer Row</div>'; ?>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="card" style="padding: 4rem 2rem; text-align: center; border: 2px dashed #ddd; background: transparent;">
+                    <p style="font-size: 1.2rem; color: #666;">Aucun résultat ne correspond à votre recherche.</p>
+                </div>
+            <?php endif; ?>
+        </div>
+    </main>
+</div>
+
+<footer></footer>
+
+<script type="module" src="<?php echo CDN_URL; ?>/assets/scripts/load_head_foot.js"></script>
+
+</body>
+</html>

@@ -11,30 +11,51 @@
 }
 
 :root {
-    --clr-bg: #f0f0f0;
-    --clr-surface: #fafafa;
-    --clr-border: #aaaaaa;
-    --clr-border-light: #cccccc;
-    --clr-text: #1a1a1a;
-    --clr-text-muted: #666666;
-    --clr-accent: #1a1a1a;
-    --clr-accent-inv: #f0f0f0;
+    /* Enable automatic light/dark switching */
+    color-scheme: light dark;
 
-    --clr-tag-green: #c8e6c9;
-    --clr-tag-green-t: #1b5e20;
-    --clr-tag-amber: #fff3cd;
-    --clr-tag-amber-t: #6d4c00;
-    --clr-tag-slate: #d6d6d6;
-    --clr-tag-slate-t: #333333;
+    /* Backgrounds and surfaces */
+    --clr-bg: light-dark(#f0f0f0, #121212);
+    --clr-surface: light-dark(#fafafa, #1e1e1e);
 
-    --clr-danger: #b71c1c;
-    --clr-success: #2e7d32;
+    /* Borders */
+    --clr-border: light-dark(#aaaaaa, #444444);
+    --clr-border-light: light-dark(#cccccc, #666666);
 
+    /* Text */
+    --clr-text: light-dark(#1a1a1a, #e0e0e0);
+    --clr-text-muted: light-dark(#666666, #999999);
+
+    /* Accent */
+    --clr-accent: light-dark(#1a1a1a, #bb86fc);
+    --clr-accent-inv: light-dark(#f0f0f0, #121212);
+
+    /* Tags */
+    --clr-tag-green: light-dark(#c8e6c9, #2e7d32);
+    --clr-tag-green-t: light-dark(#1b5e20, #c8e6c9);
+    --clr-tag-amber: light-dark(#fff3cd, #ffb74d);
+    --clr-tag-amber-t: light-dark(#6d4c00, #3e2723);
+    --clr-tag-slate: light-dark(#d6d6d6, #555555);
+    --clr-tag-slate-t: light-dark(#333333, #f0f0f0);
+
+    /* Status */
+    --clr-danger: light-dark(#b71c1c, #cf6679);
+    --clr-success: light-dark(#2e7d32, #81c784);
+
+    /* Borders / radii */
     --border-width: 0.125rem;
-    --border-radius : 8px;
-    --border-radius-btn : 6px;
+    --border-radius: 8px;
+    --border-radius-btn: 6px;
 
     --font: 'SF Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+}
+
+[data-theme="light"] {
+    color-scheme: light;
+}
+
+[data-theme="dark"] {
+    color-scheme: dark;
 }
 
 /* ---------- BASE ---------- */
@@ -138,8 +159,8 @@ header {
 }
 
 .logo span {
-/*color: var(--clr-accent); OVERRIDDEN SO DISABLE*/
-/*    background: var(--clr-accent-inv);*/
+    /*color: var(--clr-accent); OVERRIDDEN SO DISABLE*/
+    /*    background: var(--clr-accent-inv);*/
     padding: .1em .3em;
     margin-right: .35em;
     background-image: url('https://moodle.cesi.fr/pluginfile.php/1/theme_edutor/logo/1769693681/Logo%20One%20CESI.jpg');
@@ -148,7 +169,7 @@ header {
     background-position: center;
     width: 24px;
     height: 24px;
-    color: transparent;  /* hides text */
+    color: transparent; /* hides text */
 }
 
 /* ---------- NAV ---------- */
@@ -279,8 +300,9 @@ nav a.active {
 .card-body {
     padding: .6rem .85rem .85rem;
 }
+
 div.card-meta span i.icon::after {
-    content:" "
+    content: " "
 }
 
 .card-meta {
@@ -653,3 +675,26 @@ footer {
 .text-muted {
     color: var(--clr-text-muted);
 }
+
+/* Update your root to support the manual data-theme override */
+:root:has(html[data-theme="light"]),
+html[data-theme="light"] :root {
+    color-scheme: light;
+}
+
+:root:has(html[data-theme="dark"]),
+html[data-theme="dark"] :root {
+    color-scheme: dark;
+}
+
+/* Ensure the theme button is ALWAYS visible in the header */
+.btn-theme {
+    background: var(--clr-accent-inv);
+    color: var(--clr-accent);
+    border: 1px solid var(--clr-accent-inv);
+    font-family: var(--font);
+    padding: 2px 8px;
+    cursor: pointer;
+    border-radius: var(--border-radius-btn);
+}
+

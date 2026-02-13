@@ -6,7 +6,8 @@ services:
     image: php:8.2-apache
     container_name: lamp-web
     ports:
-      - "8080:80"
+      - "80:80"
+      - "443:443"
     volumes:
       - ./www:/var/www/html
     depends_on:

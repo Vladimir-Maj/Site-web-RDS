@@ -1,12 +1,16 @@
 FROM php:8.2-apache
 
-# Install extensions
 RUN docker-php-ext-install mysqli pdo pdo_mysql
 
-# Enable headers (Required for CORS) and rewrite
-RUN a2enmod headers rewrite
+RUN a2enmod headers rewrite ssl
 
-# Copy your config
 COPY apache/vhosts.conf /etc/apache2/sites-available/000-default.conf
 
+COPY apache/entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80 443
+
+ENTRYPOINT ["/entrypoint.sh"]

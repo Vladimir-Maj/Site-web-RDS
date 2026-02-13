@@ -1,49 +1,97 @@
+/**
+ * load_head_foot.js
+ * Handles dynamic loading of header/footer and wires up theme toggle logic.
+ * Supports both PHP-injected and JS-injected headers.
+ */
 (async function() {
-    // 1. Define where the CDN lives
-    const cdnBase = 'http://cdn.localhost:8080/';
-    const assetsBase = cdnBase + 'assets/';
+    // 1. Determine CDN Base URL
+    const cdnBase = (window.APP_CONFIG && window.APP_CONFIG.cdnUrl)
+        ? window.APP_CONFIG.cdnUrl + '/'
+        : 'https://cdn.stageflow.fr/';
 
-    // Get current page filename (e.g., index.html)
+    const assetsBase = cdnBase + 'assets/';
     const currentPage = location.pathname.split('/').pop() || 'index.html';
 
-    // 2. Use Absolute Paths for fetching
-    const headerPath = assetsBase + 'elements/header.html';
-    const footerPath = assetsBase + 'elements/footer.html';
-    const headExcludePath = assetsBase + 'head_exclude.json';
-    const footExcludePath = assetsBase + 'foot_exclude.json';
+    // Target Elements
+    const headerEl = document.querySelector('header');
+    const footerEl = document.querySelector('footer');
+
+    /**
+     * Theme Toggle Logic
+     */
+    function setupThemeToggle() {
+        setTimeout(() => {
+            const btn = document.getElementById('theme-toggle');
+            const icon = document.getElementById('theme-icon');
+            const html = document.documentElement;
+
+            if (!btn) {
+                console.warn("Theme toggle button not found in the header.");
+                return;
+            }
+
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            html.setAttribute('data-theme', savedTheme);
+            if (icon) icon.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
+
+            btn.onclick = (e) => {
+                e.preventDefault();
+                const isDark = html.getAttribute('data-theme') === 'dark';
+                const newTheme = isDark ? 'light' : 'dark';
+
+                html.setAttribute('data-theme', newTheme);
+                localStorage.setItem('theme', newTheme);
+                if (icon) icon.textContent = newTheme === 'dark' ? '🌙' : '☀️';
+
+                console.log(`Theme switched to: ${newTheme}`);
+            };
+
+            console.log("Theme toggle successfully wired!");
+        }, 50);
+    }
 
     try {
-        // Load exclude lists from CDN
-        const [headExclude, footExclude] = await Promise.all([
-            fetch(headExcludePath).then(r => r.json()),
-            fetch(footExcludePath).then(r => r.json())
-        ]);
+        // 2. LOAD HEADER
+        if (headerEl) {
+            if (headerEl.innerHTML.trim() === "") {
+                const headExcludePath = assetsBase + 'head_exclude.json';
+                const headExclude = await fetch(headExcludePath).then(r => r.json());
 
-        // Load header if not excluded
-        if (!headExclude.includes(currentPage)) {
-            const headerHtml = await fetch(headerPath).then(r => r.text());
-            const headerEl = document.querySelector('header');
-            if (headerEl) {
-                headerEl.innerHTML = headerHtml;
+                if (!headExclude.includes(currentPage)) {
+                    // FIXED: Path changed from 'elements/' to 'templates/'
+                    const headerPath = assetsBase + 'elements/header_template.html';
+                    const resp = await fetch(headerPath + '?v=' + Date.now());
 
-                // Highlight active link
-                headerEl.querySelectorAll('nav a').forEach(link => {
-                    if (link.getAttribute('href') === currentPage) {
-                        link.classList.add('active');
+                    if (resp.ok) {
+                        headerEl.innerHTML = await resp.text();
+                        setupThemeToggle();
+                    } else {
+                        console.error(`Failed to fetch header from: ${headerPath}`);
                     }
-                });
+                }
+            } else {
+                setupThemeToggle();
             }
         }
 
-        // Load footer if not excluded
-        if (!footExclude.includes(currentPage)) {
-            const footerHtml = await fetch(footerPath).then(r => r.text());
-            const footerEl = document.querySelector('footer');
-            if (footerEl) {
-                footerEl.innerHTML = footerHtml;
+        // 3. LOAD FOOTER
+        if (footerEl && footerEl.innerHTML.trim() === "") {
+            const footExcludePath = assetsBase + 'foot_exclude.json';
+            const footExclude = await fetch(footExcludePath).then(r => r.json());
+
+            if (!footExclude.includes(currentPage)) {
+                // FIXED: Path changed from 'elements/' to 'templates/' (adjust if footer is elsewhere)
+                const footerPath = assetsBase + 'elements/footer_template.html';
+                const resp = await fetch(footerPath);
+                if (resp.ok) {
+                    footerEl.innerHTML = await resp.text();
+                } else {
+                    console.error(`Failed to fetch footer from: ${footerPath}`);
+                }
             }
         }
+
     } catch (err) {
-        console.error("Failed to load CDN assets:", err);
+        console.error("Critical error in load_head_foot.js:", err);
     }
 })();
