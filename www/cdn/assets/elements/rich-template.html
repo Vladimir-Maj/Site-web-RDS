@@ -1,0 +1,34 @@
+<article class="card offer-card">
+    <div class="card-header">
+        <div>
+            <h3>{{POSITION}}</h3>
+            <p style="color: var(--clr-accent); font-weight: bold; font-size: 0.85rem; margin-top: 2px;">
+                @{{COMPANY_NAME}}
+            </p>
+        </div>
+        <span class="tag {{TAG_CLASS}}">{{FORMATTED_STATE}}</span>
+    </div>
+
+    <div class="card-body">
+        <div class="card-meta" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.5rem; margin-bottom: 1rem;">
+            <span><i class="icon">LOC:</i> {{LOCATION}}</span>
+            <span><i class="icon">PAY:</i> {{SALARY}}</span>
+            <span><i class="icon">TYP:</i> {{JOB_TYPE}}</span>
+            <span><i class="icon">REM:</i> {{REMOTE_TYPE}}</span>
+            <span><i class="icon">LVL:</i> {{EXP_LEVEL}}</span>
+            <span><i class="icon">UPD:</i> {{DATE}}</span>
+        </div>
+
+        <p class="description" style="margin-bottom: 1rem; font-size: 0.85rem;">
+            {{DESCRIPTION}}
+        </p>
+
+        <div class="skills-container">
+            {{SKILLS_HTML}}
+        </div>
+
+        <div class="card-actions" style="margin-top: 1rem; border-top: 1px solid var(--clr-border-light); padding-top: 0.8rem;">
+            <a href="offer_detail.php?offer_id={{ID}}" class="btn btn-primary">CONSULTER_OFFRE</a>
+        </div>
+    </div>
+</article>
