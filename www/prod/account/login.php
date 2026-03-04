@@ -1,30 +1,28 @@
 <?php
 /**
- * SF Prosit - User Login
+ * Login
+ * Path: /prod/auth/login.php
  */
 
 require_once '../util/config.php';
 require_once '../util/db_connect.php';
 
-// Ensure session is started for all pages via config or here
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
 // --- 1. CONFIGURATION ---
-$pageTitle = "Connexion — SF Prosit";
+$pageTitle = "Connexion — StageFlow";
 $currentPage = "login.php";
 
-// --- 2. HEADER FETCH ---
-$localHeaderPath = '/var/www/html/cdn/assets/elements/header.html';
-$headerUrl = CDN_URL . "/assets/elements/header.html";
-$headerHtml = "";
-if (file_exists($localHeaderPath)) {
-    $headerHtml = file_get_contents($localHeaderPath);
-} else {
-    $context = stream_context_create(["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]]);
-    $headerHtml = @file_get_contents($headerUrl, false, $context) ?: "";
-}
+if (1+1==2) echo "test"; elseif (1+1!=2) echo "false";
+
+// --- 2. ELEMENT FETCHING ---
+$basePath = __DIR__ . '/../../cdn/assets/elements/';
+$headerHtml = file_exists($basePath . 'header_template.html') ? file_get_contents($basePath . 'header_template.html') : "";
+$footerHtml = file_exists($basePath . 'footer_template.html') ? file_get_contents($basePath . 'footer_template.html') : "";
+
+// Set Active Link
 $headerHtml = str_replace('data-page="' . $currentPage . '"', 'data-page="' . $currentPage . '" class="active"', $headerHtml);
 
 // --- 3. LOGIN LOGIC ---
@@ -43,19 +41,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user['password'])) {
-                // Password is correct!
                 $_SESSION['user_id']   = $user['id'];
                 $_SESSION['username']  = $user['username'];
                 $_SESSION['user_role'] = $user['role'];
 
-                // Redirect to dashboard or search
-                header("Location: ../search.php");
+                header("Location: ../index.php");
                 exit();
             } else {
-                $error = "Identifiants invalides.";
+                $error = "Identifiants incorrects. Veuillez réessayer.";
             }
         } catch (PDOException $e) {
-            $error = "Erreur système : " . $e->getMessage();
+            $error = "Une erreur est survenue lors de la connexion.";
         }
     }
 }
@@ -66,64 +62,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><?php echo $pageTitle; ?></title>
+
     <script>window.APP_CONFIG = { cdnUrl: "<?php echo CDN_URL; ?>" };</script>
+    <link rel="icon" type="image/x-icon" href="<?php echo CDN_URL; ?>/favicon.ico">
     <link rel="stylesheet" href="<?php echo CDN_URL; ?>/styles.css">
-    <style>
-        .page-content { padding: 4rem 0; max-width: 400px; margin: 0 auto; }
-        .auth-card { padding: 2rem; border-radius: var(--border-radius); }
-        .alert-error {
-            background: var(--clr-bg);
-            border: 1px solid var(--clr-danger);
-            color: var(--clr-danger);
-            padding: 0.8rem;
-            margin-bottom: 1rem;
-            font-size: 0.85rem;
-        }
-    </style>
 </head>
 <body>
 
-<header><?php echo $headerHtml; ?></header>
+<header>
+    <?php echo $headerHtml; ?>
+</header>
 
 <div class="page-wrapper">
-    <main class="container page-content">
-        <h1 style="margin-bottom: 1.5rem; text-align: center;">> AUTH_REQUIRED</h1>
+    <main class="container">
+        <div class="auth-container">
 
-        <?php if($error): ?>
-            <div class="alert-error">
-                [ERROR]: <?= htmlspecialchars($error) ?>
+            <div class="auth-header">
+                <h1>Connexion</h1>
+                <p>Accédez à votre espace de gestion</p>
             </div>
-        <?php endif; ?>
 
-        <section class="card auth-card">
-            <form action="login.php" method="POST">
-                <div class="form-group mb-2">
-                    <label>EMAIL_ADDRESS</label>
-                    <input type="email" name="email" required placeholder="user@domain.com" autofocus>
+            <?php if($error): ?>
+                <div class="error-message">
+                    <?= htmlspecialchars($error) ?>
                 </div>
+            <?php endif; ?>
 
-                <div class="form-group mb-2">
-                    <label>PASSWORD</label>
-                    <input type="password" name="password" required placeholder="********">
+            <section class="card" style="padding: 2rem;">
+                <form action="login.php" method="POST">
+                    <div class="form-group" style="margin-bottom: 1.25rem;">
+                        <label>Adresse e-mail</label>
+                        <input type="email" name="email" required placeholder="nom@exemple.com" autofocus style="width: 100%;">
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 1.5rem;">
+                        <label>Mot de passe</label>
+                        <input type="password" name="password" required placeholder="••••••••" style="width: 100%;">
+                    </div>
+
+                    <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px; font-weight: 600;">
+                        Se connecter
+                    </button>
+                </form>
+
+                <div class="form-footer">
+                    Pas de compte ? <a href="register.php">Créer un compte</a>
                 </div>
+            </section>
 
-                <button type="submit" class="btn btn-primary mt-2" style="width: 100%;">
-                    EXECUTE_LOGIN
-                </button>
-            </form>
-
-            <div style="margin-top: 1.5rem; text-align: center; font-size: 0.8rem;">
-                <p>Nouveau ici ? <a href="register.php">CRÉER_COMPTE</a></p>
-            </div>
-        </section>
+        </div>
     </main>
 </div>
 
 <footer>
-    <div class="footer-inner">
-        <span>© 2026 StageFlow.TUI</span>
-        <a href="index.php">RET_HOME</a>
-    </div>
+    <?php echo $footerHtml; ?>
 </footer>
 
 <script type="module" src="<?php echo CDN_URL; ?>/assets/scripts/load_head_foot.js"></script>

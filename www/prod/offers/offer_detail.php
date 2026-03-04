@@ -14,7 +14,7 @@ if ($offerId) {
 }
 
 if (!$offer) {
-    header("Location: home.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -58,7 +58,7 @@ $stateClasses = [
 <div class="page-wrapper">
     <main>
         <div class="mb-2">
-            <a href="home.php" class="btn btn-ghost" style="text-decoration:none;">&lt; RETOUR</a>
+            <a href="../index.php" class="btn btn-ghost" style="text-decoration:none;">&lt; RETOUR</a>
         </div>
 
         <div class="page-header">

@@ -21,5 +21,5 @@ try {
 }
 
 // 4. Redirect back to the home page immediately
-header("Location: home.php");
+header("Location: index.php");
 exit();
