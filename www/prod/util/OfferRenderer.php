@@ -25,7 +25,7 @@ class OfferRenderer {
     private static function fetchTemplate(string $format): ?string {
         if ($format === 'rich') {
             if (self::$richTemplate === null) {
-                self::$richTemplate = @file_get_contents(self::CDN_BASE . "rich-template.html");
+                self::$richTemplate = @file_get_contents(self::CDN_BASE . "rich_template.html");
             }
             return self::$richTemplate;
         } else {

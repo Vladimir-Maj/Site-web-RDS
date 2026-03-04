@@ -1,34 +1,22 @@
 <?php
 /**
  * SF Prosit - Page Template
- * Use this as a starting point for all new pages.
  */
 
-require_once 'config.php';
-// require_once 'db_connect.php'; // Uncomment when DB is needed
+require_once 'util/config.php';
+// require_once 'util/db_connect.php';
 
-// --- 1. CONFIGURATION ---
-$pageTitle = "Page Title — SF Prosit";
-$currentPage = basename(__FILE__); // Automatically detects filename (e.g., 'search.php')
+$pageTitle = "Nom de la Page - SF Prosit";
+$currentPage = basename(__FILE__);
 
-// --- 2. HEADER FETCH LOGIC ---
-// We try the local filesystem first (Docker speed), then fallback to URL
-$localHeaderPath = '/var/www/html/cdn/assets/elements/header.html';
-$headerUrl = CDN_URL . "/assets/elements/header.html";
+$basePath = __DIR__ . '/../cdn/assets/elements/';
+$headerPath = $basePath . 'header_template.html';
+$footerPath = $basePath . 'footer_template.html';
 
-$headerHtml = "";
-if (file_exists($localHeaderPath)) {
-    $headerHtml = file_get_contents($localHeaderPath);
-} else {
-    $context = stream_context_create(["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]]);
-    $headerHtml = @file_get_contents($headerUrl, false, $context) ?: "";
-}
+$headerHtml = file_exists($headerPath) ? file_get_contents($headerPath) : "";
+$footerHtml = file_exists($footerPath) ? file_get_contents($footerPath) : "";
 
-// Set Active Navigation Link
 $headerHtml = str_replace('data-page="' . $currentPage . '"', 'data-page="' . $currentPage . '" class="active"', $headerHtml);
-
-// --- 3. PAGE LOGIC ---
-// Your PHP logic/queries go here
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -43,11 +31,6 @@ $headerHtml = str_replace('data-page="' . $currentPage . '"', 'data-page="' . $c
 
     <link rel="icon" type="image/x-icon" href="<?php echo CDN_URL; ?>/favicon.ico">
     <link rel="stylesheet" href="<?php echo CDN_URL; ?>/styles.css">
-
-    <style>
-        /* Page-specific styles */
-        .page-content { padding: 2rem 0; }
-    </style>
 </head>
 <body>
 
@@ -58,14 +41,15 @@ $headerHtml = str_replace('data-page="' . $currentPage . '"', 'data-page="' . $c
 <div class="page-wrapper">
     <main class="container page-content">
         <h1><?php echo $pageTitle; ?></h1>
-
         <section class="card">
-            <p>Votre contenu commence ici...</p>
+            <p>Contenu ici...</p>
         </section>
     </main>
 </div>
 
-<footer></footer>
+<footer>
+    <?php echo $footerHtml; ?>
+</footer>
 
 <script type="module" src="<?php echo CDN_URL; ?>/assets/scripts/load_head_foot.js"></script>
 </body>

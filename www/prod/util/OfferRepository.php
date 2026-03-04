@@ -7,6 +7,20 @@ class OfferRepository {
         $this->pdo = $pdo;
     }
 
+    // Dans OfferRepository.php
+    public function countAll() {
+        return $this->pdo->query("SELECT COUNT(*) FROM offers")->fetchColumn();
+    }
+
+    public function findPaginated($limit, $offset) {
+        $stmt = $this->pdo->prepare(
+            "SELECT * FROM offers ORDER BY created_at DESC LIMIT :limit OFFSET :offset");
+        $stmt->bindValue(':limit', (int) $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int) $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
     /**
      * Search with advanced filters matching the new schema
      */

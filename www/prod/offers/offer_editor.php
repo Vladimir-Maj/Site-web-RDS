@@ -1,27 +1,26 @@
 <?php
 /**
  * SF Prosit - Job Editor
+ * Path: /prod/offers/offer_editor.php
  */
 
-require_once 'util/config.php';
-require_once 'util/db_connect.php';
-require_once 'util/OfferRepository.php';
+require_once '../util/config.php';
+require_once '../util/db_connect.php';
+require_once '../util/OfferRepository.php';
 
 // --- 1. CONFIGURATION ---
 $pageTitle = "Publier une offre — SF Prosit";
-$currentPage = "editor.php"; // Explicitly set for navigation highlighting
+$currentPage = "offer_editor.php";
 
-// --- 2. HEADER FETCH LOGIC ---
-$localHeaderPath = '/var/www/html/cdn/assets/elements/header.html';
-$headerUrl = CDN_URL . "/assets/elements/header.html";
+// --- 2. ELEMENT FETCHING (Harmonisé avec template.php) ---
+$basePath = __DIR__ . '/../../cdn/assets/elements/';
+$headerPath = $basePath . 'header_template.html';
+$footerPath = $basePath . 'footer_template.html';
 
-$headerHtml = "";
-if (file_exists($localHeaderPath)) {
-    $headerHtml = file_get_contents($localHeaderPath);
-} else {
-    $context = stream_context_create(["ssl" => ["verify_peer"=>false, "verify_peer_name"=>false]]);
-    $headerHtml = @file_get_contents($headerUrl, false, $context) ?: "";
-}
+$headerHtml = file_exists($headerPath) ? file_get_contents($headerPath) : "";
+$footerHtml = file_exists($footerPath) ? file_get_contents($footerPath) : "";
+
+// Set Active Link
 $headerHtml = str_replace('data-page="' . $currentPage . '"', 'data-page="' . $currentPage . '" class="active"', $headerHtml);
 
 // --- 3. PAGE LOGIC ---
@@ -34,7 +33,7 @@ try {
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $offerData = [
                 'title'                => $_POST['title'] ?? '',
-                'position'             => $_POST['title'] ?? '',
+                'position'             => $_POST['title'] ?? '', // Doublon par sécurité selon votre repo
                 'company_id'           => (int)($_POST['company_id'] ?? 0),
                 'location'             => $_POST['location'] ?? '',
                 'description'          => $_POST['description'] ?? '',
@@ -56,7 +55,7 @@ try {
 
         if (!empty($offerData['title']) && $offerData['company_id'] > 0) {
             if ($repo->create($offerData)) {
-                header("Location: search.php");
+                header("Location: ../index.php"); // Redirection vers l'accueil/catalogue
                 exit();
             }
         } else {
@@ -74,20 +73,18 @@ try {
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><?php echo $pageTitle; ?></title>
 
-    <script>
-        window.APP_CONFIG = { cdnUrl: "<?php echo CDN_URL; ?>" };
-    </script>
-
+    <script>window.APP_CONFIG = { cdnUrl: "<?php echo CDN_URL; ?>" };</script>
     <link rel="icon" type="image/x-icon" href="<?php echo CDN_URL; ?>/favicon.ico">
     <link rel="stylesheet" href="<?php echo CDN_URL; ?>/styles.css">
 
     <style>
-        .page-content { padding: 2rem 0; }
         .form-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; }
         .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
         .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-        .label-group { font-weight: bold; color: var(--clr-primary); font-size: 0.9rem; text-transform: uppercase; margin-bottom: 10px; display: block; }
-        .error-notice { color: #d9534f; background: #f9f2f2; border: 1px solid #d9534f; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem; }
+        .label-group { font-weight: bold; color: #2563eb; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 12px; display: block; letter-spacing: 0.05em; }
+        .error-notice { color: #d9534f; background: #fef2f2; border: 1px solid #fecaca; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+        /* Responsive simple */
+        @media (max-width: 768px) { .grid-2, .grid-3 { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
@@ -97,9 +94,10 @@ try {
 </header>
 
 <div class="page-wrapper">
-    <main class="container page-content">
-        <div class="page-header">
+    <main class="container page-content" style="padding: 2rem 0;">
+        <div class="page-header" style="margin-bottom: 2rem;">
             <h1>Publier une offre</h1>
+            <p>Remplissez les détails pour attirer les meilleurs candidats.</p>
         </div>
 
         <?php if($error): ?>
@@ -108,18 +106,18 @@ try {
             </div>
         <?php endif; ?>
 
-        <form action="editor.php" method="POST" class="card" style="padding: 20px;">
+        <form action="" method="POST" class="card" style="padding: 30px;">
 
             <span class="label-group">Poste & Entreprise</span>
-            <div class="form-group">
+            <div class="form-group" style="margin-bottom: 1.5rem;">
                 <label>Titre de l'offre</label>
-                <input type="text" name="title" placeholder="ex: Développeur PHP Fullstack" required/>
+                <input type="text" name="title" placeholder="ex: Développeur PHP Fullstack" required style="width: 100%;"/>
             </div>
 
-            <div class="grid-2">
+            <div class="grid-2" style="margin-bottom: 1.5rem;">
                 <div class="form-group">
                     <label>Entreprise</label>
-                    <select name="company_id" required>
+                    <select name="company_id" required style="width: 100%;">
                         <option value="">— Choisir —</option>
                         <?php foreach($companies as $c): ?>
                             <option value="<?= $c['id']; ?>"><?= htmlspecialchars($c['name']); ?></option>
@@ -128,24 +126,24 @@ try {
                 </div>
                 <div class="form-group">
                     <label>Ville / Lieu</label>
-                    <input type="text" name="location" placeholder="ex: Nancy (54)" required/>
+                    <input type="text" name="location" placeholder="ex: Nancy (54)" required style="width: 100%;"/>
                 </div>
             </div>
 
             <div class="form-section">
                 <span class="label-group">Salaire & Contrat</span>
-                <div class="grid-3">
+                <div class="grid-3" style="margin-bottom: 1rem;">
                     <div class="form-group">
                         <label>Salaire Min (€)</label>
-                        <input type="number" name="salary_min" placeholder="35000">
+                        <input type="number" name="salary_min" placeholder="35000" style="width: 100%;">
                     </div>
                     <div class="form-group">
                         <label>Salaire Max (€)</label>
-                        <input type="number" name="salary_max" placeholder="45000">
+                        <input type="number" name="salary_max" placeholder="45000" style="width: 100%;">
                     </div>
                     <div class="form-group">
                         <label>Type de contrat</label>
-                        <select name="job_type">
+                        <select name="job_type" style="width: 100%;">
                             <option value="full-time">CDI</option>
                             <option value="part-time">Temps partiel</option>
                             <option value="internship">Stage</option>
@@ -156,7 +154,7 @@ try {
                 <div class="grid-3">
                     <div class="form-group">
                         <label>Mode de travail</label>
-                        <select name="remote_type">
+                        <select name="remote_type" style="width: 100%;">
                             <option value="on-site">Sur site</option>
                             <option value="hybrid">Hybride</option>
                             <option value="remote">Télétravail</option>
@@ -164,7 +162,7 @@ try {
                     </div>
                     <div class="form-group">
                         <label>Niveau d'expérience</label>
-                        <select name="experience_level">
+                        <select name="experience_level" style="width: 100%;">
                             <option value="entry">Junior</option>
                             <option value="mid">Confirmé</option>
                             <option value="senior">Senior</option>
@@ -173,7 +171,7 @@ try {
                     </div>
                     <div class="form-group">
                         <label>Niveau d'études</label>
-                        <select name="education_level">
+                        <select name="education_level" style="width: 100%;">
                             <option value="none">Indifférent</option>
                             <option value="bac+2">Bac +2</option>
                             <option value="bac+3">Bac +3</option>
@@ -185,13 +183,13 @@ try {
 
             <div class="form-section">
                 <span class="label-group">Détails & Compétences</span>
-                <div class="form-group">
+                <div class="form-group" style="margin-bottom: 1rem;">
                     <label>Description</label>
-                    <textarea name="description" rows="4" placeholder="Missions, environnement technique..."></textarea>
+                    <textarea name="description" rows="5" placeholder="Missions, environnement technique..." style="width: 100%; font-family: inherit;"></textarea>
                 </div>
                 <div class="form-group">
                     <label>Compétences (séparées par des virgules)</label>
-                    <input type="text" name="required_skills" placeholder="PHP, Symfony, Docker..."/>
+                    <input type="text" name="required_skills" placeholder="PHP, Symfony, Docker..." style="width: 100%;"/>
                 </div>
             </div>
 
@@ -200,27 +198,29 @@ try {
                 <div class="grid-2">
                     <div class="form-group">
                         <label>Statut</label>
-                        <select name="state">
+                        <select name="state" style="width: 100%;">
                             <option value="draft">Brouillon (Privé)</option>
                             <option value="open">Publié (Public)</option>
                         </select>
                     </div>
                     <div class="form-group">
                         <label>Expire le (Optionnel)</label>
-                        <input type="date" name="expires_at">
+                        <input type="date" name="expires_at" style="width: 100%;">
                     </div>
                 </div>
             </div>
 
-            <div style="margin-top: 30px; display: flex; gap: 10px; justify-content: flex-end;">
-                <a href="search.php" class="btn btn-ghost">Annuler</a>
-                <button type="submit" class="btn btn-primary" style="padding: 10px 30px;">Enregistrer l'offre</button>
+            <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end;">
+                <a href="../index.php" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary" style="padding: 12px 40px; cursor: pointer;">Enregistrer l'offre</button>
             </div>
         </form>
     </main>
 </div>
 
-<footer></footer>
+<footer>
+    <?php echo $footerHtml; ?>
+</footer>
 
 <script type="module" src="<?php echo CDN_URL; ?>/assets/scripts/load_head_foot.js"></script>
 </body>
