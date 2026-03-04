@@ -3,8 +3,8 @@
  * SF Prosit - User Registration
  */
 
-require_once 'config.php';
-require_once 'db_connect.php';
+require_once '../.back/util/config.php';
+require_once '../.back/repository/UserRepository.php';
 
 // --- 1. CONFIGURATION ---
 $pageTitle = "Créer un compte — SF Prosit";
@@ -27,43 +27,13 @@ $error = null;
 $success = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $username   = trim($_POST['username'] ?? '');
-    $email      = trim($_POST['email'] ?? '');
-    $password   = $_POST['password'] ?? '';
-    $confirm_pw = $_POST['confirm_password'] ?? '';
-    $role       = $_POST['role'] ?? 'candidate';
-
-    // Basic Validation
-    if (empty($username) || empty($email) || empty($password)) {
-        $error = "Tous les champs obligatoires doivent être remplis.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Format d'email invalide.";
-    } elseif ($password !== $confirm_pw) {
-        $error = "Les mots de passe ne correspondent pas.";
-    } elseif (strlen($password) < 8) {
-        $error = "Le mot de passe doit faire au moins 8 caractères.";
+    $userRepo = new UserRepository($pdo);
+    
+    if ($userRepo->exists($_POST['email'], $_POST['username'])) {
+        $error = "Email ou pseudo déjà utilisé.";
     } else {
-        try {
-            // Check if user already exists
-            $stmt = $pdo->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
-            $stmt->execute([$email, $username]);
-
-            if ($stmt->fetch()) {
-                $error = "Cet email ou ce nom d'utilisateur est déjà utilisé.";
-            } else {
-                // Hash the password securely
-                $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-                $sql = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
-                $insert = $pdo->prepare($sql);
-
-                if ($insert->execute([$username, $email, $hashedPassword, $role])) {
-                    $success = "Compte créé avec succès ! Vous pouvez maintenant vous connecter.";
-                }
-            }
-        } catch (PDOException $e) {
-            $error = "Erreur de base de données : " . $e->getMessage();
-        }
+        $userRepo->create($_POST);
+        $success = "Compte créé !";
     }
 }
 ?>
