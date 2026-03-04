@@ -1,34 +1,36 @@
 <?php
-require_once 'db_connect.php';
-require_once 'OfferRepository.php';
+/**
+ * SF Prosit - Offer Details
+ * Path: /prod/offers/offer_detail.php
+ */
+
+require_once '../.back/util/config.php';
+require_once '../.back/util/db_connect.php';
+require_once '../.back/repository/OfferRepository.php';
+require_once '../.back/util/OfferHelper.php';
 
 $repo = new OfferRepository($pdo);
-$offerId = $_GET['offer_id'] ?? null;
+$offerId = $_GET['id'] ?? $_GET['offer_id'] ?? null; // Support both naming conventions
 $offer = null;
 
 if ($offerId) {
-    $offer = $repo->findById($offerId);
+    // findById should return the join with 'companies' to get company_name and bio
+    $offer = $repo->findById((int)$offerId);
     if ($offer) {
-        $repo->incrementViews($offerId);
+        $repo->incrementViews((int)$offerId);
     }
 }
 
+// Redirect if not found
 if (!$offer) {
-    header("Location: index.php");
+    header("Location: ../index.php");
     exit();
 }
 
-// Prepare display values
-$displayTitle = !empty($offer['position']) ? $offer['position'] : $offer['title'];
-$salaryText = ($offer['salary_min'] || $offer['salary_max'])
-    ? ($offer['salary_min'] ?? '?') . "€ - " . ($offer['salary_max'] ?? '?') . "€"
-    : "Non spécifié";
-
-$stateClasses = [
-    'open'    => 'tag-green',
-    'pending' => 'tag-amber',
-    'draft'   => 'tag-slate'
-];
+// Prepare display values using our Helper
+$displayTitle = !empty($offer['position']) ? $offer['position'] : ($offer['title'] ?? 'Sans titre');
+$salaryText = OfferHelper::formatSalary($offer['salary_min'], $offer['salary_max'], $offer['salary_currency'] ?? 'EUR');
+$skills = OfferHelper::parseSkills($offer['required_skills'] ?? '');
 ?>
 
 <!DOCTYPE html>
@@ -37,118 +39,98 @@ $stateClasses = [
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title><?= htmlspecialchars($displayTitle) ?> — StageFlow</title>
-    <link rel="stylesheet" href="http://cdn.stageflow.fr/styles.css"/>
+    <link rel="stylesheet" href="<?= CDN_URL; ?>/styles.css"/>
     <style>
-        /* Maintain TUI grid alignment */
-        .detail-layout { display: grid; grid-template-columns: 1fr 280px; gap: 1rem; margin-top: 1rem; }
-        .detail-content { display: flex; flex-direction: column; gap: 1rem; }
-        .section-title { font-size: 0.9rem; text-transform: uppercase; border-bottom: 1px solid var(--clr-border-light); margin-bottom: 0.5rem; padding-bottom: 0.2rem; }
-        .meta-row { display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.4rem; }
-        .meta-row span:first-child { color: var(--clr-text-muted); }
-
-        @media (max-width: 768px) {
-            .detail-layout { grid-template-columns: 1fr; }
-        }
+        .detail-layout { display: grid; grid-template-columns: 1fr 300px; gap: 1.5rem; margin-top: 1rem; }
+        .meta-row { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.6rem; padding-bottom: 0.4rem; border-bottom: 1px solid #f1f5f9; }
+        .meta-row span:first-child { color: #64748b; font-weight: 500; }
+        .skill-list { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        @media (max-width: 900px) { .detail-layout { grid-template-columns: 1fr; } }
     </style>
 </head>
 <body>
-<script type="module" src="http://cdn.stageflow.fr/assets/scripts/load_head_foot.js"></script>
-<header></header>
+<header>
+    </header>
 
 <div class="page-wrapper">
-    <main>
-        <div class="mb-2">
-            <a href="../index.php" class="btn btn-ghost" style="text-decoration:none;">&lt; RETOUR</a>
+    <main class="container">
+        <div style="margin: 1.5rem 0;">
+            <a href="offer_search.php" class="btn btn-ghost">← Retour aux offres</a>
         </div>
 
-        <div class="page-header">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
             <div>
-                <span class="tag <?= $stateClasses[$offer['state']] ?? 'tag-slate' ?> mb-2">
-                    <?= strtoupper($offer['state']) ?>
+                <span class="tag <?= OfferHelper::getStateClass($offer['state']) ?> mb-2">
+                    <?= OfferHelper::formatState($offer['state']) ?>
                 </span>
-                <h1><?= htmlspecialchars($displayTitle) ?></h1>
-                <p><?= htmlspecialchars($offer['company_name']) ?> @ <?= htmlspecialchars($offer['location']) ?></p>
+                <h1 style="margin-top: 0.5rem;"><?= htmlspecialchars($displayTitle) ?></h1>
+                <p style="font-size: 1.1rem; color: #64748b;">
+                    <strong><?= htmlspecialchars($offer['company_name'] ?? 'Entreprise') ?></strong> 
+                    • <?= htmlspecialchars($offer['location'] ?? 'N/C') ?>
+                </p>
             </div>
-            <div style="display: flex; gap: 0.5rem;">
-                <?php if ($offer['application_url']): ?>
-                    <a href="<?= htmlspecialchars($offer['application_url']) ?>" target="_blank" class="btn btn-primary">POSTULER</a>
+            
+            <div class="actions">
+                <?php if (!empty($offer['application_url'])): ?>
+                    <a href="<?= htmlspecialchars($offer['application_url']) ?>" target="_blank" class="btn btn-primary btn-lg">Postuler maintenant</a>
                 <?php else: ?>
-                    <a href="mailto:<?= htmlspecialchars($offer['contact_email']) ?>" class="btn btn-primary">CONTACTER</a>
+                    <a href="mailto:<?= htmlspecialchars($offer['contact_email'] ?? '') ?>?subject=Candidature: <?= urlencode($displayTitle) ?>" class="btn btn-primary">Contacter le recruteur</a>
                 <?php endif; ?>
             </div>
         </div>
 
         <div class="detail-layout">
             <div class="detail-content">
-                <article class="card">
-                    <div class="card-header">
-                        <h3>DESCRIPTION_DU_POSTE</h3>
-                    </div>
-                    <div class="card-body">
-                        <div style="white-space: pre-line; color: var(--clr-text-muted);">
-                            <?= nl2br(htmlspecialchars($offer['description'])) ?>
-                        </div>
+                <article class="card" style="padding: 2rem;">
+                    <h3 class="section-title">Description du poste</h3>
+                    <div class="rich-text" style="line-height: 1.6; color: #334155;">
+                        <?= nl2br(htmlspecialchars($offer['description'] ?? '')) ?>
                     </div>
                 </article>
 
-                <?php if ($offer['required_skills']): ?>
-                    <article class="card">
-                        <div class="card-header">
-                            <h3>COMPETENCES_REQUISES</h3>
-                        </div>
-                        <div class="card-body">
-                            <p><?= htmlspecialchars($offer['required_skills']) ?></p>
-                        </div>
-                    </article>
-                <?php endif; ?>
-
-                <?php if ($offer['benefits']): ?>
-                    <article class="card">
-                        <div class="card-header">
-                            <h3>AVANTAGES</h3>
-                        </div>
-                        <div class="card-body">
-                            <p><?= htmlspecialchars($offer['benefits']) ?></p>
-                        </div>
-                    </article>
+                <?php if (!empty($skills)): ?>
+                <article class="card" style="padding: 2rem; margin-top: 1.5rem;">
+                    <h3 class="section-title">Compétences recherchées</h3>
+                    <div class="skill-list">
+                        <?php foreach ($skills as $skill): ?>
+                            <span class="skill-tag"><?= htmlspecialchars($skill) ?></span>
+                        <?php endforeach; ?>
+                    </div>
+                </article>
                 <?php endif; ?>
             </div>
 
             <aside>
-                <div class="card">
-                    <div class="card-header">
-                        <h3>INFOS_CLES</h3>
-                    </div>
-                    <div class="card-body">
-                        <div class="meta-row"><span>SALAIRE</span><strong><?= $salaryText ?></strong></div>
-                        <div class="meta-row"><span>CONTRAT</span><strong><?= ucfirst($offer['job_type']) ?></strong></div>
-                        <div class="meta-row"><span>REMOTE</span><strong><?= ucfirst($offer['remote_type']) ?></strong></div>
-                        <div class="meta-row"><span>NIVEAU</span><strong><?= strtoupper($offer['education_level']) ?></strong></div>
-                        <div class="meta-row"><span>VUES</span><strong><?= (int)$offer['views_count'] ?></strong></div>
+                <div class="card" style="padding: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 1.2rem; border-bottom: 2px solid var(--primary-color); display: inline-block;">Infos clés</h3>
+                    
+                    <div class="meta-row"><span>Salaire</span><strong><?= $salaryText ?></strong></div>
+                    <div class="meta-row"><span>Contrat</span><strong><?= OfferHelper::formatJobType($offer['job_type']) ?></strong></div>
+                    <div class="meta-row"><span>Télétravail</span><strong><?= ucfirst($offer['remote_type'] ?? 'On-site') ?></strong></div>
+                    <div class="meta-row"><span>Expérience</span><strong><?= ucfirst($offer['experience_level'] ?? 'N/C') ?></strong></div>
+                    <div class="meta-row"><span>Vues</span><strong><?= (int)$offer['views_count'] ?></strong></div>
 
-                        <?php if ($offer['application_deadline']): ?>
-                            <div class="notice notice-warn mt-2">
-                                <span class="notice-icon">!</span>
-                                <p>Deadline: <?= date('d/m/Y', strtotime($offer['application_deadline'])) ?></p>
-                            </div>
-                        <?php endif; ?>
-                    </div>
+                    <?php if (!empty($offer['application_deadline'])): ?>
+                        <div class="notice notice-warn" style="margin-top: 1rem; font-size: 0.85rem;">
+                            <strong>Deadline :</strong> <?= date('d/m/Y', strtotime($offer['application_deadline'])) ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <div class="card mt-2">
-                    <div class="card-header">
-                        <h3>ENTREPRISE</h3>
-                    </div>
-                    <div class="card-body">
-                        <p class="text-sm"><?= htmlspecialchars($offer['company_name']) ?></p>
-                        <p class="text-sm mt-1"><?= htmlspecialchars($offer['company_bio'] ?? 'Pas de description.') ?></p>
-                    </div>
+                <div class="card" style="padding: 1.5rem; margin-top: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-bottom: 0.8rem;">À propos de l'entreprise</h3>
+                    <p style="font-weight: 600; margin-bottom: 0.5rem;"><?= htmlspecialchars($offer['company_name'] ?? '') ?></p>
+                    <p style="font-size: 0.85rem; color: #64748b; line-height: 1.4;">
+                        <?= htmlspecialchars($offer['company_bio'] ?? 'Aucune description disponible pour cette entreprise.') ?>
+                    </p>
                 </div>
             </aside>
         </div>
     </main>
 </div>
 
-<footer></footer>
+<footer style="margin-top: 4rem;"></footer>
+
+<script type="module" src="<?= CDN_URL; ?>/assets/scripts/load_head_foot.js"></script>
 </body>
 </html>
