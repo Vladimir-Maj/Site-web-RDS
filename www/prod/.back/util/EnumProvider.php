@@ -1,18 +1,38 @@
 <?php
-// src/Helpers/EnumProvider.php
+// .back/util/EnumProvider.php
 
-class EnumProvider {
-    private $pdo;
+declare(strict_types=1);
 
-    public function __construct(PDO $pdo) {
-        $this->pdo = $pdo;
+class EnumProvider
+{
+    private OfferRepository $offerRepo;
+
+    public function __construct(OfferRepository $offerRepo)
+    {
+        $this->offerRepo = $offerRepo;
     }
 
-    public function getJobTypes() {
-        return ['full-time', 'part-time', 'contract', 'internship', 'apprenticeship', 'remote', 'hybrid'];
+    /**
+     * Returns fixed job types from the Model
+     */
+    public function getJobTypes(): array
+    {
+        return OfferModel::JOB_TYPES;
     }
 
-    public function getLocations() {
-        return $this->pdo->query("SELECT DISTINCT location FROM offers ORDER BY location")->fetchAll(PDO::FETCH_COLUMN);
+    /**
+     * Returns fixed remote types from the Model
+     */
+    public function getRemoteTypes(): array
+    {
+        return OfferModel::REMOTE_TYPES;
+    }
+
+    /**
+     * Returns dynamic locations from the Repository
+     */
+    public function getLocations(): array
+    {
+        return $this->offerRepo->getUniqueLocations();
     }
 }

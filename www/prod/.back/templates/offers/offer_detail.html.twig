@@ -1,0 +1,97 @@
+{% extends "base.html.twig" %}
+
+{# Block title: Only used for the browser tab #}
+{% block title %}{{ offer.getDisplayTitle() }} - StageFlow{% endblock %}
+
+{% block head %}
+<style>
+    .detail-container { margin-top: 2rem; }
+    .offer-header { 
+        background: white; 
+        padding: 2rem; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        margin-bottom: 2rem;
+    }
+    .grid-layout { display: grid; grid-template-columns: 1fr 320px; gap: 2rem; }
+    .sidebar-card { background: #f8fafc; padding: 1.5rem; border-radius: 8px; position: sticky; top: 20px; }
+    .skill-badge { 
+        display: inline-block; 
+        background: #e2e8f0; 
+        padding: 4px 12px; 
+        border-radius: 4px; 
+        margin: 4px; 
+        font-size: 0.9rem; 
+    }
+    @media (max-width: 768px) { .grid-layout { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="detail-container">
+    {# Navigation back #}
+    <div style="margin-bottom: 1.5rem;">
+        <a href="../index.php" class="btn btn-ghost">← Retour au catalogue</a>
+    </div>
+
+    {# Main Header Section #}
+    <section class="offer-header">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <span class="tag {{ offer.state|lower }}">{{ offer.state|upper }}</span>
+                <h1 style="margin: 0.5rem 0;">{{ offer.getDisplayTitle() }}</h1>
+                <p class="text-muted"><strong>{{ offer.company_name }}</strong> • {{ offer.location }}</p>
+            </div>
+            
+            <div class="action-zone">
+                {% if alreadyApplied %}
+                    <button class="btn btn-disabled" disabled>Déjà postulé</button>
+                {% else %}
+                    <a href="apply.php?id={{ offer.id }}" class="btn btn-primary btn-lg">Postuler maintenant</a>
+                {% endif %}
+            </div>
+        </div>
+    </section>
+
+    <div class="grid-layout">
+        {# Left Column: Content #}
+        <div class="main-content">
+            <div class="card" style="padding: 2rem;">
+                <h3>Description du poste</h3>
+                <div class="description-text" style="line-height: 1.7; white-space: pre-line;">
+                    {{ offer.description }}
+                </div>
+
+                {% set skills = offer.getSkillsArray() %}
+                {% if skills is not empty %}
+                    <h3 style="margin-top: 2rem;">Compétences recherchées</h3>
+                    <div class="skills-container">
+                        {% for skill in skills %}
+                            <span class="skill-badge">{{ skill }}</span>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        {# Right Column: Sidebar #}
+        <aside class="sidebar">
+            <div class="sidebar-card">
+                <h3 style="font-size: 1.1rem; margin-bottom: 1rem;">Détails pratiques</h3>
+                
+                <p><strong>💰 Salaire :</strong> {{ offer.formatSalary() }}</p>
+                <p><strong>🕒 Type :</strong> {{ offer.job_type|capitalize }}</p>
+                <p><strong>🏠 Télétravail :</strong> {{ offer.remote_type|default('N/C')|capitalize }}</p>
+                <p><strong>🎓 Niveau :</strong> {{ offer.education_level|default('N/C')|upper }}</p>
+                
+                <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #e2e8f0;">
+                
+                <p style="font-size: 0.85rem; color: #64748b;">
+                    Publiée le : {{ offer.created_at|date("d/m/Y") }}<br>
+                    Vues : {{ offer.views_count }}
+                </p>
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

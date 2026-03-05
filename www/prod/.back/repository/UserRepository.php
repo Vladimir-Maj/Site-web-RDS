@@ -1,87 +1,75 @@
 <?php
-/**
- * User Repository
- * Path: /prod/.back/repository/UserRepository.php
- */
+// .back/repository/UserRepository.php
 
-class UserRepository {
-    private $pdo;
+declare(strict_types=1);
 
-    public function __construct(PDO $pdo) {
+class UserRepository
+{
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo)
+    {
         $this->pdo = $pdo;
     }
 
-    /**
-     * Find a user by ID
-     */
-    public function findById(int $id): ?array {
+    public function findById(int $id): ?UserModel
+    {
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
         $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? UserModel::fromArray($row) : null;
     }
 
-    /**
-     * Find a user by Email
-     */
-    public function findByEmail(string $email): ?array {
+    public function findByEmail(string $email): ?UserModel
+    {
         $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
         $stmt->execute([$email]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? UserModel::fromArray($row) : null;
     }
 
     /**
-     * Check if email or username is already taken
+     * Authentication: Returns the User object if password is valid
      */
-    public function exists(string $email, string $username): bool {
-        $stmt = $this->pdo->prepare("SELECT id FROM users WHERE email = ? OR username = ?");
-        $stmt->execute([$email, $username]);
-        return (bool)$stmt->fetch();
-    }
-
-    /**
-     * Authentication logic
-     */
-    public function authenticate(string $email, string $password): ?array {
+    public function authenticate(string $email, string $password): ?UserModel
+    {
         $user = $this->findByEmail($email);
         
-        if ($user && password_verify($password, $user['password'])) {
-            // Remove password from the returned array for security
-            unset($user['password']);
+        if ($user && password_verify($password, $user->password)) {
             return $user;
         }
         
         return null;
     }
 
-    /**
-     * Create a new user (Registration)
-     */
-    public function create(array $data): bool {
-        $sql = "INSERT INTO users (username, email, password, role, created_at) 
-                VALUES (:username, :email, :password, :role, NOW())";
+    public function create(array $data): bool
+    {
+        $sql = "INSERT INTO users (username, email, password, first_name, last_name, role, created_at) 
+                VALUES (:username, :email, :password, :first_name, :last_name, :role, NOW())";
         
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
-            ':username' => $data['username'],
-            ':email'    => $data['email'],
-            ':password' => password_hash($data['password'], PASSWORD_DEFAULT),
-            ':role'     => $data['role'] ?? 'candidate'
+            ':username'   => $data['username'],
+            ':email'      => $data['email'],
+            ':password'   => password_hash($data['password'], PASSWORD_DEFAULT),
+            ':first_name' => $data['first_name'] ?? null,
+            ':last_name'  => $data['last_name'] ?? null,
+            ':role'       => $data['role'] ?? 'candidate'
         ]);
     }
 
-    /**
-     * Update CV path (Utility for upload_cv.php)
-     */
-    public function updateCvPath(int $userId, string $path): bool {
+    public function updateCvPath(int $userId, string $path): bool
+    {
         $stmt = $this->pdo->prepare("UPDATE users SET cv_path = ? WHERE id = ?");
         return $stmt->execute([$path, $userId]);
     }
 
-    /**
-     * Utility: Role validation
-     */
-    public function isRecruiter(int $userId): bool {
-        $user = $this->findById($userId);
-        return $user && $user['role'] === 'recruiter';
+    public function exists(string $email, string $username): bool
+    {
+        $stmt = $this->pdo->prepare("SELECT 1 FROM users WHERE email = ? OR username = ? LIMIT 1");
+        $stmt->execute([$email, $username]);
+        return (bool)$stmt->fetchColumn();
     }
 }

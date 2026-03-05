@@ -1,25 +1,21 @@
 <?php
-// 1. Connection
-$host = 'db'; $db = 'sql_db'; $user = 'user'; $pass = 'password';
+// prod/offers/offer_delete.php
 
-try {
-    $pdo = new PDO("mysql:host=$host;dbname=$db;charset=utf8mb4", $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+// 1. Load the environment (Composer + Config + DB Connection)
+require_once __DIR__ . '/../util/config.php';
 
-    // 2. Check for the ID in the URL
-    if (isset($_GET['id'])) {
-        $id = (int)$_GET['id'];
+// Assuming $pdo is created in util/db_connect.php (included via config)
+$offerRepo = new OfferRepository($pdo);
 
-        // 3. Prepare the DELETE statement (Prevents SQL Injection)
-        $stmt = $pdo->prepare("DELETE FROM offers WHERE id = ?");
-        $stmt->execute([$id]);
-    }
+// 2. Logic: Attempt deletion if ID is provided
+$id = filter_input(INPUT_GET, 'id', FILTER_VALIDATE_INT);
 
-} catch (Exception $e) {
-    // In a real app, maybe log the error
+if ($id) {
+    // In the future, you can add a check here: 
+    // if ($user->role === 'admin' || $user->id === $offer->owner_id)
+    $offerRepo->delete($id);
 }
 
-// 4. Redirect back to the home page immediately
-header("Location: index.php");
+// 3. Response: Redirect back to the search page or home
+header("Location: " . (defined('SITE_URL') ? SITE_URL : '/') . "/offers/offer_search.php");
 exit();

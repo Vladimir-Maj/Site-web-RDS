@@ -1,0 +1,67 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ offer.getDisplayTitle() }} — StageFlow{% endblock %}
+
+{% block body %}
+<div style="margin: 1.5rem 0;">
+    <a href="offer_search.php" class="btn btn-ghost">← Retour aux offres</a>
+</div>
+
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem;">
+    <div>
+        <span class="tag {{ offer.state|lower }} mb-2">{{ offer.state|upper }}</span>
+        <h1 style="margin-top: 0.5rem;">{{ offer.getDisplayTitle() }}</h1>
+        <p style="font-size: 1.1rem; color: #64748b;">
+            <strong>{{ offer.company_name|default('Entreprise') }}</strong> 
+            • {{ offer.location|default('N/C') }}
+        </p>
+    </div>
+    
+    <div class="actions">
+        {% if alreadyApplied %}
+            <button class="btn btn-disabled btn-lg" disabled>Déjà postulé</button>
+        {% else %}
+            <a href="apply.php?id={{ offer.id }}" class="btn btn-primary btn-lg">Postuler maintenant</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="detail-layout">
+    <div class="detail-content">
+        <article class="card" style="padding: 2rem;">
+            <h3 class="section-title">Description du poste</h3>
+            <div class="rich-text" style="line-height: 1.6; color: #334155;">
+                {{ offer.description|nl2br }}
+            </div>
+        </article>
+
+        {% set skills = offer.getSkillsArray() %}
+        {% if skills is not empty %}
+        <article class="card" style="padding: 2rem; margin-top: 1.5rem;">
+            <h3 class="section-title">Compétences recherchées</h3>
+            <div class="skill-list">
+                {% for skill in skills %}
+                    <span class="skill-tag">{{ skill }}</span>
+                {% endfor %}
+            </div>
+        </article>
+        {% endif %}
+    </div>
+
+    <aside>
+        <div class="card" style="padding: 1.5rem;">
+            <h3 class="info-title">Infos clés</h3>
+            <div class="meta-row"><span>Salaire</span><strong>{{ offer.formatSalary() }}</strong></div>
+            <div class="meta-row"><span>Contrat</span><strong>{{ offer.job_type|capitalize }}</strong></div>
+            <div class="meta-row"><span>Télétravail</span><strong>{{ offer.remote_type|default('On-site')|capitalize }}</strong></div>
+            <div class="meta-row"><span>Vues</span><strong>{{ offer.views_count }}</strong></div>
+        </div>
+
+        <div class="card" style="padding: 1.5rem; margin-top: 1.5rem;">
+            <h3>À propos de l'entreprise</h3>
+            <p><strong>{{ offer.company_name }}</strong></p>
+            <p style="font-size: 0.85rem; color: #64748b;">{{ offer.company_bio|default('Aucune description disponible.') }}</p>
+        </div>
+    </aside>
+</div>
+{% endblock %}

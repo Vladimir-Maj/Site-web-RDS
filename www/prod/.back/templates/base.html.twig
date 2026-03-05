@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}StageFlow{% endblock %}</title>
+    
+    {# Using the absolute CDN_URL defined in your config.php #}
+    <link rel="stylesheet" href="{{ cdn_url }}/styles.css">
+    
+    {# This allows pages like the editor to inject their specific grid styles #}
+    {% block head %}{% endblock %}
+</head>
+<body>
+
+    {% include 'header_template.html.twig' %}
+
+    <div class="page-wrapper">
+        <main class="container">
+            {% block body %}{% endblock %}
+        </main>
+    </div>
+
+    {% include 'footer_template.html.twig' %}
+
+    {# Global Scripts #}
+    <script src="{{ cdn_url }}/assets/scripts/theme-toggle.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

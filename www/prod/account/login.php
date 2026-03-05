@@ -4,68 +4,62 @@
  * Path: /prod/account/login.php
  */
 
-require_once '../.back/util/config.php';
-require_once '../.back/util/db_connect.php';
-require_once '../.back/repository/UserRepository.php';
+require_once __DIR__ . '/../.back/util/config.php';
+// Note: db_connect.php et les Repositories sont généralement inclus via config.php ou l'autoloader
+require_once __DIR__ . '/../.back/repository/UserRepository.php';
 
-if (session_status() === PHP_SESSION_NONE) { session_start(); }
+if (session_status() === PHP_SESSION_NONE) { 
+    session_start(); 
+}
 
-$pageTitle = "Connexion — StageFlow";
-$currentPage = "login.php";
+// Redirection si déjà connecté
+if (isset($_SESSION['user_id'])) {
+    header("Location: ../index.php");
+    exit();
+}
 
-// --- 1. ELEMENT FETCHING ---
-$basePath = __DIR__ . '/../../cdn/assets/elements/';
-$headerHtml = @file_get_contents($basePath . 'header_template.html') ?: "";
-$footerHtml = @file_get_contents($basePath . 'footer_template.html') ?: "";
-$headerHtml = str_replace('data-page="' . $currentPage . '"', 'class="active"', $headerHtml);
-
-// --- 2. LOGIN LOGIC ---
 $error = null;
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $userRepo = new UserRepository($pdo);
-    $user = $userRepo->authenticate($_POST['email'] ?? '', $_POST['password'] ?? '');
 
-    if ($user) {
-        $_SESSION['user_id']   = $user['id'];
-        $_SESSION['username']  = $user['username'];
-        $_SESSION['user_role'] = $user['role'];
-        header("Location: ../index.php");
-        exit();
+// --- 1. LOGIQUE DE CONNEXION ---
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+
+    if (!empty($email) && !empty($password)) {
+        $userRepo = new UserRepository($pdo);
+        // On suppose que authenticate() renvoie un objet User ou un tableau
+        $user = $userRepo->authenticate($email, $password);
+
+        if ($user) {
+            // Adaptation selon que $user est un objet ou un array
+            $_SESSION['user_id']   = is_array($user) ? $user['id'] : $user->id;
+            $_SESSION['username']  = is_array($user) ? $user['username'] : $user->username;
+            $_SESSION['user_role'] = is_array($user) ? $user['role'] : $user->role;
+            
+            // Régénération de l'ID de session pour prévenir la fixation de session
+            session_regenerate_id(true);
+
+            header("Location: ../index.php");
+            exit();
+        } else {
+            $error = "Identifiants incorrects ou compte inexistant.";
+        }
     } else {
-        $error = "Identifiants incorrects.";
+        $error = "Veuillez remplir tous les champs.";
     }
 }
-?>
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8"/>
-    <title><?= $pageTitle ?></title>
-    <link rel="stylesheet" href="<?= CDN_URL; ?>/styles.css">
-</head>
-<body>
-    <header><?= $headerHtml ?></header>
-    <main class="container">
-        <div class="auth-container">
-            <h1>Connexion</h1>
-            <?php if($error): ?><div class="error-message"><?= htmlspecialchars($error) ?></div><?php endif; ?>
-            
-            <section class="card">
-                <form method="POST">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" name="email" required autofocus>
-                    </div>
-                    <div class="form-group">
-                        <label>Mot de passe</label>
-                        <input type="password" name="password" required>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Se connecter</button>
-                </form>
-                <div class="form-footer">Pas de compte ? <a href="register.php">S'inscrire</a></div>
-            </section>
-        </div>
-    </main>
-    <footer><?= $footerHtml ?></footer>
-</body>
-</html>
+
+// --- 2. RENDU AVEC TWIG ---
+// On utilise la même logique que ton search.php pour la cohérence
+try {
+    echo TwigFactory::getTwig()->render('account/login.html.twig', [
+        'page_title'   => "Connexion — StageFlow",
+        'current_page' => 'login',
+        'error'        => $error,
+        'last_email'   => $_POST['email'] ?? '' // Pour ne pas retaper l'email en cas d'erreur
+    ]);
+} catch (Exception $e) {
+    error_log($e->getMessage());
+    // Fallback minimaliste en cas d'erreur Twig
+    die("Une erreur technique est survenue lors de l'affichage de la page.");
+}
