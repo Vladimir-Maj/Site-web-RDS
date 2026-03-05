@@ -1,28 +1,28 @@
-{# .back/templates/components/card_template.twig #}
-<div class="card offer-card">
-    <div class="card-header">
+<div class="card offer-card" style="padding: 1.25rem;">
+    <div class="card-header" style="border-bottom: none; padding: 0; margin-bottom: 1rem;">
         <div>
-            <h3>{{ offer.getDisplayTitle() }}</h3>
-            <div class="card-meta">
-                <span><i class="icon">Localisation :</i> {{ offer.location|default('N/C') }}</span>
-                <span><i class="icon">Entreprise :</i> {{ offer.company_name|default('Inconnue') }}</span>
-                <span><i class="icon">Publié le :</i> {{ offer.created_at|date("d/m/Y") }}</span>
+            <h3 style="font-size: 1.1rem; margin-bottom: 0.25rem;">{{ offer.getDisplayTitle() }}</h3>
+            <div class="card-meta" style="flex-direction: row; gap: 1rem;">
+                <span style="font-size: 0.85rem;">{{ offer.company_name }}</span>
+                <span style="font-size: 0.85rem;">•</span>
+                <span style="font-size: 0.85rem;">{{ offer.location }}</span>
             </div>
         </div>
-        {# We use the state for both the class and the text #}
-        <span class="tag {{ offer.state|lower }}">{{ offer.state|upper }}</span>
+        <span class="tag {{ offer.state|lower }}" style="font-size: 0.7rem;">{{ offer.state }}</span>
     </div>
-    <div class="card-body">
-        {# Using slice to keep the card description short #}
-        <p>{{ offer.description|length > 150 ? offer.description|slice(0, 150) ~ '...' : offer.description }}</p>
+    
+    <div class="card-body" style="padding: 0; display: block;">
+        <p style="font-size: 0.9rem; color: var(--clr-text-muted); margin-bottom: 1.25rem; line-height: 1.5;">
+            {{ offer.description|length > 130 ? offer.description|slice(0, 130) ~ '...' : offer.description }}
+        </p>
         
-        <div class="card-actions">
-            {# Generate URLs using the ID #}
-            <a href="offers/offer_detail.php?id={{ offer.id }}" class="btn btn-primary">Détails</a>
-            <a href="offers/offer_editor.php?id={{ offer.id }}" class="btn btn-outline">Modifier</a>
+        <div style="display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid var(--clr-bg); padding-top: 1rem;">
+            <a href="offers/offer_detail.php?id={{ offer.id }}" class="btn btn-primary" style="font-size: 0.75rem;">Voir l'offre</a>
+            <a href="offers/offer_editor.php?id={{ offer.id }}" class="btn btn-outline" style="font-size: 0.75rem;">Modifier</a>
             <a href="offers/offer_delete.php?id={{ offer.id }}" 
-               class="btn btn-danger" 
-               onclick="return confirm('CONFIRMER LA SUPPRESSION ?');">
+               class="btn btn-ghost" 
+               style="color: var(--clr-danger); border-color: transparent; font-size: 0.75rem;"
+               onclick="return confirm('Supprimer définitivement cette offre ?');">
                 Supprimer
             </a>
         </div>
