@@ -1,41 +1,61 @@
 <?php
-// prod/.back/repository/CompanyRepository.php
+// .back/repository/CompanyRepository.php
 
-class CompanyRepository {
-    private $pdo;
+declare(strict_types=1);
 
-    public function __construct(PDO $pdo) {
+class CompanyRepository
+{
+    private PDO $pdo;
+
+    public function __construct(PDO $pdo)
+    {
         $this->pdo = $pdo;
     }
 
     /**
-     * Fetches all companies for dropdown menus
-     * Returns an array of associative arrays with 'id' and 'name'
+     * @return CompanyModel[]
      */
-    public function getAllCompanies(): array {
-        $sql = "SELECT id, name FROM companies ORDER BY name ASC";
-        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+    public function findAll(): array
+    {
+        $sql = "SELECT * FROM companies ORDER BY name ASC";
+        $stmt = $this->pdo->query($sql);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return array_map([CompanyModel::class, 'fromArray'], $rows);
     }
 
     /**
-     * Fetches a single company by its ID
+     * Fetches a single company by ID, returning a Model or null
      */
-    public function findById(int $id): ?array {
+    public function findById(int $id): ?CompanyModel
+    {
         $stmt = $this->pdo->prepare("SELECT * FROM companies WHERE id = ?");
         $stmt->execute([$id]);
-        return $stmt->fetch(PDO::FETCH_ASSOC) ?: null;
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? CompanyModel::fromArray($row) : null;
     }
 
     /**
-     * Useful for the Search page: 
-     * Get companies that actually have active offers
+     * Returns companies that have active offers
+     * @return CompanyModel[]
      */
-    public function getCompaniesWithActiveOffers(): array {
-        $sql = "SELECT DISTINCT c.id, c.name 
-                FROM companies c
+    public function getCompaniesWithActiveOffers(): array
+    {
+        $sql = "SELECT DISTINCT c.* FROM companies c
                 INNER JOIN offers o ON c.id = o.company_id
                 WHERE o.state = 'open'
                 ORDER BY c.name ASC";
-        return $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        
+        $rows = $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        return array_map([CompanyModel::class, 'fromArray'], $rows);
+    }
+
+    public function getAllCompagnies(): array
+    {
+        $sql = 'SELECT DISTICT c.* FROM companies c';
+
+        $rows= $this->pdo->query($sql)->fetchAll(PDO::FETCH_ASSOC);
+        return array_map([CompanyModel::class,'fromArray'], $rows);
     }
 }

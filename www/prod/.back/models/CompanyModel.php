@@ -1,18 +1,30 @@
 <?php
-// models/Company.php
+// .back/models/CompanyModel.php
 
-class Company extends BaseModel {
-    public function getAll() {
-        return $this->db->query("SELECT * FROM companies")->fetchAll();
-    }
+declare(strict_types=1);
 
-    public function getWithOffers($companyId) {
-        $sql = "SELECT c.*, o.title, o.location 
-                FROM companies c 
-                LEFT JOIN offers o ON c.id = o.company_id 
-                WHERE c.id = ?";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute([$companyId]);
-        return $stmt->fetchAll();
+class CompanyModel
+{
+    public int $id;
+    public string $name;
+    public ?string $industry;
+    public ?string $description;
+    public ?string $website;
+    public string $created_at;
+
+    /**
+     * Factory method to create an object from a PDO result
+     */
+    public static function fromArray(array $data): self
+    {
+        $company = new self();
+        $company->id = (int)$data['id'];
+        $company->name = $data['name'];
+        $company->industry = $data['industry'] ?? null;
+        $company->description = $data['description'] ?? null;
+        $company->website = $data['website'] ?? null;
+        $company->created_at = $data['created_at'];
+        
+        return $company;
     }
 }
