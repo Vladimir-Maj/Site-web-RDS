@@ -48,11 +48,70 @@ La recherche d'offres utilise une approche dynamique avec `WHERE 1=1` permettant
 * Entreprise : Filtrage par ID d'entreprise.
 * Type de contrat : Stage, Alternance, CDI, etc.
 
-## 🎨 Moteur de Rendu (UI)
+```mermaid
+erDiagram
+    USER ||--o| PILOT : "is a"
+    USER ||--o| STUDENT : "is a"
+    USER ||--o| ADMINISTRATOR : "is a"
 
-L'affichage des composants est géré par la classe **`OfferRenderer`** :
+    CAMPUS ||--o{ PROMOTION : "hosts"
+    PROMOTION ||--o{ PROMOTION_ASSIGNMENT : "assigned to"
+    PILOT ||--o{ PROMOTION_ASSIGNMENT : "manages"
+    
+    PROMOTION ||--o{ STUDENT_ENROLLMENT : "contains"
+    STUDENT ||--o{ STUDENT_ENROLLMENT : "enrolled in"
 
-1. Récupération du Template : Le fichier HTML est chargé depuis le CDN (`cdn/assets/elements/card_template.html`).
-2. Mise en cache : Le template est chargé une seule fois en mémoire pour optimiser les performances.
-3. Mapping : Remplacement des tags (ex: `{{STAGE_NAME}}`) par les données réelles.
-4. URLs Absolues : Les liens sont générés via la constante `SITE_URL` pour éviter les erreurs de chemins relatifs entre les dossiers.
+    BUSINESS_SECTOR ||--o{ COMPANY : "categorizes"
+    COMPANY ||--o{ COMPANY_SITE : "located at"
+    COMPANY_SITE ||--o{ INTERNSHIP_OFFER : "hosts"
+
+    INTERNSHIP_OFFER ||--o{ OFFER_REQUIREMENT : "requires"
+    SKILL ||--o{ OFFER_REQUIREMENT : "is needed for"
+
+    STUDENT ||--o{ APPLICATION : "submits"
+    INTERNSHIP_OFFER ||--o{ APPLICATION : "receives"
+
+    PILOT ||--o{ BUSINESS_REVIEW : "evaluates"
+    COMPANY ||--o{ BUSINESS_REVIEW : "is reviewed by"
+
+    STUDENT ||--o{ WISHLIST : "saves"
+    INTERNSHIP_OFFER ||--o{ WISHLIST : "is bookmarked by"
+
+    USER {
+        binary16 id PK
+        string email
+        string password
+        string first_name
+        string last_name
+        boolean is_active
+        datetime created_at
+    }
+
+    STUDENT {
+        binary16 user_id PK, FK
+        string status
+    }
+
+    COMPANY {
+        binary16 id PK
+        string name
+        string tax_id
+        binary16 sector_id FK
+    }
+
+    INTERNSHIP_OFFER {
+        binary16 id PK
+        string title
+        decimal hourly_rate
+        int duration_weeks
+        binary16 site_id FK
+    }
+
+    APPLICATION {
+        binary16 id PK
+        binary16 student_id FK
+        binary16 offer_id FK
+        enum status
+        datetime applied_at
+    }
+```
