@@ -1,3 +1,4 @@
-DirectoryIndex home.html index.php
-
-#RedirectMatch 301 ^/$ /home.html
+# Allow PHP files to be served
+<FilesMatch "\.php$">
+    Require all granted
+</FilesMatch>

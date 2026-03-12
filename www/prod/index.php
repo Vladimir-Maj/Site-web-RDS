@@ -1,27 +1,33 @@
 <?php
 // prod/index.php
 
+declare(strict_types=1);
+
+// This handles your autoloader, PDO $pdo, and TwigFactory
 require_once __DIR__ . '/.back/util/config.php';
 
-// 1. Dependency Injection & Repository setup
-$repo = new OfferRepository($pdo);
+// 1. Repository setup
+$offerRepo = new OfferRepository($pdo);
 
-// 2. Pagination Logic
-$limit = 5; 
-$page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+// 2. Pagination Parameters
+$limit  = 5; 
+$page   = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
 $offset = (max(1, $page) - 1) * $limit;
 
 try {
-    $totalOffers = $repo->countAll();
-    $totalPages = ceil($totalOffers / $limit);
-    $offers = $repo->findPaginated($limit, $offset);
+    $totalOffers = $offerRepo->countAll();
+    $totalPages  = (int)ceil($totalOffers / $limit);
+    
+    // Ensure findPaginated uses your OfferModel::fromArray internally
+    $offers = $offerRepo->findPaginated($limit, $offset);
+
 } catch (Exception $e) {
-    error_log($e->getMessage());
-    die("Une erreur est survenue lors du chargement des offres.");
+    error_log("Error loading index.php: " . $e->getMessage());
+    // You might have a specific error page in Twig
+    die("Une erreur est survenue.");
 }
 
 // 3. Render
-// Note: 'currentPage' is passed to help Twig highlight the nav menu
 TwigFactory::render('index.html.twig', [
     'pageTitle'   => "Catalogue des Offres - StageFlow",
     'offers'      => $offers,
