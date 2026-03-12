@@ -2,8 +2,13 @@
 // .back/repository/OfferRepository.php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../models/OfferModel.php';
+namespace App\Repository;
 
+// 1. Import PDO from the global namespace
+use PDO; 
+use PDOException;
+// 2. Import your Model from the Models namespace
+use App\Models\OfferModel;
 class OfferRepository
 {
     private PDO $pdo;

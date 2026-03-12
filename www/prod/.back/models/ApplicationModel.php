@@ -1,6 +1,7 @@
 <?php
 declare (strict_types= 1);
 // .back/models/ApplicationModel.php
+namespace App\Models;
 class ApplicationModel extends BaseModel {
     public string $id;
     public string $student_id;

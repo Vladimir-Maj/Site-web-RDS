@@ -1,7 +1,8 @@
 <?php
 // .back/models/Offer.php
+namespace App\Models;
 
-class Offer
+class OfferModel
 {
     public $id;
     public $company_id;

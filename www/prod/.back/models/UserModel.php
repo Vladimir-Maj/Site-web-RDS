@@ -1,8 +1,7 @@
 <?php
 // .back/models/UserModel.php
 declare(strict_types=1);
-
-require_once __DIR__ . '/BaseModel.php';
+namespace App\Models;
 
 class UserModel extends BaseModel 
 {

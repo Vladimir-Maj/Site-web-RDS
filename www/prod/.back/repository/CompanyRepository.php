@@ -2,6 +2,13 @@
 // .back/repository/CompanyRepository.php
 declare(strict_types=1);
 
+namespace App\Repository;
+
+// 1. Import PDO from the global namespace
+use PDO; 
+// 2. Import your Model from the Models namespace
+use App\Models\CompanyModel;
+
 class CompanyRepository {
     private PDO $pdo;
 

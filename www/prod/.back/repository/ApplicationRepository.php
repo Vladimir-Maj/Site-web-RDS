@@ -2,6 +2,12 @@
 // .back/repository/ApplicationRepository.php
 declare(strict_types=1);
 
+namespace App\Repository;
+
+use PDO; 
+
+use App\Models\ApplicationModel;
+
 class ApplicationRepository {
     private PDO $pdo;
 
