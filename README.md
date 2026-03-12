@@ -56,19 +56,3 @@ L'affichage des composants est géré par la classe **`OfferRenderer`** :
 2. Mise en cache : Le template est chargé une seule fois en mémoire pour optimiser les performances.
 3. Mapping : Remplacement des tags (ex: `{{STAGE_NAME}}`) par les données réelles.
 4. URLs Absolues : Les liens sont générés via la constante `SITE_URL` pour éviter les erreurs de chemins relatifs entre les dossiers.
-
-## 📝 À faire (Todo)
-
-* [ ] Implémenter la pagination sur la page de recherche.
-* [ ] Ajouter la gestion de la Wishlist dans `ControllerWishlist.php`.
-* [ ] Finaliser l'éditeur d'offres (`offer_editor.php`).
-
-* Corriger relation role etidiant/pilote/admin
-* 1 table par role car les roles ont des liens differents (pilote gere une promo, etudiant appartient à une promo, pas de relation entre admin & les promo)
-* seuls les pilotes peuvent donner une note aux entreprises (**a verifier**)
-* simplifier les relations 1:1 / 0:n/0:n si besoin
-* simplifier table candidate (2 relation 1,1 => on peut simplifier)
-* mettre etudiant <-> promotion en 1,N/0,N
-* date debut/date fin dans la relation etudiant<->promotion (relation `appartient`)
-* trouver api pour l'addresse
-* menu pour selectionner les skills de l'offre
