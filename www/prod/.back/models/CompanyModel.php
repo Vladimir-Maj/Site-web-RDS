@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+namespace App\Models;
 
 // .back/models/CompanyModel.php
 class CompanyModel extends BaseModel {

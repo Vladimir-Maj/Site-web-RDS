@@ -3,7 +3,12 @@
 
 declare(strict_types=1);
 
-require_once __DIR__ . '/../models/UserModel.php';
+namespace App\Repository;
+
+// 1. Import PDO from the global namespace
+use PDO; 
+// 2. Import your Model from the Models namespace
+use App\Models\UserModel;
 
 class UserRepository
 {

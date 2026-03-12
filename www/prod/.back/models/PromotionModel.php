@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+namespace App\Models;
 // .back/models/PromotionModel.php
 class PromotionModel extends BaseModel {
     public string $id;

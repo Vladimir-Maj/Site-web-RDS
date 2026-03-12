@@ -1,6 +1,13 @@
 <?php
 // .back/repository/CampusRepository.php
 declare(strict_types=1);
+namespace App\Repository;
+
+// 1. Import PDO from the global namespace
+use PDO; 
+// 2. Import your Model from the Models namespace
+use App\Models\CampusModel;
+use App\Models\PromotionModel;
 
 class CampusRepository {
     private PDO $pdo;
