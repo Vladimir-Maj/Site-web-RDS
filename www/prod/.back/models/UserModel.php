@@ -2,11 +2,13 @@
 declare(strict_types=1);
 namespace App\Models;
 
+use PharIo\Manifest\Email;
+
 class UserModel extends BaseModel 
 {
     // UUIDs are strings in PHP context (Hex representation)
     public string $id; 
-    public string $email;
+    public Email $email;
     public string $password;
     public ?string $first_name;
     public ?string $last_name;

@@ -4,7 +4,9 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use PDO;
+use PharIo\Manifest\Email;
 use App\Models\UserModel;
+use function PHPUnit\Framework\returnArgument;
 
 class UserRepository
 {
@@ -40,24 +42,27 @@ class UserRepository
         return $row ? UserModel::fromArray($row) : null;
     }
 
-    public function findByEmail(string $email): ?UserModel
+    public function findByEmail(string|Email $email): ?UserModel
     {
+        // If it's an object, convert it to a string first
+        $emailString = ($email instanceof Email) ? $email->asString() : $email;
+
         $sql = "SELECT 
-                    HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
-                    CASE 
-                        WHEN a.user_id IS NOT NULL THEN 'admin'
-                        WHEN p.user_id IS NOT NULL THEN 'pilote'
-                        WHEN s.user_id IS NOT NULL THEN 'student'
-                        ELSE NULL
-                    END as role
-                FROM user u
-                LEFT JOIN administrator a ON u.id = a.user_id
-                LEFT JOIN pilot p ON u.id = p.user_id
-                LEFT JOIN student s ON u.id = s.user_id
-                WHERE u.email = ?";
+                HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
+                CASE 
+                    WHEN a.user_id IS NOT NULL THEN 'admin'
+                    WHEN p.user_id IS NOT NULL THEN 'pilote'
+                    WHEN s.user_id IS NOT NULL THEN 'student'
+                    ELSE NULL
+                END as role
+            FROM user u
+            LEFT JOIN administrator a ON u.id = a.user_id
+            LEFT JOIN pilot p ON u.id = p.user_id
+            LEFT JOIN student s ON u.id = s.user_id
+            WHERE u.email = ?";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$email]);
+        $stmt->execute([$emailString]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? UserModel::fromArray($row) : null;
