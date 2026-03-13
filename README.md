@@ -48,6 +48,8 @@ La recherche d'offres utilise une approche dynamique avec `WHERE 1=1` permettant
 * Entreprise : Filtrage par ID d'entreprise.
 * Type de contrat : Stage, Alternance, CDI, etc.
 
+## MCD de la BDD
+
 ```mermaid
 erDiagram
     USER ||--o| PILOT : "is a"
