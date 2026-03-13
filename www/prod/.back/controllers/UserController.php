@@ -5,19 +5,28 @@ namespace App\Controller;
 use App\Controllers\BaseController;
 use App\Models\UserModel;
 use App\Repository\UserRepository;
+use PharIo\Manifest\Email;
 
 class UserController extends BaseController
 {
-    private $repo;
+    private UserRepository $repo;
 
     public function __construct(UserRepository $repo)
     {
         $this->repo = $repo;
     }
 
-    public function getUser($id): UserModel
+    public function getUserFromMail(Email $mail): ?UserModel
     {
-        if ($this->isPrivileged() == false && $_SESSION['user_id'] != $id) {
+        if ($this->isTargetOrPrivileged() == false) {
+            $this->abort(403, "Unauthorized access.");
+        }
+        return $this->repo->findByMail($mail->asString());
+    }
+
+    public function getUserById(string $id): UserModel
+    {
+        if ($this->isTargetOrPrivileged($id) == false) {
             $this->abort(403, "Unauthorized access.");
         }
 

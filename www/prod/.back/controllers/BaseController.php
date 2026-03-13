@@ -11,7 +11,6 @@ abstract class BaseController {
     public function __construct(Environment $twig) {
         $this->twig = $twig;
         
-        // Ensure session is started for all controllers
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
@@ -28,6 +27,17 @@ abstract class BaseController {
     }
 
     /**
+     * Checks if the provided ID matches the current session.
+     * Note: UUIDs are strings.
+     */
+    protected function isSessionUser(string $id): bool {
+        // We use a loose check or strict string check. 
+        // UUIDs should be compared case-insensitively if coming from different sources,
+        // but typically lower-case hex is standard.
+        return isset($_SESSION['user_id']) && strtolower((string)$_SESSION['user_id']) === strtolower($id);
+    }
+
+    /**
      * Common Utility: Check if user has the required permission
      */
     protected function checkRole(array $allowedRoles): void {
@@ -37,11 +47,9 @@ abstract class BaseController {
         }
     }
 
-    /**
-     * Common Utility: Centralized error rendering
-     */
     protected function abort(int $code, string $message): void {
         http_response_code($code);
+        // Make sure your twig path matches your actual file structure
         echo $this->twig->render('errors/error.html.twig', [
             'code' => $code,
             'message' => $message
@@ -49,15 +57,22 @@ abstract class BaseController {
         exit;
     }
 
-    protected function isSuperUser() : bool {
+    protected function isSuperUser(): bool {
         return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
     }
 
-    protected function isPilote() : bool {
+    protected function isPilote(): bool {
         return isset($_SESSION['role']) && $_SESSION['role'] === 'pilote';
     }
 
-    protected function isPrivileged() : bool {
+    protected function isPrivileged(): bool {
         return $this->isSuperUser() || $this->isPilote();
+    }
+
+    /**
+     * Refactored: Checks if user is the owner OR has elevated permissions.
+     */
+    protected function isTargetOrPrivileged(string $id): bool {
+        return $this->isPrivileged() || $this->isSessionUser($id);
     }
 }

@@ -14,8 +14,39 @@ class UserRepoTest extends MySQLTestCase
         // This should not throw a PDO error; it should just return null
         $user = $repo->findById("123"); 
         $this->assertNull($user);
+        $user = $repo->findByEmail("nonexistent@example.com");
+        $this->assertNull($user);
     }
 
+    public function testRejectionOfNonNumericIds()
+    {
+        $repo = new \App\Repository\UserRepository(self::$pdo);
+        // This should not throw a PDO error; it should just return null
+        $user = $repo->findById("not-a-uuid"); 
+        $this->assertNull($user);
+    }
+
+    public function testInsert()
+    {
+        $repo = new \App\Repository\UserRepository(self::$pdo);
+        $user = \App\Models\UserModel::fromArray([
+            'email' => 'test@example.com',
+            'password' => 'hashedpassword',
+            'first_name' => 'Test',
+            'last_name' => 'User',
+            'is_active' => true,
+        ]);
+
+        $repo->push($user);
+        $fetched = $repo->findByEmail('test@example.com');
+
+        $this->assertNotNull($fetched);
+        $this->assertEquals($fetched->email, 'test@example.com');
+        $this->assertEquals($fetched->first_name, 'Test');
+        $this->assertEquals($fetched->last_name, 'User');
+        $this->assertTrue($fetched->is_active);
+        $this->assertEquals($fetched->password, 'hashedpassword');
+    }
     /**
      * TEST: The "Zombie" Student
      * Purpose: Try to create a student for a user that doesn't exist.
