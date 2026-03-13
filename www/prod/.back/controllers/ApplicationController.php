@@ -15,13 +15,12 @@ class ApplicationController extends BaseController {
         $this->repo = $repo;
     }
 
-    public function listForStudent(): void {
+    public function listForStudent(): array {
         $this->checkAuth(); // Inherited from BaseController
         
         $applications = $this->repo->findByStudent($_SESSION['user_id']);
-        echo $this->twig->render('applications/my_list.html.twig', [
-            'applications' => $applications
-        ]);
+        return $applications;
+        ;
     }
 
     public function delete(string $applicationId): void {
