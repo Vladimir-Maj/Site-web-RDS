@@ -1,108 +1,47 @@
 <?php
-// .back/repository/UserRepository.php
-
 declare(strict_types=1);
-
 namespace App\Repository;
 
-// 1. Import PDO from the global namespace
-use PDO; 
-// 2. Import your Model from the Models namespace
+use PDO;
 use App\Models\UserModel;
 
 class UserRepository
 {
     private PDO $pdo;
 
-    public function __construct(PDO $pdo)
-    {
-        $this->pdo = $pdo;
-    }
+    public function __construct(PDO $pdo) { $this->pdo = $pdo; }
 
-    /**
-     * Find a user by their primary ID
-     */
-    public function findById(int $id): ?UserModel
+    public function findById(string $hexId): ?UserModel
     {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE id = ?");
-        $stmt->execute([$id]);
-        $row = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        // Map array row to the UserModel object
-        return $row ? UserModel::fromArray($row) : null;
-    }
-
-    /**
-     * Find a user by email (useful for login/registration checks)
-     */
-    public function findByEmail(string $email): ?UserModel
-    {
-        $stmt = $this->pdo->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$email]);
+        // CRITICAL: Must use UNHEX for BINARY(16) lookup
+        $stmt = $this->pdo->prepare("SELECT HEX(id) as id, email, password, first_name, last_name, is_active, created_at FROM user WHERE id = UNHEX(?)");
+        $stmt->execute([$hexId]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? UserModel::fromArray($row) : null;
     }
 
-    /**
-     * Handles the credential check. 
-     * Separates the "finding" from the "verifying".
-     */
-    public function authenticate(string $email, string $password): ?UserModel
+    public function push(UserModel $user): bool
     {
-        $user = $this->findByEmail($email);
-        
-        // Use the property from our UserModel
-        if ($user && password_verify($password, $user->password)) {
-            return $user;
-        }
-        
-        return null;
-    }
+        // We let the Trigger generate the UUID, or we pass it in if we have one
+        $sql = "INSERT INTO user (email, password, first_name, last_name) 
+                VALUES (:email, :password, :first_name, :last_name)";
 
-    /**
-     * Create a new user entry. 
-     * Expects an associative array of data.
-     */
-    public function create(array $data): bool
-    {
-        $sql = "INSERT INTO users (username, email, password, first_name, last_name, role, created_at) 
-                VALUES (:username, :email, :password, :first_name, :last_name, :role, NOW())";
-        
         $stmt = $this->pdo->prepare($sql);
-
         return $stmt->execute([
-            ':username'   => $data['username'],
-            ':email'      => $data['email'],
-            ':password'   => password_hash($data['password'], PASSWORD_DEFAULT),
-            ':first_name' => $data['first_name'] ?? null,
-            ':last_name'  => $data['last_name'] ?? null,
-            ':role'       => $data['role'] ?? 'candidate'
+            ':email'      => $user->email,
+            ':password'   => $user->password, // Ensure this is pre-hashed!
+            ':first_name' => $user->first_name,
+            ':last_name'  => $user->last_name
         ]);
     }
 
     /**
-     * Specific update for CV uploads
+     * Harsh fix: Links a user to the student table
      */
-    public function updateCvPath(int $userId, string $path): bool
+    public function makeStudent(string $userHexId, string $status = 'Searching'): bool
     {
-        $stmt = $this->pdo->prepare("UPDATE users SET cv_path = ? WHERE id = ?");
-        return $stmt->execute([$path, $userId]);
-    }
-
-    /**
-     * Validation check for uniqueness before registration
-     */
-    public function exists(string $email, string $username): bool
-    {
-        $stmt = $this->pdo->prepare(
-            "SELECT 1 FROM users WHERE email = :email OR username = :username LIMIT 1"
-        );
-        $stmt->execute([
-            ':email'    => $email,
-            ':username' => $username
-        ]);
-        
-        return (bool)$stmt->fetchColumn();
+        $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)");
+        return $stmt->execute([$userHexId, $status]);
     }
 }
