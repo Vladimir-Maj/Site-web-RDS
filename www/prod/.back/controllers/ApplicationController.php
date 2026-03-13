@@ -33,7 +33,7 @@ class ApplicationController extends BaseController {
         }
 
         // Ownership check
-        if ($application->getStudentId() !== $_SESSION['user_id'] && $_SESSION['role'] !== 'admin') {
+        if ($application->getStudentId() !== $_SESSION['user_id'] || !$this->isSuperUser()) {
             $this->abort(403, "Unauthorized deletion attempt.");
         }
 

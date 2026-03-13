@@ -48,4 +48,12 @@ abstract class BaseController {
         ]);
         exit;
     }
+
+    protected function isSuperUser() : bool {
+        return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+    }
+
+    protected function isPilote() : bool {
+        return isset($_SESSION['role']) && $_SESSION['role'] === 'pilote';
+    }
 }
