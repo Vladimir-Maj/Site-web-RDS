@@ -44,30 +44,30 @@ Stack : Apache / PHP (POO) / MySQL / HTML5 / CSS3 / JS / Moteur de template.
 
 ### 🏗️ PHASE 1 — Architecture & Infrastructure
 
-- [ ] **TASK-01** Initialiser la structure MVC (dossiers `app/`, `public/`, `views/`, `config/`, `routes/`)
-- [ ] **TASK-02** Configurer Apache : vhost principal + vhost statique (CSS/JS/images)
-- [ ] **TASK-03** Configurer HTTPS (certificat SSL, redirection HTTP → HTTPS)
-- [ ] **TASK-04** Mettre en place le moteur de template (ex: Twig ou moteur maison)
-- [ ] **TASK-05** Créer le système de routage URL backend (router PHP natif, URLs lisibles)
-- [ ] **TASK-06** Créer le fichier `.htaccess` pour la réécriture d'URLs
-- [ ] **TASK-07** Mettre en place la connexion PDO à la base de données
+- [X] **TASK-01** Initialiser la structure MVC (dossiers `app/`, `public/`, `views/`, `config/`, `routes/`)
+- [X] **TASK-02** Configurer Apache : vhost principal + vhost statique (CSS/JS/images)
+- [X] **TASK-03** Configurer HTTPS (certificat SSL, redirection HTTP → HTTPS)
+- [X] **TASK-04** Mettre en place le moteur de template (ex: Twig ou moteur maison)
+- [X] **TASK-05** Créer le système de routage URL backend (router PHP natif, URLs lisibles)
+- [X] **TASK-06** Créer le fichier `.htaccess` pour la réécriture d'URLs
+- [X] **TASK-07** Mettre en place la connexion PDO à la base de données
 - [ ] **TASK-08** Créer `sitemap.xml` et `robots.txt`
-- [ ] **TASK-09** Ajouter les balises SEO globales (title, meta description, meta keywords, alt images)
+- [X] **TASK-09** Ajouter les balises SEO globales (title, meta description, meta keywords, alt images)
 
 ---
 
 ### 🗄️ PHASE 2 — Base de données
 
-- [ ] **TASK-10** Concevoir le MCD/MLD complet (toutes entités + relations)
-- [ ] **TASK-11** Créer la table `users` (id, nom, prénom, email, password_hash, role ENUM[admin,pilote,etudiant], created_at)
-- [ ] **TASK-12** Créer la table `entreprises` (id, nom, description, email, telephone, created_at)
-- [ ] **TASK-13** Créer la table `evaluations` (id, entreprise_id FK, user_id FK, note, commentaire, created_at)
-- [ ] **TASK-14** Créer la table `competences` (id, libelle) — liste fixe, pas de modification UI
-- [ ] **TASK-15** Créer la table `offres` (id, entreprise_id FK, titre, description, remuneration, date_offre, created_at)
-- [ ] **TASK-16** Créer la table `offre_competences` (offre_id FK, competence_id FK) — table pivot
-- [ ] **TASK-17** Créer la table `candidatures` (id, offre_id FK, etudiant_id FK, lettre_motivation, cv_path, created_at)
-- [ ] **TASK-18** Créer la table `wishlist` (id, offre_id FK, etudiant_id FK)
-- [ ] **TASK-19** Créer la table `pilote_etudiant` (pilote_id FK, etudiant_id FK) — relation pilote ↔ étudiants
+- [X] **TASK-10** Concevoir le MCD/MLD complet (toutes entités + relations)
+- [X] **TASK-11** Créer la table `users` (id, nom, prénom, email, password_hash, role ENUM[admin,pilote,etudiant], created_at)
+- [X] **TASK-12** Créer la table `entreprises` (id, nom, description, email, telephone, created_at)
+- [X] **TASK-13** Créer la table `evaluations` (id, entreprise_id FK, user_id FK, note, commentaire, created_at)
+- [X] **TASK-14** Créer la table `competences` (id, libelle) — liste fixe, pas de modification UI
+- [X] **TASK-15** Créer la table `offres` (id, entreprise_id FK, titre, description, remuneration, date_offre, created_at)
+- [X] **TASK-16** Créer la table `offre_competences` (offre_id FK, competence_id FK) — table pivot
+- [X] **TASK-17** Créer la table `candidatures` (id, offre_id FK, etudiant_id FK, lettre_motivation, cv_path, created_at)
+- [X] **TASK-18** Créer la table `wishlist` (id, offre_id FK, etudiant_id FK)
+- [X] **TASK-19** Créer la table `pilote_etudiant` (pilote_id FK, etudiant_id FK) — relation pilote ↔ étudiants
 - [ ] **TASK-20** Vérifier et poser toutes les clés étrangères avec `FOREIGN KEY ... ON DELETE CASCADE/RESTRICT`
 - [ ] **TASK-21** Créer les seeds / fixtures de données de test
 
