@@ -56,4 +56,8 @@ abstract class BaseController {
     protected function isPilote() : bool {
         return isset($_SESSION['role']) && $_SESSION['role'] === 'pilote';
     }
+
+    protected function isPrivileged() : bool {
+        return $this->isSuperUser() || $this->isPilote();
+    }
 }
