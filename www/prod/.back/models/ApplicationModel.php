@@ -2,6 +2,8 @@
 declare (strict_types= 1);
 // .back/models/ApplicationModel.php
 namespace App\Models;
+
+use function PHPUnit\Framework\returnArgument;
 class ApplicationModel extends BaseModel {
     public string $id;
     public string $student_id;
@@ -21,6 +23,10 @@ class ApplicationModel extends BaseModel {
         $inst->status = $data['status'] ?? 'pending';
         $inst->applied_at = $data['applied_at'] ?? '';
         return $inst;
+    }
+
+    public function getStudentId(): string {
+        return $this->student_id;
     }
 
     public function isPending(): bool { return $this->status === 'pending'; }
