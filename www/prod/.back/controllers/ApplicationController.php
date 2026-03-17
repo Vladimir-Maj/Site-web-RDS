@@ -15,6 +15,25 @@ class ApplicationController extends BaseController {
         $this->repo = $repo;
     }
 
+    // In App\Controllers\ApplicationController
+
+public function showJson(string $applicationId): void {
+    // Optional: add $this->checkAuth(); if you want this private
+    $application = $this->repo->findById($applicationId);
+
+    if (!$application) {
+        header('Content-Type: application/json');
+        http_response_code(404);
+        echo json_encode(["error" => "Application not found"]);
+        exit;
+    }
+
+    header('Content-Type: application/json');
+    // Assuming your model has a toArray method or public properties
+    echo json_encode($application); 
+    exit;
+}
+
     public function listForStudent(): array {
         $this->checkAuth(); // Inherited from BaseController
         

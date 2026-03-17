@@ -3,8 +3,23 @@
 
 declare(strict_types=1);
 
-// This handles your autoloader, PDO $pdo, and TwigFactory
 require_once __DIR__ . '/.back/util/config.php';
+
+use App\Repository\OfferRepository;
+
+$requestUri = $_SERVER['REQUEST_URI'];
+$path = parse_url($requestUri, PHP_URL_PATH);
+
+// Match /app/applications/{id}
+if (preg_match('#^/app/applications/([a-zA-Z0-9-]+)$#', $path, $matches)) {
+    $id = $matches[1];
+    
+    // Initialize the controller (assuming $pdo and $twig are from config.php)
+    $appRepo = new \App\Repository\ApplicationRepository($pdo);
+    $controller = new \App\Controllers\ApplicationController($appRepo, $twig);
+    
+    $controller->showJson($id);
+}
 
 // 1. Repository setup
 $offerRepo = new OfferRepository($pdo);

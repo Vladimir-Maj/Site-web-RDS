@@ -47,6 +47,4 @@ class UserController extends BaseController
         }
         return $this->repo->findByEmail($user->email);
     }
-
-
 }

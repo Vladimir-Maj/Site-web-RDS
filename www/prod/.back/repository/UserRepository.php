@@ -42,6 +42,8 @@ class UserRepository
         return $row ? UserModel::fromArray($row) : null;
     }
 
+    
+
     public function findByEmail(string|Email $email): ?UserModel
     {
         // If it's an object, convert it to a string first

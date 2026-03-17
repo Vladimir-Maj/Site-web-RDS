@@ -101,4 +101,19 @@ abstract class BaseController
         // 3. Otherwise, treat it as a UUID and check the session
         return $this->isPrivileged() || $this->isSessionUser($id);
     }
+
+    public function abortIfNotPriv(): bool
+    {
+        if ($this->isPrivileged() == false) {
+            $this->abort(403, "Unauthorized access.");
+        }
+        return true;
+    }
+
+    /**
+     * user_id : UUIDv7
+     * email : string
+     * role : string ('admin', 'pilote', 'student')
+     * 
+     */
 }
