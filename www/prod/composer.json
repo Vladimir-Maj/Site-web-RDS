@@ -21,6 +21,7 @@
         "classmap": [
             ".back/models/",
             ".back/repository/",
+            ".back/controllers/",
             ".back/util/"
         ]
     }

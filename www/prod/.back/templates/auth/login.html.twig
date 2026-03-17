@@ -1,0 +1,53 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+<main class="container">
+    <div class="auth-container">
+        <h1>Connexion</h1>
+        
+        {# Display backend validation errors #}
+        {% if error %}
+            <div class="alert alert-danger" role="alert">
+                {{ error }}
+            </div>
+        {% endif %}
+        
+        <section class="card">
+            {# TASK-22/29: Updated action to the AuthController route #}
+            <form method="POST" action="/login">
+                
+                {# TASK-28: CSRF Token Implementation #}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    {# TASK-27: HTML5 required and email validation #}
+                    <input type="email" 
+                           id="email" 
+                           name="email" 
+                           value="{{ last_email }}" 
+                           required 
+                           placeholder="exemple@stageflow.fr"
+                           autofocus>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Mot de passe</label>
+                    {# TASK-27: Pattern or minlength for front-end validation #}
+                    <input type="password" 
+                           id="password" 
+                           name="password" 
+                           required 
+                           minlength="8">
+                </div>
+
+                <button type="submit" class="btn btn-primary">Se connecter</button>
+            </form>
+
+            <div class="form-footer">
+                Pas de compte ? <a href="/register">S'inscrire</a>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

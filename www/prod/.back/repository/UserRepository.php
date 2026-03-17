@@ -12,8 +12,9 @@ class UserRepository
 {
     private PDO $pdo;
 
-    public function __construct(PDO $pdo) { 
-        $this->pdo = $pdo; 
+    public function __construct(PDO $pdo)
+    {
+        $this->pdo = $pdo;
     }
 
     /**
@@ -22,18 +23,19 @@ class UserRepository
     public function findById(string $hexId): ?UserModel
     {
         $sql = "SELECT 
-                    HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
-                    CASE 
-                        WHEN a.user_id IS NOT NULL THEN 'admin'
-                        WHEN p.user_id IS NOT NULL THEN 'pilote'
-                        WHEN s.user_id IS NOT NULL THEN 'student'
-                        ELSE NULL
-                    END as role
-                FROM user u
-                LEFT JOIN administrator a ON u.id = a.user_id
-                LEFT JOIN pilot p ON u.id = p.user_id
-                LEFT JOIN student s ON u.id = s.user_id
-                WHERE u.id = UNHEX(?)";
+                HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
+                s.cv_path, s.status, -- Added these fields from the student table
+                CASE 
+                    WHEN a.user_id IS NOT NULL THEN 'admin'
+                    WHEN p.user_id IS NOT NULL THEN 'pilote'
+                    WHEN s.user_id IS NOT NULL THEN 'student'
+                    ELSE NULL
+                END as role
+            FROM user u
+            LEFT JOIN administrator a ON u.id = a.user_id
+            LEFT JOIN pilot p ON u.id = p.user_id
+            LEFT JOIN student s ON u.id = s.user_id
+            WHERE u.id = UNHEX(?)";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$hexId]);
@@ -42,7 +44,7 @@ class UserRepository
         return $row ? UserModel::fromArray($row) : null;
     }
 
-    
+
 
     public function findByEmail(string|Email $email): ?UserModel
     {
@@ -81,20 +83,39 @@ class UserRepository
 
         $stmt = $this->pdo->prepare($sql);
         $success = $stmt->execute([
-            ':email'      => $user->email,
-            ':password'   => $user->password, 
+            ':email' => $user->email->asString(),
+            ':password' => $user->password,
             ':first_name' => $user->first_name,
-            ':last_name'  => $user->last_name
+            ':last_name' => $user->last_name
         ]);
 
-        if (!$success) return null;
+        if (!$success)
+            return null;
 
         // Fetch the generated ID to return to the controller
         $stmt = $this->pdo->prepare("SELECT HEX(id) FROM user WHERE email = ?");
-        $stmt->execute([$user->email]);
+        $stmt->execute([$user->email->asString()]);
         return $stmt->fetchColumn() ?: null;
     }
 
+    public function updateCvPath(string $hexUserId, string $path): bool
+    {
+        // This query handles both cases: 
+        // 1. Student record doesn't exist yet -> Create it
+        // 2. Student record exists -> Update cv_path
+        $sql = "INSERT INTO student (user_id, cv_path) 
+            VALUES (UNHEX(:id), :path)
+            ON DUPLICATE KEY UPDATE cv_path = :path_update";
+
+        $stmt = $this->pdo->prepare($sql);
+
+        return $stmt->execute([
+            'id' => $hexUserId,
+            'path' => $path,
+            'path_update' => $path
+        ]);
+    }
+    
     public function makeStudent(string $userHexId, string $status = 'Searching'): bool
     {
         $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)");

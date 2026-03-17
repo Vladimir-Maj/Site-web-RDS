@@ -2,3 +2,12 @@
 <FilesMatch "\.php$">
     Require all granted
 </FilesMatch>
+
+RewriteEngine On
+
+# If the requested filename is not a real file on the disk...
+RewriteCond %{REQUEST_FILENAME} !-f
+# ...and is not a real directory...
+RewriteCond %{REQUEST_FILENAME} !-d
+# ...then send the request to index.php
+RewriteRule ^ index.php [QSA,L]
