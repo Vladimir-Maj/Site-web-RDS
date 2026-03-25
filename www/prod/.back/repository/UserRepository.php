@@ -8,7 +8,7 @@ use PharIo\Manifest\Email;
 use App\Models\UserModel;
 use function PHPUnit\Framework\returnArgument;
 
-class UserRepository
+class UserRepository 
 {
     private PDO $pdo;
 

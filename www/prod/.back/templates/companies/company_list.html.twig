@@ -1,0 +1,126 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Liste des Entreprises — SF Prosit{% endblock %}
+
+{% block body %}
+<div class="page-wrapper">
+    <main class="main">
+        
+        <header class="page-header mt-3">
+            <div class="header-flex">
+                <div>
+                    <h1>Entreprises</h1>
+                    <p>Consultez et gérez les organisations enregistrées.</p>
+                </div>
+                <a href="/app/companies/new" class="btn btn-primary">
+                    + Nouvelle Entreprise
+                </a>
+            </div>
+        </header>
+
+        {# --- Section Filtres --- #}
+        <section class="card mt-2">
+            <form method="GET" action="/app/companies" class="card-body filter-form">
+                <div class="form-grid-4">
+                    <div class="form-group">
+                        <label for="f-name">Recherche</label>
+                        <input type="text" name="name" id="f-name" value="{{ app.request.query.get('name') }}" placeholder="Nom, SIREN...">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="f-sector">Secteur</label>
+                        <select name="sector_id" id="f-sector">
+                            <option value="">Tous les secteurs</option>
+                            {% for sector in sectors %}
+                                <option value="{{ sector.id }}" {{ app.request.query.get('sector_id') == sector.id ? 'selected' : '' }}>
+                                    {{ sector.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="f-status">Statut</label>
+                        <select name="status" id="f-status">
+                            <option value="">Tous</option>
+                            <option value="active" {{ app.request.query.get('status') == 'active' ? 'selected' : '' }}>Actif</option>
+                            <option value="pending" {{ app.request.query.get('status') == 'pending' ? 'selected' : '' }}>En attente</option>
+                        </select>
+                    </div>
+
+                    <div class="form-actions-inline">
+                        <button type="submit" class="btn btn-secondary">Filtrer</button>
+                        <a href="/app/companies" class="btn btn-link">Réinitialiser</a>
+                    </div>
+                </div>
+            </form>
+        </section>
+
+        {# --- Tableau des résultats --- #}
+        <div class="card mt-2">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Entreprise</th>
+                            <th>Secteur</th>
+                            <th>Localisation</th>
+                            <th>Statut</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for company in companies %}
+                            <tr>
+                                <td>
+                                    <div class="company-cell">
+                                        {% if company.logo_url %}
+                                            <img src="{{ company.logo_url }}" alt="" class="avatar-sm">
+                                        {% endif %}
+                                        <div>
+                                            <strong>{{ company.name }}</strong><br>
+                                            <small class="text-muted">SIREN: {{ company.siren }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ company.sector_name|default('N/A') }}</td>
+                                <td>{{ company.location|default('-') }}</td>
+                                <td>
+                                    <span class="badge {{ company.is_active ? 'badge-success' : 'badge-warning' }}">
+                                        {{ company.is_active ? 'Actif' : 'En attente' }}
+                                    </span>
+                                </td>
+                                <td class="text-right">
+                                    <a href="/app/companies/{{ company.id }}" class="btn btn-sm btn-ghost">Modifier</a>
+                                </td>
+                            </tr>
+                        {% else %}
+                            <tr>
+                                <td colspan="5" class="text-center py-3">Aucune entreprise trouvée.</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {# --- Pagination (Simulée pour 10 items/page) --- #}
+            {% set currentPage = app.request.query.get('page', 1) %}
+            <div class="card-footer pagination-wrapper">
+                <p class="text-muted small">Affichage de {{ companies|length }} résultats</p>
+                <nav class="pagination">
+                    {% if currentPage > 1 %}
+                        <a href="?{{ app.request.query.all|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-sm btn-ghost">Précédent</a>
+                    {% endif %}
+                    
+                    <span class="page-number">Page {{ currentPage }}</span>
+
+                    {% if companies|length == 10 %}
+                        <a href="?{{ app.request.query.all|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-sm btn-ghost">Suivant</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+
+    </main>
+</div>
+{% endblock %}

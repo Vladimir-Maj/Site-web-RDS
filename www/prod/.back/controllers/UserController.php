@@ -24,7 +24,9 @@ class UserController extends BaseController
         return $this->repo->findByEmail($mail->asString());
     }
 
-    public function getUserById(string $id): UserModel
+    
+
+    public function getUserById(string $id, callable $isAuthorized): ?UserModel
     {
         if ($this->isTargetOrPrivileged($id) == false) {
             $this->abort(403, "Unauthorized access.");
