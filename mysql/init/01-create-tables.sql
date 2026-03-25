@@ -2,6 +2,8 @@
 -- USER MANAGEMENT
 -- ============================================================
 
+USE sql_db;
+
 CREATE TABLE user (
     id BINARY(16) PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE,

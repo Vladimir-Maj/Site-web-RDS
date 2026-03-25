@@ -1,44 +1,44 @@
 <?php
-// .back/models/UserModel.php
 declare(strict_types=1);
 namespace App\Models;
 
-class UserModel extends BaseModel 
+use PharIo\Manifest\Email;
+use App\Models\RoleEnum;
+
+class UserModel extends BaseModel
 {
-    public int $id;
-    public string $username;
-    public string $email;
-    public string $password;
-    public ?string $first_name;
-    public ?string $last_name;
-    public string $role; 
-    public ?string $cv_path;
-    public string $created_at;
-    public string $updated_at; // Kept for compatibility
+    public string $id = '';
+    public Email $email;
+    public string $password = '';
+    public ?string $first_name = null; // Defaulting to null initializes the property
+    public ?string $last_name = null;  // Defaulting to null initializes the property
+    public bool $is_active = true;
+    public string $created_at = '';
+    public ?string $cv_path = null
+    ;
+    public RoleEnum $role = RoleEnum::Student;
+
+    /**
+     * Ensure the constructor initializes critical objects
+     */
+    public function __construct(?string $id = null)
+    {
+        if ($id)
+            $this->id = $id;
+        // We don't initialize $email here because it requires a string for the PharIo object
+    }
 
     public static function fromArray(array $data): self
     {
-        // Pass null because Repo handles the DB connection
-        $user = new self(null); 
-        
-        $user->id         = (int)($data['id'] ?? 0);
-        $user->username   = $data['username'] ?? '';
-        $user->email      = $data['email'] ?? '';
-        $user->password   = $data['password'] ?? '';
+        $user = new self($data['id'] ?? null);
+        $user->email = new Email($data['email'] ?? 'temp@temp.com');
+        $user->password = $data['password'] ?? '';
         $user->first_name = $data['first_name'] ?? null;
-        $user->last_name  = $data['last_name'] ?? null;
-        $user->role       = $data['role'] ?? 'candidate';
-        $user->cv_path    = $data['cv_path'] ?? null;
-        $user->created_at = $data['created_at'] ?? date('Y-m-d H:i:s');
-        $user->updated_at = $data['updated_at'] ?? date('Y-m-d H:i:s');
-        
+        $user->last_name = $data['last_name'] ?? null;
+        $user->is_active = (bool) ($data['is_active'] ?? true);
+        $user->created_at = $data['created_at'] ?? '';
+        $user->role = isset($data['role']) ? RoleEnum::from($data['role']) : RoleEnum::Student;
+        $user ->cv_path = $data['cv_path'] ??'';
         return $user;
-    }
-
-    public function getFullName(): string
-    {
-        return ($this->first_name && $this->last_name) 
-            ? "{$this->first_name} {$this->last_name}" 
-            : $this->username;
     }
 }

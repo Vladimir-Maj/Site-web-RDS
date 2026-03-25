@@ -1,0 +1,73 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+    <main class="container">
+        <div class="auth-container" style="max-width: 500px; margin: 2rem auto;">
+            <h1 style="text-align: center; margin-bottom: 2rem;">Créer un compte</h1>
+
+            {% if error %}
+                <div class="alert alert-error" style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            {% if success %}
+                <div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
+                    {{ success }}
+                    <div style="margin-top: 1rem; text-align: center;">
+                        <a href="/login" class="btn btn-primary">Se connecter maintenant</a>
+                    </div>
+                </div>
+            {% endif %}
+
+            {% if not success %}
+                <section class="card" style="padding: 2rem; border: 1px solid var(--clr-border); border-radius: 8px;">
+                    <form method="POST" action="/register">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="first_name" style="display: block; margin-bottom: 0.5rem;">Prénom</label>
+                            {# CHANGED: name="first_name" to match your PHP Controller #}
+                            <input type="text" id="first_name" name="first_name" 
+                                   value="{{ old.first_name|default('') }}" 
+                                   required autofocus placeholder="ex: Jean">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="email" style="display: block; margin-bottom: 0.5rem;">Email</label>
+                            <input type="email" id="email" name="email" 
+                                   value="{{ old.email|default('') }}" 
+                                   required placeholder="ex: jean.dupont@email.com">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="role" style="display: block; margin-bottom: 0.5rem;">Je suis un :</label>
+                            <select id="role" name="role" style="width: 100%; padding: 0.5rem;">
+                                <option value="student" {{ old.role|default('') == 'student' ? 'selected' : '' }}>Étudiant</option>
+                                <option value="pilote" {{ old.role|default('') == 'pilote' ? 'selected' : '' }}>Pilote</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1rem;">
+                            <label for="password" style="display: block; margin-bottom: 0.5rem;">Mot de passe</label>
+                            <input type="password" id="password" name="password" required minlength="8" placeholder="8 caractères minimum">
+                        </div>
+
+                        <div class="form-group" style="margin-bottom: 1.5rem;">
+                            <label for="confirm_password" style="display: block; margin-bottom: 0.5rem;">Confirmer le mot de passe</label>
+                            <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; cursor: pointer;">
+                            S'inscrire
+                        </button>
+                    </form>
+
+                    <div class="form-footer" style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
+                        Déjà un compte ? <a href="/login" style="text-decoration: underline;">Connectez-vous ici</a>.
+                    </div>
+                </section>
+            {% endif %}
+        </div>
+    </main>
+{% endblock %}

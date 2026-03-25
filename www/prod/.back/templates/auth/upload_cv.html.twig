@@ -4,14 +4,14 @@
 <main class="container">
     <div class="upload-container" style="max-width: 600px; margin: 3rem auto;">
         <div style="margin-bottom: 2rem;">
-            <a href="profile.php" style="text-decoration: none; font-size: 0.9rem; color: #6b7280;">← Retour au profil</a>
+            <a href="/profile" style="text-decoration: none; font-size: 0.9rem; color: #6b7280;">← Retour au profil</a>
             <h1 style="margin-top: 1rem;">Mettre à jour mon CV</h1>
         </div>
 
         {% if success %}
             <div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 1.5rem; border-radius: 8px; text-align: center;">
                 <p style="margin-bottom: 1rem;"><strong>Succès !</strong> {{ success }}</p>
-                <a href="profile.php" class="btn btn-primary">Voir mon profil</a>
+                <a href="/profile" class="btn btn-primary">Voir mon profil</a>
             </div>
         {% else %}
             {% if error %}
@@ -20,7 +20,10 @@
                 </div>
             {% endif %}
 
-            <form action="upload_cv.php" method="POST" enctype="multipart/form-data" id="uploadForm">
+            <form action="/profile/upload-cv" method="POST" enctype="multipart/form-data" id="uploadForm">
+                {# TASK-28: CSRF Protection #}
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                
                 <label class="drop-zone" style="display: block; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 3rem; text-align: center; cursor: pointer; transition: all 0.2s ease;">
                     <span style="font-size: 3rem; display: block; margin-bottom: 1rem;">📄</span>
                     <strong>Cliquez ou glissez votre CV ici</strong>
@@ -32,36 +35,27 @@
     </div>
 
     <script>
-        const dropZone = document.querySelector('.drop-zone');
+        // Auto-submit form when file is selected
         const fileInput = document.getElementById('cv_file');
         const form = document.getElementById('uploadForm');
+        const dropZone = document.querySelector('.drop-zone');
 
-        if (dropZone) {
-            // Changement au clic
+        if (fileInput) {
             fileInput.addEventListener('change', () => {
                 if (fileInput.files.length > 0) form.submit();
             });
+        }
 
-            // Drag & Drop
-            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(name => {
-                dropZone.addEventListener(name, e => { e.preventDefault(); e.stopPropagation(); });
-            });
-
-            ['dragenter', 'dragover'].forEach(name => {
-                dropZone.addEventListener(name, () => dropZone.style.borderColor = '#3b82f6');
-            });
-
-            ['dragleave', 'drop'].forEach(name => {
-                dropZone.addEventListener(name, () => dropZone.style.borderColor = '#cbd5e1');
-            });
-
+        if (dropZone) {
+            ['dragenter', 'dragover'].forEach(n => dropZone.addEventListener(n, () => dropZone.style.borderColor = '#6366f1'));
+            ['dragleave', 'drop'].forEach(n => dropZone.addEventListener(n, () => dropZone.style.borderColor = '#cbd5e1'));
+            
             dropZone.addEventListener('drop', e => {
+                e.preventDefault();
                 const files = e.dataTransfer.files;
                 if (files.length > 0 && files[0].type === 'application/pdf') {
                     fileInput.files = files;
                     form.submit();
-                } else {
-                    alert("Seuls les fichiers PDF sont acceptés.");
                 }
             });
         }

@@ -12,12 +12,12 @@ require_once 'db_connect.php';
 spl_autoload_register(function ($class_name) {
     // On définit la racine du projet (www/prod/)
     $root = realpath(__DIR__ . '/../../');
-    
+
     // Liste des dossiers où tes classes (Models, Repos, Utils) sont rangées
     $sources = [
         $root . '/.back/models/',
         $root . '/.back/repository/',
-        $root . '/.back/util/'
+        $root . '/.back/util'
     ];
 
     foreach ($sources as $source) {
@@ -29,4 +29,3 @@ spl_autoload_register(function ($class_name) {
     }
 });
 
-// You can add more here later (DB names, etc.)

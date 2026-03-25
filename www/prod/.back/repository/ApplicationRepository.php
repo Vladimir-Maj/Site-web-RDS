@@ -43,6 +43,16 @@ class ApplicationRepository
         return array_map(fn($row) => ApplicationModel::fromArray($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
     }
 
+    public function push(ApplicationModel $application): void
+    {
+        $this->postApplication(
+            $application->getStudentId(),
+            $application->offer_id,
+            $application->cover_letter_path,
+            $application->cv_path
+        );
+    }
+
     /**
      * Utility: Submit a new internship application
      */
@@ -87,7 +97,7 @@ class ApplicationRepository
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([$id]);
 
-        $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$row) {
             return null;

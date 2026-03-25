@@ -1,27 +1,31 @@
 <header>
-    <div class="header-inner">
-        <a href="{{ site_url }}/index.php" class="logo"><span></span>SF Prosit</a>
+	<div class="header-inner">
+		<a href="/" class="logo">
+			<span></span>SF Prosit</a>
 
-        <nav>
-            <a href="{{ site_url }}/offers/offer_search.php" 
-               class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
-            
-            <a href="{{ site_url }}/offers/offer_editor.php" 
-               class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
+		<nav>
+			<a href="/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
 
-            {# session is usually available in Twig if you pass it or add it to globals #}
-            {% if session.user_id is defined %}
-                <a href="{{ site_url }}/account/profile.php" 
-                   class="{{ currentPage|default('') == 'profile' ? 'active' : '' }}" title="Mon Compte">Profil</a>
-                <a href="{{ site_url }}/account/logout.php" style="color: var(--clr-danger); opacity: 1;">Logout</a>
-            {% else %}
-                <a href="{{ site_url }}/account/login.php" 
-                   class="{{ currentPage|default('') == 'login' ? 'active' : '' }}">Connexion</a>
-                <a href="{{ site_url }}/account/register.php" 
-                   class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>
-            {% endif %}
+			{# Only show 'Publier' for admins or pilots #}
+			{% if user and (user.role == 'admin' or user.role == 'pilote') %}
+				<a href="/offers/publish" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
+			{% endif %}
 
-            <button id="theme-toggle" class="btn-theme" style="margin-left: 10px;">L/D</button>
-        </nav>
-    </div>
+			{% if user %}
+				{# If user is logged in #}
+				<a
+					href="/profile" class="{{ currentPage|default('') == 'profile' ? 'active' : '' }}" title="Mon Compte">
+					{# Use the 'default' filter to provide a fallback if first_name is missing #}
+					Profil ({{ user.first_name|default('PRENOM MANQUANT') }})
+				</a>
+				<a href="/logout" style="color: var(--clr-danger); opacity: 1;">Logout</a>
+			{% else %}
+				{# If user is guest #}
+				<a href="/login" class="{{ currentPage|default('') == 'login' ? 'active' : '' }}">Connexion</a>
+				<a href="/register" class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>
+			{% endif %}
+
+			<button id="theme-toggle" class="btn-theme" style="margin-left: 10px;">L/D</button>
+		</nav>
+	</div>
 </header>

@@ -3,41 +3,71 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\ApplicationModel;
 use App\Repository\ApplicationRepository;
 use Twig\Environment;
+use App\Util;
 
 class ApplicationController extends BaseController {
     private ApplicationRepository $repo;
 
     public function __construct(ApplicationRepository $repo, Environment $twig) {
-        // Run the BaseController constructor (starts session, sets twig)
         parent::__construct($twig);
         $this->repo = $repo;
     }
 
-    public function listForStudent(): array {
-        $this->checkAuth(); // Inherited from BaseController
-        
-        $applications = $this->repo->findByStudent($_SESSION['user_id']);
-        return $applications;
-        ;
+    /**
+     * @throws \RuntimeException Si l'application n'existe pas
+     */
+    public function showJson(string $applicationId): void {
+        $application = $this->repo->findById($applicationId);
+
+        if (!$application) {
+            $this->renderJsonError("Application not found", 404);
+        }
+
+        header('Content-Type: application/json');
+        echo json_encode($application); 
+        exit;
     }
 
+    /**
+     * @return array Liste des candidatures pour l'étudiant connecté
+     */
+    public function listForStudent(): array {
+        // On utilise l'ID en session, injecté par le middleware d'auth
+        return $this->repo->findByStudent(Util::getUserId());
+    }
+
+    public function apply(ApplicationModel $application): void {
+        $this->repo->push($application);
+    }
+
+    /**
+     * @throws \RuntimeException
+     */
     public function delete(string $applicationId): void {
-        $this->checkAuth();
+        // On vérifie juste l'existence, le middleware a déjà validé le droit de supprimer
         $application = $this->repo->findById($applicationId);
 
         if (!$application) {
             $this->abort(404, "Application not found.");
         }
 
-        // Ownership check
-        if ($application->getStudentId() !== $_SESSION['user_id'] || !$this->isSuperUser()) {
-            $this->abort(403, "Unauthorized deletion attempt.");
-        }
-
         $this->repo->delete($applicationId);
-        header('Location: /index.php?page=my-applications');
+        
+        // Redirection avec un paramètre de succès pour le feedback UI
+        header('Location: /index.php?page=my-applications&status=deleted');
+        exit;
+    }
+
+    /**
+     * Helper privé pour uniformiser les erreurs JSON
+     */
+    private function renderJsonError(string $message, int $code): void {
+        header('Content-Type: application/json');
+        http_response_code($code);
+        echo json_encode(["error" => $message]);
         exit;
     }
 }
