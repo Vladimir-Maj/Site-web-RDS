@@ -928,3 +928,113 @@ html[data-theme="dark"] :root {
     color: #991b1b;
     border-color: #fecaca;
 }
+
+/* --- Company Form Container --- */
+.company-form.card {
+    width: 100%;
+    max-width: 100%; /* Overrides the 90% global limit */
+    margin-bottom: 2rem;
+}
+
+/* --- Body Reset --- */
+.company-form .card-body {
+    display: block; /* Overrides flex/space-between from global styles */
+    padding: 2rem;
+}
+
+/* --- Section Dividers --- */
+.company-form .info-section {
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--clr-border-light);
+    margin-bottom: 1.5rem;
+}
+
+.company-form .info-section:first-child {
+    border-top: none;
+    padding-top: 0;
+}
+
+/* --- Section Labels (Tiny Caps) --- */
+.company-form .section-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--clr-text-muted);
+    margin-bottom: 1rem;
+}
+
+/* --- Responsive Grid --- */
+.company-form .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+}
+
+@media (max-width: 768px) {
+    .company-form .form-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* --- Field Styling --- */
+.company-form .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.company-form .form-group label {
+    font-weight: 500;
+    font-size: 0.9rem;
+}
+
+.company-form input,
+.company-form select,
+.company-form textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--clr-border-light);
+    border-radius: 6px;
+    background-color: var(--clr-surface);
+    color: var(--clr-text);
+    font-size: 0.95rem;
+}
+
+.company-form textarea {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* --- Footer Actions --- */
+.company-form .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--clr-border-light);
+    margin-top: 1rem;
+}
+
+/* --- Notice/Alert Variants --- */
+.notice {
+    padding: 1rem;
+    border-radius: 8px;
+    border-left: 4px solid transparent;
+    margin-bottom: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.notice-error {
+    background-color: #fef2f2;
+    border-color: #d9534f;
+    color: #b91c1c;
+}
+
+.notice-success {
+    background-color: #f0fdf4;
+    border-color: #4ade80;
+    color: #166534;
+}

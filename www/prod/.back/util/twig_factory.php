@@ -49,7 +49,7 @@ class TwigFactory
                 session_start();
             }
             self::$twig->addGlobal('session', $_SESSION);
-
+            self::$twig->addGlobal('user', $_SESSION['user'] ?? null);
             // Helpful for absolute paths to assets
             self::$twig->addGlobal('cdn_url', defined('CDN_URL') ? CDN_URL : '/cdn');
             // .back/util/twig_factory.php

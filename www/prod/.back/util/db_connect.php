@@ -1,14 +1,33 @@
 <?php
 // prod/.back/util/db_connect.php
-$host = 'db'; $db = 'sql_db'; $user = 'user'; $pass = 'password';
+
+// ===== LOCAL (Docker) =====
+$host = 'db';
+$port = 3306;
+$db   = 'sql_db';
+$user = 'website-local';
+$pass = '1234';
+
+/*
+// ===== PRODUCTION =====
+$host = '165.22.90.120';
+$port = 3306;
+$db   = 'sql_db';
+$user = 'laptop-admin';
+$pass = 'change_in_prod';
+*/
 
 try {
-    $dsn = "mysql:host=$host;dbname=$db;charset=utf8mb4";
+    $dsn = "mysql:host={$host};port={$port};dbname={$db};charset=utf8mb4";
+
     $pdo = new PDO($dsn, $user, $pass, [
         PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES   => false,
+        PDO::ATTR_PERSISTENT         => true,
     ]);
+
 } catch (PDOException $e) {
-    die("Connection failed: " . $e->getMessage());
+    // In production, log instead of exposing error details
+    die("Database connection failed.");
 }
