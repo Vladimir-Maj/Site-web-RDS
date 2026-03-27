@@ -1,99 +1,88 @@
+{# .back/views/offers/offer_search.html.twig #}
 {% extends "base.html.twig" %}
 
 {% block title %}Rechercher une offre — StageFlow{% endblock %}
 
 {% block body %}
-    <div class="page-header" style="padding-top: 2rem;">
-        <h1>Trouver votre opportunité</h1>
-        <p>Utilisez les filtres ci-dessous pour affiner votre recherche.</p>
+    <div class="page-header">
+        <div>
+            <h1>Trouver votre opportunité</h1>
+            <p>Utilisez les filtres pour explorer le catalogue des stages.</p>
+        </div>
     </div>
 
-    {# --- Section Filtres --- #}
-    <section class="card" style="margin: 2rem 0; padding: 1.5rem; background: #f8fafc;">
-        <form method="GET" action="offer_search.php">
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.2rem;">
+    {# --- Filter Section: Styled as a Terminal Search Module --- #}
+    <section class="card search-bar" style="display: block; width: 100%; padding: 1.5rem; margin-bottom: 2rem;">
+        <form method="GET" action="/offers/search">
+            <div class="form-grid">
                 
                 <div class="form-group">
-                    <label>Recherche libre</label>
-                    <input type="text" name="keyword" placeholder="Poste, mots-clés..." value="{{ filters.keyword }}">
+                    <label for="keyword">Recherche libre</label>
+                    <input type="text" name="keyword" id="keyword" placeholder="Poste, technologies..." value="{{ filters.keyword }}">
                 </div>
 
                 <div class="form-group">
-                    <label>Localisation</label>
-                    <select name="location">
-                        <option value="">Toutes les villes</option>
-                        {% for loc in locations %}
-                            <option value="{{ loc }}" {{ filters.location == loc ? 'selected' : '' }}>{{ loc }}</option>
-                        {% endfor %}
-                    </select>
+                    <label for="city">Ville / Localisation</label>
+                    <input type="text" name="city" id="city" placeholder="ex: Nancy" value="{{ filters.city }}">
                 </div>
 
                 <div class="form-group">
-                    <label>Entreprise</label>
-                    <select name="company_id">
-                        <option value="">Toutes les entreprises</option>
-                        {% for comp in companies %}
-                            <option value="{{ comp.id }}" {{ filters.company_id == comp.id ? 'selected' : '' }}>
-                                {{ comp.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    <label for="duration">Durée max (semaines)</label>
+                    <input type="number" name="duration" id="duration" placeholder="ex: 16" value="{{ filters.duration }}">
                 </div>
 
-                <div class="form-group">
-                    <label>Type de contrat</label>
-                    <select name="job_type">
-                        <option value="">Tous les types</option>
-                        {% for type in jobTypes %}
-                            <option value="{{ type }}" {{ filters.job_type == type ? 'selected' : '' }}>
-                                {{ type|capitalize }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div style="display: flex; align-items: flex-end;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%; height: 42px;">
-                        🔍 Filtrer
+                <div class="form-group" style="display: flex; align-items: flex-end;">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        🔍 Lancer la recherche
                     </button>
                 </div>
             </div>
             
-            <div style="margin-top: 1rem; font-size: 0.85rem;">
-                <a href="offer_search.php" style="color: #64748b; text-decoration: none;">✕ Réinitialiser les filtres</a>
+            <div style="margin-top: 1.2rem; display: flex; justify-content: space-between; align-items: center;">
+                <a href="/offers/search" class="text-sm text-muted">✕ Réinitialiser les filtres</a>
+                
+                {# Hidden inputs to preserve filters when sorting #}
+                <div class="sort-select">
+                    <label class="text-sm" style="margin-right: 8px;">Trier par :</label>
+                    <select name="sort" onchange="this.form.submit()" style="width: auto; padding: 2px 10px;">
+                        <option value="recent" {{ filters.sort == 'recent' ? 'selected' : '' }}>Plus récentes</option>
+                        <option value="rate" {{ filters.sort == 'rate' ? 'selected' : '' }}>Gratification</option>
+                        <option value="duration" {{ filters.sort == 'duration' ? 'selected' : '' }}>Durée</option>
+                    </select>
+                </div>
             </div>
         </form>
     </section>
 
-    {# --- Meta Résultats --- #}
-    <div class="results-meta" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-        <p><strong>{{ count }}</strong> offre{{ count > 1 ? 's' : '' }} correspond{{ count > 1 ? 'ent' : '' }} à vos critères.</p>
-        
-        <div class="sort-select">
-            <form method="GET" id="sortForm">
-                {# On garde les filtres actifs lors du tri #}
-                <input type="hidden" name="keyword" value="{{ filters.keyword }}">
-                <input type="hidden" name="location" value="{{ filters.location }}">
-                <input type="hidden" name="company_id" value="{{ filters.company_id }}">
-                
-                <select name="sort" onchange="this.form.submit()">
-                    <option value="recent" {{ filters.sort == 'recent' ? 'selected' : '' }}>Plus récentes</option>
-                    <option value="views" {{ filters.sort == 'views' ? 'selected' : '' }}>Plus consultées</option>
-                    <option value="salary" {{ filters.sort == 'salary' ? 'selected' : '' }}>Meilleur salaire</option>
-                </select>
-            </form>
-        </div>
+    {# --- Results Counter --- #}
+    <div class="notice notice-info">
+        <div class="notice-icon">📊</div>
+        <p><strong>{{ count }}</strong> offre{{ count > 1 ? 's' : '' }} trouvée{{ count > 1 ? 's' : '' }} pour votre sélection.</p>
     </div>
 
-    {# --- Liste des offres --- #}
-    <div class="offer-list" style="display: grid; gap: 1.5rem;">
+    {# --- Results Grid --- #}
+    <div class="offer-list">
         {% for offer in offers %}
-            {% include 'components/card_template.twig' with {'offer': offer} %}
+            {{ include('components/card_template.twig', {'offer': offer}) }}
         {% else %}
-            <div class="card" style="text-align: center; padding: 4rem; color: #64748b;">
-                <p style="font-size: 1.2rem;">Aucun résultat trouvé.</p>
-                <p>Essayez d'élargir vos critères de recherche.</p>
+            <div class="card" style="text-align: center; padding: 5rem 2rem;">
+                <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+                <h3 class="text-muted">Aucun résultat trouvé</h3>
+                <p class="text-sm">Essayez de simplifier vos mots-clés ou d'élargir la zone géographique.</p>
+                <a href="/offers/search" class="btn btn-ghost mt-2">Voir toutes les offres</a>
             </div>
         {% endfor %}
     </div>
+
+    {# Pagination logic #}
+    {% if totalPages > 1 %}
+        <div class="pagination" style="display: flex; justify-content: center; gap: 10px; margin-top: 3rem;">
+            {% for i in 1..totalPages %}
+                <a href="?page={{ i }}&keyword={{ filters.keyword }}&city={{ filters.city }}" 
+                   class="btn {{ page == i ? 'btn-primary' : 'btn-ghost' }}">
+                    {{ i }}
+                </a>
+            {% endfor %}
+        </div>
+    {% endif %}
 {% endblock %}

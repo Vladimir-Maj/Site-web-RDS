@@ -7,8 +7,9 @@ use PDO;
 use PharIo\Manifest\Email;
 use App\Models\UserModel;
 use function PHPUnit\Framework\returnArgument;
+use App\Models\RoleEnum;
 
-class UserRepository 
+class UserRepository
 {
     private PDO $pdo;
 
@@ -78,24 +79,50 @@ class UserRepository
      */
     public function push(UserModel $user): ?string
     {
-        $sql = "INSERT INTO user (email, password, first_name, last_name) 
-                VALUES (:email, :password, :first_name, :last_name)";
+        try {
+            $this->pdo->beginTransaction();
 
-        $stmt = $this->pdo->prepare($sql);
-        $success = $stmt->execute([
-            ':email' => $user->email->asString(),
-            ':password' => $user->password,
-            ':first_name' => $user->first_name,
-            ':last_name' => $user->last_name
-        ]);
+            // 1. Prepare and Execute User Insertion
+            // Note: Using UUID_TO_BIN(UUID()) if you aren't providing a UUID from PHP
+            $sql = "INSERT INTO user (id, email, password, first_name, last_name, is_active) 
+                VALUES (UUID_TO_BIN(UUID()), :email, :password, :first_name, :last_name, :is_active)";
 
-        if (!$success)
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':email' => $user->email->asString(),
+                ':password' => $user->password, // Ensure this is hashed before calling push!
+                ':first_name' => $user->first_name,
+                ':last_name' => $user->last_name,
+                ':is_active' => $user->is_active ? 1 : 0
+            ]);
+
+            // 2. Retrieve the Binary ID we just created
+            $stmt = $this->pdo->prepare("SELECT id FROM user WHERE email = ?");
+            $stmt->execute([$user->email->asString()]);
+            $binaryId = $stmt->fetchColumn();
+
+            if (!$binaryId) {
+                throw new \Exception("Failed to retrieve created user ID.");
+            }
+
+            // 3. Handle Role Assignment
+            // Students don't have a specific extra table based on your 'describe' results
+            if ($user->role === RoleEnum::Admin) {
+                $stmt = $this->pdo->prepare("INSERT INTO administrator (user_id) VALUES (?)");
+                $stmt->execute([$binaryId]);
+            } elseif ($user->role === RoleEnum::Pilote) {
+                $stmt = $this->pdo->prepare("INSERT INTO pilot (user_id) VALUES (?)");
+                $stmt->execute([$binaryId]);
+            }
+
+            $this->pdo->commit();
+            return bin2hex($binaryId); // Return as hex string for the controller
+
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            // Log $e->getMessage() here if needed
             return null;
-
-        // Fetch the generated ID to return to the controller
-        $stmt = $this->pdo->prepare("SELECT HEX(id) FROM user WHERE email = ?");
-        $stmt->execute([$user->email->asString()]);
-        return $stmt->fetchColumn() ?: null;
+        }
     }
 
     public function updateCvPath(string $hexUserId, string $path): bool
@@ -115,7 +142,7 @@ class UserRepository
             'path_update' => $path
         ]);
     }
-    
+
     public function makeStudent(string $userHexId, string $status = 'Searching'): bool
     {
         $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)");

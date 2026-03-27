@@ -305,4 +305,17 @@ class CompanyRepository
         $stmt = $this->pdo->prepare("DELETE FROM company_site WHERE company_id = UNHEX(?)");
         return $stmt->execute([$companyId]);
     }
+
+    /**
+     * Supprime un site spécifique par son ID
+     */
+    public function deleteSiteById(string $siteId): bool
+    {
+        if (!$this->isValidHex($siteId)) {
+            return false;
+        }
+
+        $stmt = $this->pdo->prepare("DELETE FROM company_site WHERE id = UNHEX(?)");
+        return $stmt->execute([$siteId]);
+    }
 }
