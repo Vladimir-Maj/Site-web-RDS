@@ -27,7 +27,7 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 ### Installation
 
 ```bash
-git clone https://github.com/[organisation]/stageflow.git
+git clone https://github.com/Vladimir-Maj/Site-web-RDS.git
 cd stageflow
 docker compose up -d
 ```
