@@ -19,110 +19,150 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 ---
 
 ## Démarrage rapide
-
 ### Prérequis
 
 - Docker Desktop (ou Docker + Docker Compose)
 - Git
 
-## 🏗️ Architecture du Projet
+### Installation
 
-Le projet suit une structure orientée MCV pour séparer la logique métier de l'accès aux données.
-
-### 📁 Structure des Dossiers
-
-* **`www/prod/`** : Point d'entrée de l'application et contrôleurs de pages.
-* **`www/prod/.back/`** : Logique serveur masquée.
-* `repository/` : Classes gérant les requêtes SQL (PDO).
-* `util/` : Helpers (Rendu HTML, formatage, configuration).
-
-* **`www/cdn/`** : Stockage des templates HTML statiques, CSS, JS et uploads.
-
-### 🗃️ Couche de Données (Model / Repositories)
-
-Les interactions avec la base de données sont centralisées dans les classes suivantes :
-
-| Repository | Responsabilités principales |
-| --- | --- |
-| **`OfferRepository`** | Recherche multicritères, pagination, consultation des détails, incrémentation des vues. |
-| **`CompanyRepository`** | Liste des entreprises, filtrage par secteur, détails de l'entreprise. |
-| **`UserRepository`** | Authentification, gestion des profils étudiants et pilotes. |
-
-## 🚦 Logique de Recherche & Filtres
-
-La recherche d'offres utilise une approche dynamique avec `WHERE 1=1` permettant d'empiler les filtres sans corrompre la requête SQL :
-
-* Mots-clés : Recherche dans le titre, la description et le nom de l'entreprise.
-* Localisation : Filtrage par ville via `DISTINCT` location.
-* Entreprise : Filtrage par ID d'entreprise.
-* Type de contrat : Stage, Alternance, CDI, etc.
-
-## MCD de la BDD
-
-```mermaid
-erDiagram
-    USER ||--o| PILOT : "is a"
-    USER ||--o| STUDENT : "is a"
-    USER ||--o| ADMINISTRATOR : "is a"
-
-    CAMPUS ||--o{ PROMOTION : "hosts"
-    PROMOTION ||--o{ PROMOTION_ASSIGNMENT : "assigned to"
-    PILOT ||--o{ PROMOTION_ASSIGNMENT : "manages"
-    
-    PROMOTION ||--o{ STUDENT_ENROLLMENT : "contains"
-    STUDENT ||--o{ STUDENT_ENROLLMENT : "enrolled in"
-
-    BUSINESS_SECTOR ||--o{ COMPANY : "categorizes"
-    COMPANY ||--o{ COMPANY_SITE : "located at"
-    COMPANY_SITE ||--o{ INTERNSHIP_OFFER : "hosts"
-
-    INTERNSHIP_OFFER ||--o{ OFFER_REQUIREMENT : "requires"
-    SKILL ||--o{ OFFER_REQUIREMENT : "is needed for"
-
-    STUDENT ||--o{ APPLICATION : "submits"
-    INTERNSHIP_OFFER ||--o{ APPLICATION : "receives"
-
-    PILOT ||--o{ BUSINESS_REVIEW : "evaluates"
-    COMPANY ||--o{ BUSINESS_REVIEW : "is reviewed by"
-
-    STUDENT ||--o{ WISHLIST : "saves"
-    INTERNSHIP_OFFER ||--o{ WISHLIST : "is bookmarked by"
-
-    USER {
-        binary16 id PK
-        string email
-        string password
-        string first_name
-        string last_name
-        boolean is_active
-        datetime created_at
-    }
-
-    STUDENT {
-        binary16 user_id PK, FK
-        string status
-    }
-
-    COMPANY {
-        binary16 id PK
-        string name
-        string tax_id
-        binary16 sector_id FK
-    }
-
-    INTERNSHIP_OFFER {
-        binary16 id PK
-        string title
-        decimal hourly_rate
-        int duration_weeks
-        binary16 site_id FK
-    }
-
-    APPLICATION {
-        binary16 id PK
-        binary16 student_id FK
-        binary16 offer_id FK
-        enum status
-        datetime applied_at
-    }
+```bash
+git clone https://github.com/[organisation]/stageflow.git
+cd stageflow
+docker compose up -d
 ```
+
+C'est tout. Docker monte automatiquement Apache, PHP et MySQL avec la base de données initialisée.
+
+### Accès aux environnements
+
+| Environnement | URL |
+|---|---|
+| Application (Vhost PROD) | http://prod.localhost:8080 |
+| Assets & Médias (Vhost CDN) | http://cdn.localhost:8080 |
+
+### Configuration de la base de données
+
+Les paramètres de connexion sont dans `util/config.php`. En développement local, les valeurs par défaut du `docker-compose.yml` s'appliquent sans modification.
+
+---
+
+## Fonctionnalités
+
+StageFlow propose des interfaces différentes selon le profil de l'utilisateur connecté.
+
+Les **visiteurs anonymes** peuvent consulter les entreprises, les offres de stage et les statistiques sans créer de compte.
+
+Les **étudiants** peuvent en plus postuler aux offres, suivre leurs candidatures et gérer leur wish-list personnelle.
+
+Les **pilotes de promotion** ont accès à la gestion des entreprises et des offres, et peuvent consulter les candidatures de leurs élèves.
+
+Les **administrateurs** ont accès à l'ensemble de la plateforme, y compris la gestion des comptes pilotes et l'administration complète des utilisateurs.
+
+La liste complète des 25 fonctionnalités (SFx1 à SFx25) est détaillée dans le [cahier des charges](docs/cahier-des-charges.md).
+
+---
+
+## Architecture
+
+Le projet suit une architecture **MVC stricte**, sans framework backend ni CMS.
+
+```
+stageflow/
+├── www/
+│   ├── prod/               # Point d'entrée (index.php) + contrôleurs de pages
+│   │   └── .back/          # Logique serveur (routeur, auth, traitement)
+│   └── cdn/                # Templates HTML statiques, CSS, JS, uploads
+├── repository/             # Classes d'accès BDD (PDO, requêtes préparées)
+├── util/                   # Helpers : rendu HTML, formatage, configuration
+├── sql/
+│   ├── schema.sql          # Création des tables
+│   └── fixtures.sql        # Données de démonstration
+├── tests/                  # Tests unitaires PHPUnit
+├── docs/                   # MCD, MLD, cahier des charges
+├── docker-compose.yml
+├── sitemap.xml
+└── robots.txt
+```
+
+### Couche de données — Repositories
+
+Les interactions avec la base de données sont centralisées dans des classes Repository dédiées :
+
+| Repository | Responsabilités |
+|---|---|
+| `OfferRepository` | Recherche multicritères, pagination, détails d'une offre, statistiques |
+| `CompanyRepository` | Liste des entreprises, filtrage, évaluations, détails |
+| `UserRepository` | Authentification, gestion des profils étudiants et pilotes |
+| `ApplicationRepository` | Candidatures, wish-list, suivi par étudiant et par pilote |
+
+### Logique de recherche et filtres
+
+La recherche d'offres utilise une construction de requête dynamique avec `WHERE 1=1`, ce qui permet d'ajouter les filtres actifs sans casser la syntaxe SQL :
+
+```php
+$sql = "SELECT * FROM offre_stage WHERE 1=1";
+if ($keyword)  $sql .= " AND (titre LIKE ? OR description LIKE ? OR nom_entreprise LIKE ?)";
+if ($location) $sql .= " AND localisation = ?";
+if ($company)  $sql .= " AND id_entreprise = ?";
+if ($type)     $sql .= " AND type_contrat = ?";
+```
+
+Chaque filtre est optionnel et les valeurs sont passées via requête préparée (PDO).
+
+---
+
+## Stack technique
+
+| Couche | Technologie |
+|---|---|
+| Serveur | Apache 2.4 (via Docker) |
+| Frontend | HTML5 / CSS3 / JavaScript vanilla |
+| Backend | PHP 8.x — POO, PSR-12 |
+| Moteur de template | Twig |
+| Base de données | MySQL / MariaDB |
+| Tests | PHPUnit |
+| Conteneurisation | Docker + Docker Compose |
+| Versionning | Git — workflow Git Flow |
+
+Aucun framework frontend (React, Vue, Angular) ni backend (Laravel, Symfony) n'est utilisé, conformément aux spécifications techniques du projet.
+
+---
+
+## Tests
+
+Les tests unitaires couvrent au minimum un contrôleur complet avec PHPUnit.
+
+```bash
+# Lancer tous les tests (depuis le conteneur PHP)
+docker exec -it stageflow-php ./vendor/bin/phpunit tests/
+
+# Lancer un test spécifique
+docker exec -it stageflow-php ./vendor/bin/phpunit tests/OffreControllerTest.php
+```
+
+---
+
+## Sécurité
+
+- Mots de passe hashés avec `password_hash()` (bcrypt)
+- Sessions serveur + cookies `HttpOnly`, `Secure`, `SameSite=Strict`
+- Protection SQL via PDO et requêtes préparées exclusivement
+- Protection XSS via l'échappement automatique Twig (`{{ var }}`)
+- Tokens CSRF sur tous les formulaires
+- HTTPS en production
+
+---
+
+## Workflow Git
+
+Le projet utilise **Git Flow** :
+
+- `main` — version stable / livrée
+- `develop` — branche d'intégration continue
+- `feature/[nom]` — développement d'une fonctionnalité
+- `fix/[nom]` — correction de bug
+
+Chaque fonctionnalité passe par une Pull Request relue par un autre membre avant merge sur `develop`.
+
+---
