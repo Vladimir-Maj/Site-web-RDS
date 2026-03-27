@@ -216,3 +216,7 @@ Le projet utilise **Git Flow** :
 Chaque fonctionnalité passe par une Pull Request relue par un autre membre avant merge sur `develop`.
 
 ---
+
+## Licence
+
+Projet académique — CESI Nancy. Non destiné à un usage en production.
