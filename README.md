@@ -10,10 +10,10 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 | Nom | Rôle Scrum |
 |---|---|
-| [Clément BERGER] | Développeur |
-| [Arthur CHANTRAINE] | Développeur |
-| [Vladimir MAJCHER] | Développeur |
-| [Turker CALISKAN] | Développeur |
+| Clément BERGER | Développeur |
+| Arthur CHANTRAINE | Développeur |
+| Vladimir MAJCHER | Développeur |
+| Turker CALISKAN | Développeur |
 
 ---
 
