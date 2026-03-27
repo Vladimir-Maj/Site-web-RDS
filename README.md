@@ -39,7 +39,7 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 ### Installation
 
 ```bash
-git clone https://github.com/Vladimir-Maj/Site-web-RDS.git
+git clone git@github.com:Vladimir-Maj/Site-web-RDS.git
 cd Site-web-RDS
 docker compose up -d
 ```
