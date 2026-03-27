@@ -12,6 +12,7 @@ use App\Repository\UserRepository;
 use App\Repository\ApplicationRepository;
 use App\Controllers\AuthController;
 use App\Controllers\ApplicationController;
+use App\Controller\SiteController;
 use App\Util;
 
 // --- 1. SESSION & SECURITY ---
@@ -125,7 +126,7 @@ if (str_starts_with($path, '/profile')) {
 
 //// --- WEB ROUTES: COMPANY MANAGEMENT ---
 if (str_starts_with($path, '/app/companies')) {
-//    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
+    //    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
 
     $companyCtrl = new CompanyController(new CompanyRepository($pdo), $twig);
     $method = $_SERVER['REQUEST_METHOD'];
@@ -178,6 +179,91 @@ if ($path === '/' || $path === '/index.php') {
         http_response_code(500);
         die("Erreur système.");
     }
+    exit;
+}
+
+// --- WEB ROUTES: OFFER MANAGEMENT ---
+if (str_starts_with($path, '/app/offers')) {
+    $offerRepo = new \App\Repository\OfferRepository($pdo);
+    $offerCtrl = new \App\Controllers\OfferController($twig, $offerRepo, $pdo);
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    // 1. Search Route (The Board)
+    if ($path === '/app/offers/search') {
+        $offerCtrl->search();
+        exit;
+    }
+
+    // 2. Creation Route
+    if ($path === '/app/offers/create') {
+        if ($method === 'GET') {
+            $offerCtrl->create();
+        } else {
+            $offerCtrl->store();
+        }
+        exit;
+    }
+
+    // --- WEB ROUTES: OFFER MANAGEMENT ---
+    if (preg_match('#^/app/offers/(show|edit|delete|update)/([a-fA-F0-9]{32})$#', $path, $matches)) {
+        $action = $matches; // Action string
+        $id = $matches;     // ID string (The 32-char Hex)
+
+        switch ($action) {
+            case 'show':
+                // Pass $id (string), not $matches (array)
+                $offerCtrl->show($id);
+                break;
+
+            case 'edit':
+                $offerCtrl->edit($id);
+                break;
+
+            case 'update':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $offerCtrl->update($id);
+                }
+                break;
+
+            case 'delete':
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $offerCtrl->destroy($id);
+                }
+                break;
+        }
+        exit;
+    }
+
+    // 4. Default List View (if just /offers)
+    if ($path === '/app/offers') {
+        $offerCtrl->index();
+        exit;
+    }
+}
+
+// --- WEB ROUTES: SITE MANAGEMENT ---
+if (str_starts_with($path, '/app/sites')) {
+    $repo = new CompanyRepository($pdo);
+    $siteCtrl = new SiteController($repo);
+    $method = $_SERVER['REQUEST_METHOD'];
+
+    // Handle Save (Create/Update)
+    if ($path === '/app/sites/save' && $method === 'POST') {
+        $siteCtrl->handleSave();
+        exit;
+    }
+
+    // Handle Delete: /app/sites/delete/{hex32}
+    if (preg_match('#^/app/sites/delete/([a-fA-F0-9]{32})$#', $path, $m)) {
+        $siteCtrl->delete($m);
+        exit;
+    }
+}
+
+// --- AJAX/API ROUTES ---
+if (preg_match('#^/app/companies/([a-fA-F0-9]{32})/sites$#', $path, $m)) {
+    $repo = new CompanyRepository($pdo);
+    (new CompanyController($repo, $twig))->getSitesByCompany($m[1]);
     exit;
 }
 

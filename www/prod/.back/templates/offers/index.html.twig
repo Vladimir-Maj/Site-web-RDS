@@ -1,0 +1,61 @@
+{# .back/views/offers/index.html.twig #}
+{% extends "base.html.twig" %}
+
+{% block title %}Catalogue des Offres — StageFlow{% endblock %}
+
+{% block body %}
+    <div class="page-header">
+        <div>
+            <h1>Catalogue des Offres</h1>
+            <p>Gestion centrale des opportunités de stage et d'emploi.</p>
+        </div>
+        {% if isPrivileged %}
+            <div style="display: flex; gap: 10px;">
+                <a href="/offers/create" class="btn btn-primary">+ Publier</a>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Search Bar using your .search-bar and .form-group classes #}
+    <form method="GET" action="/offers" class="search-bar">
+        <div class="form-group">
+            <label>Mots-clés</label>
+            <input type="text" name="q" placeholder="Titre, entreprise..." value="{{ filters.keyword }}">
+        </div>
+        <div class="form-group">
+            <label>Localisation</label>
+            <input type="text" name="city" placeholder="Ville (ex: Nancy)" value="{{ filters.city }}">
+        </div>
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+        <a href="/offers" class="btn btn-ghost">Réinitialiser</a>
+    </form>
+
+    <div class="notice notice-info">
+        <div class="notice-icon">ℹ️</div>
+        <p>Il y a actuellement <strong>{{ offers|length }} offre{{ offers|length > 1 ? 's' : '' }}</strong> correspondant à vos critères.</p>
+    </div>
+
+    <div class="offer-list">
+        {% for offer in offers %}
+            {# Reusing the modern component we just updated #}
+            {{ include('components/card_template.twig', {'offer': offer}) }}
+        {% else %}
+            <div class="card" style="padding: 2rem; text-align: center;">
+                <p class="text-muted">Aucune offre ne correspond à votre recherche.</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Pagination logic integrated into your TUI style #}
+    {% if totalPages > 1 %}
+        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center;">
+            {% if page > 1 %}
+                <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
+            {% endif %}
+            <span class="text-sm">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+            {% if page < totalPages %}
+                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}
