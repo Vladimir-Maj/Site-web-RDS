@@ -140,6 +140,10 @@ if (str_starts_with($path, '/app/companies')) {
         exit;
     }
 
+    if ($path === '/app/companies') {
+        $companyCtrl->renderList();
+    }
+
     if (preg_match('#^/app/companies/([^/]+)$#', $path, $m)) {
         $id = $m[1]; // "create", "42", etc.
         if ($method === 'GET') {

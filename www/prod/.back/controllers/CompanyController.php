@@ -7,6 +7,7 @@ use App\Controllers\BaseController;
 use App\Models\CompanyModel;
 use App\Models\CompanySiteModel;
 use App\Repository\CompanyRepository;
+use App\Util;
 use Exception;
 use PharIo\Manifest\Email;
 use Twig\Environment;
@@ -208,6 +209,8 @@ class CompanyController extends BaseController
                 'id' => $id,
                 'name' => $_POST['name'] ?? '',
                 'description' => $_POST['description'] ?? null,
+                'email' => $_POST['email'] ?: 'temp@temp.com',
+                'phone' => $_POST['phone'] ?: null,
                 'siren' => $_POST['siren'] ?? '000000000', // Default if not in form
                 'sector_id' => $_POST['sector_id'] ?? '1',         // Default if not in form
                 'is_active' => ($_POST['status'] ?? 'active') === 'active',
@@ -250,25 +253,35 @@ class CompanyController extends BaseController
     }
 
     public function renderList(): void
-    {
-        // Basic mapping of GET params to a filter array
-        $filters = [
-            'name' => $_GET['name'] ?? null,
-            'sector_id' => $_GET['sector_id'] ?? null,
-            'status' => $_GET['status'] ?? null,
-            'page' => (int) ($_GET['page'] ?? 1),
-            'limit' => 10
-        ];
+{
+    // 1. Fetch the sectors for the dropdown menu
+    // Assuming you have a SectorRepository or a method in your current repo
+    $sectors = $this->repo->findAllSectors(); 
 
-        $companies = $this->repo->search($filters);
+    // 2. Mapping of GET params
+    $filters = [
+        'name' => $_GET['name'] ?? null,
+        'sector_id' => $_GET['sector_id'] ?? null,
+        'status' => $_GET['status'] ?? null,
+        'page' => (int) ($_GET['page'] ?? 1),
+        'limit' => 10
+    ];
 
-        // Note: Ensure your Twig render uses 'companies' (fixed typo)
-        echo $this->twig->render('companies/company_list.html.twig', [
-            'companies' => $companies,
-            'sectors' => $this->repo->findAllSectors(), // You'll need this for the dropdown
-            'csrf_token' => \App\Util::getCSRFToken()
-        ]);
-    }
+    $companies = $this->repo->search($filters);
+
+    echo $this->twig->render('companies/company_list.html.twig', [
+        'companies' => $companies,
+        'sectors'   => $sectors, // <--- ADD THIS LINE
+        'filters'   => $filters,
+        'csrf'      => Util::getCSRFToken(),
+        'app' => [
+            'request' => [
+                'query' => $_GET,
+                'uri' => $_SERVER['REQUEST_URI']
+            ]
+        ]
+    ]);
+}
 
     /**
      * POST /app/companies/new OR /app/companies/{id}

@@ -5,7 +5,6 @@
 {% block body %}
 <div class="page-wrapper">
     <main class="main">
-        
         <header class="page-header mt-3">
             <div class="header-flex">
                 <div>
@@ -24,7 +23,7 @@
                 <div class="form-grid-4">
                     <div class="form-group">
                         <label for="f-name">Recherche</label>
-                        <input type="text" name="name" id="f-name" value="{{ app.request.query.get('name') }}" placeholder="Nom, SIREN...">
+                        <input type="text" name="name" id="f-name" value="{{ filters.name|default('') }}" placeholder="Nom, SIREN...">
                     </div>
                     
                     <div class="form-group">
@@ -32,7 +31,8 @@
                         <select name="sector_id" id="f-sector">
                             <option value="">Tous les secteurs</option>
                             {% for sector in sectors %}
-                                <option value="{{ sector.id }}" {{ app.request.query.get('sector_id') == sector.id ? 'selected' : '' }}>
+                                {# Fixed the syntax error here #}
+                                <option value="{{ sector.id }}" {{ filters.sector_id|default('') == sector.id ? 'selected' : '' }}>
                                     {{ sector.name }}
                                 </option>
                             {% endfor %}
@@ -43,8 +43,9 @@
                         <label for="f-status">Statut</label>
                         <select name="status" id="f-status">
                             <option value="">Tous</option>
-                            <option value="active" {{ app.request.query.get('status') == 'active' ? 'selected' : '' }}>Actif</option>
-                            <option value="pending" {{ app.request.query.get('status') == 'pending' ? 'selected' : '' }}>En attente</option>
+                            {# Replaced app.request.query.get with filters variable #}
+                            <option value="active" {{ filters.status|default('') == 'active' ? 'selected' : '' }}>Actif</option>
+                            <option value="pending" {{ filters.status|default('') == 'pending' ? 'selected' : '' }}>En attente</option>
                         </select>
                     </div>
 
@@ -74,7 +75,7 @@
                             <tr>
                                 <td>
                                     <div class="company-cell">
-                                        {% if company.logo_url %}
+                                        {% if company.logo_url is defined and company.logo_url %}
                                             <img src="{{ company.logo_url }}" alt="" class="avatar-sm">
                                         {% endif %}
                                         <div>
@@ -103,19 +104,20 @@
                 </table>
             </div>
 
-            {# --- Pagination (Simulée pour 10 items/page) --- #}
-            {% set currentPage = app.request.query.get('page', 1) %}
+            {# --- Pagination --- #}
+            {% set currentPage = filters.page|default(1) %}
             <div class="card-footer pagination-wrapper">
                 <p class="text-muted small">Affichage de {{ companies|length }} résultats</p>
                 <nav class="pagination">
                     {% if currentPage > 1 %}
-                        <a href="?{{ app.request.query.all|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-sm btn-ghost">Précédent</a>
+                        {# We use app.request.query as an array and the 'merge' filter #}
+                        <a href="?{{ app.request.query|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-sm btn-ghost">Précédent</a>
                     {% endif %}
                     
                     <span class="page-number">Page {{ currentPage }}</span>
 
                     {% if companies|length == 10 %}
-                        <a href="?{{ app.request.query.all|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-sm btn-ghost">Suivant</a>
+                        <a href="?{{ app.request.query|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-sm btn-ghost">Suivant</a>
                     {% endif %}
                 </nav>
             </div>
