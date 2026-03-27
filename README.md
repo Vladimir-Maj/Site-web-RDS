@@ -1,6 +1,6 @@
-# 🚀 StageFlow - Plateforme de Gestion de Stages
+# StageFlow
 
-Projet de gestion d'offres de stage avec architecture découplée (Front-end, Back-end et CDN).
+> Plateforme web de recherche et gestion de stages — CESI Nancy, CPI 2ème année (2025–2026)
 
 ## 🛠️ Manuel d'Installation
 
