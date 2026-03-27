@@ -6,6 +6,17 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 ---
 
+## Équipe
+
+| Nom | Rôle Scrum |
+|---|---|
+| [Clément BERGER] | Développeur |
+| [Arthur CHENTRAINE] | Développeur |
+| [VLADIMIR ] | Développeur |
+| [Turker CALISKAN] | Développeur |
+
+---
+
 ## Démo
 
 > 🔗 [prod.localhost:8080](http://prod.localhost:8080) — accessible en local après installation
