@@ -6,19 +6,24 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 ---
 
-## 🛠️ Manuel d'Installation
+## Démo
 
-1. Lancer l'infrastructure Docker :
+> 🔗 [prod.localhost:8080](http://prod.localhost:8080) — accessible en local après installation
 
-```bash
-docker compose up -d
+| Identifiant de test | Rôle |
+|---|---|
+| `admin@stageflow.fr` / `Admin1234!` | Administrateur |
+| `pilote@stageflow.fr` / `Pilote1234!` | Pilote de promotion |
+| `etudiant@stageflow.fr` / `Etudiant1234!` | Étudiant |
 
-```
+---
 
-1. Accès aux environnements :
+## Démarrage rapide
 
-* **Production (Vhost PROD)** : [http://prod.localhost:8080](https://www.google.com/search?q=http://prod.localhost:8080)
-* **Assets & Médias (Vhost CDN)** : [http://cdn.localhost:8080](https://www.google.com/search?q=http://cdn.localhost:8080)
+### Prérequis
+
+- Docker Desktop (ou Docker + Docker Compose)
+- Git
 
 ## 🏗️ Architecture du Projet
 
