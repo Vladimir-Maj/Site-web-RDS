@@ -2,6 +2,10 @@
 
 > Plateforme web de recherche et gestion de stages — CESI Nancy, CPI 2ème année (2025–2026)
 
+StageFlow centralise les offres de stages, les entreprises partenaires et les candidatures étudiantes dans une interface unique, adaptée à chaque profil utilisateur (administrateur, pilote de promotion, étudiant, visiteur anonyme).
+
+---
+
 ## 🛠️ Manuel d'Installation
 
 1. Lancer l'infrastructure Docker :
