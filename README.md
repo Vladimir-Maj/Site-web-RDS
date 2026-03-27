@@ -30,6 +30,7 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 ---
 
 ## Démarrage rapide
+
 ### Prérequis
 
 - Docker Desktop (ou Docker + Docker Compose)
@@ -39,7 +40,7 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 ```bash
 git clone https://github.com/Vladimir-Maj/Site-web-RDS.git
-cd stageflow
+cd Site-web-RDS
 docker compose up -d
 ```
 
@@ -52,9 +53,18 @@ C'est tout. Docker monte automatiquement Apache, PHP et MySQL avec la base de do
 | Application (Vhost PROD) | http://prod.localhost:8080 |
 | Assets & Médias (Vhost CDN) | http://cdn.localhost:8080 |
 
-### Configuration de la base de données
+### Scripts utilitaires
 
-Les paramètres de connexion sont dans `util/config.php`. En développement local, les valeurs par défaut du `docker-compose.yml` s'appliquent sans modification.
+Des scripts bash sont disponibles dans le dossier `scripts/` pour faciliter la gestion du projet :
+
+```bash
+scripts/chmod_all_scripts.sh   # Donne les droits d'exécution à tous les scripts
+scripts/clean-tree.sh          # Nettoie l'arborescence
+scripts/db-logs.sh             # Affiche les logs MySQL
+scripts/server-logs.sh         # Affiche les logs Apache
+scripts/units.sh               # Lance les tests unitaires
+scripts/wipe_volumes_clean.sh  # Réinitialise les volumes Docker (BDD comprise)
+```
 
 ---
 
@@ -79,21 +89,50 @@ La liste complète des 25 fonctionnalités (SFx1 à SFx25) est détaillée dans 
 Le projet suit une architecture **MVC stricte**, sans framework backend ni CMS.
 
 ```
-stageflow/
+Site-web-RDS/
+├── apache/
+│   ├── entrypoint.sh          # Script de démarrage Apache
+│   └── vhosts.conf            # Configuration des vhosts (prod + cdn)
+├── deprecated/                # Anciennes pages (non actives)
+│   ├── account/
+│   │   ├── login.php
+│   │   ├── logout.php
+│   │   ├── profile.php
+│   │   ├── register.php
+│   │   └── upload_cv.php
+│   └── offers/
+│       ├── offer_delete.php
+│       ├── offer_detail.php
+│       ├── offer_editor.php
+│       └── offer_search.php
+├── mysql/
+│   └── init/
+│       └── 01-create-tables.sql   # Schéma de la base de données
+├── scripts/
+│   ├── chmod_all_scripts.sh
+│   ├── clean-tree.sh
+│   ├── db-logs.sh
+│   ├── server-logs.sh
+│   ├── units.sh
+│   └── wipe_volumes_clean.sh
 ├── www/
-│   ├── prod/               # Point d'entrée (index.php) + contrôleurs de pages
-│   │   └── .back/          # Logique serveur (routeur, auth, traitement)
-│   └── cdn/                # Templates HTML statiques, CSS, JS, uploads
-├── repository/             # Classes d'accès BDD (PDO, requêtes préparées)
-├── util/                   # Helpers : rendu HTML, formatage, configuration
-├── sql/
-│   ├── schema.sql          # Création des tables
-│   └── fixtures.sql        # Données de démonstration
-├── tests/                  # Tests unitaires PHPUnit
-├── docs/                   # MCD, MLD, cahier des charges
-├── docker-compose.yml
-├── sitemap.xml
-└── robots.txt
+│   ├── cdn/
+│   │   ├── assets/            # Images, fonts et autres médias
+│   │   └── styles.css         # Feuille de style principale
+│   └── prod/
+│       ├── .back/             # Logique serveur (routeur, auth, contrôleurs)
+│       ├── tests/             # Tests unitaires PHPUnit
+│       ├── .htaccess          # Réécriture d'URL (mod_rewrite)
+│       ├── composer.json
+│       ├── composer.lock
+│       └── index.php          # Point d'entrée unique de l'application
+├── .gitignore
+├── CLAUDE.md
+├── Dockerfile
+├── docker-compose.yaml
+├── logger.sh
+├── test.json
+└── README.md
 ```
 
 ### Couche de données — Repositories
@@ -145,11 +184,11 @@ Aucun framework frontend (React, Vue, Angular) ni backend (Laravel, Symfony) n'e
 Les tests unitaires couvrent au minimum un contrôleur complet avec PHPUnit.
 
 ```bash
-# Lancer tous les tests (depuis le conteneur PHP)
-docker exec -it stageflow-php ./vendor/bin/phpunit tests/
+# Via le script dédié
+bash scripts/units.sh
 
-# Lancer un test spécifique
-docker exec -it stageflow-php ./vendor/bin/phpunit tests/OffreControllerTest.php
+# Ou directement depuis le conteneur PHP
+docker exec -it stageflow-php ./vendor/bin/phpunit www/prod/tests/
 ```
 
 ---
