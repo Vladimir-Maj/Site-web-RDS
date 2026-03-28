@@ -58,7 +58,9 @@ class OfferController extends BaseController
             'description' => $_POST['description'] ?? '',
             'hourly_rate' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
             'is_active' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
-            // Add other fields as necessary to match your Repository::update signature
+            'start_date' => $_POST['start_date'] ?? null,
+            'duration_weeks' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
+            'site_id' => $_POST['site_id'] ?? '', // CRITICAL: Must be passed to Repository
         ];
 
         if ($this->offerRepository->update($id, $data)) {
@@ -155,12 +157,8 @@ class OfferController extends BaseController
             'offer' => $offer
         ]);
     }
-
     /**
-     * GET /app/offers/create (The Form)
-     */
-    /**
-     * GET /app/offers/create (The Form)
+     * GET /app/offers/new (The Form)
      */
     public function create(): void
     {
@@ -175,7 +173,7 @@ class OfferController extends BaseController
             'companies' => $companies,
             'sites' => [],
             // Pass a new empty model instead of null
-            'offer' => new OfferModel() 
+            'offer' => new OfferModel()
         ]);
     }
 

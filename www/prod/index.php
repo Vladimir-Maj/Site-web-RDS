@@ -195,7 +195,7 @@ if (str_starts_with($path, '/app/offers')) {
     }
 
     // 2. Creation Route
-    if ($path === '/app/offers/create') {
+    if ($path === '/app/offers/new') {
         if ($method === 'GET') {
             $offerCtrl->create();
         } else {

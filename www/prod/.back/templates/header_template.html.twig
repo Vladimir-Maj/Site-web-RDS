@@ -4,11 +4,11 @@
 			<span></span>SF Prosit</a>
 
 		<nav>
-			<a href="/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
+			<a href="/app/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
 
 			{# Only show 'Publier' for admins or pilots #}
 			{% if user and (user.role == 'admin' or user.role == 'pilote') %}
-				<a href="/offers/publish" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
+				<a href="/app/offers/new" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
 			{% endif %}
 
 			{% if user %}
