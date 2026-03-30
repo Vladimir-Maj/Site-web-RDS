@@ -1,93 +1,85 @@
-{# .back/views/offers/offer_editor.html.twig #}
 {% extends "base.html.twig" %}
 
-{% block title %}{{ mode == 'edit' ? 'Modifier' : 'Publier' }} une offre — StageFlow{% endblock %}
+{% block title %}Publier une offre — SF Prosit{% endblock %}
+
+{% block head %}
+<style>
+    .form-section { border-top: 1px solid #eee; margin-top: 20px; padding-top: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .label-group { font-weight: bold; color: #2563eb; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 12px; display: block; letter-spacing: 0.05em; }
+    .error-notice { color: #d9534f; background: #fef2f2; border: 1px solid #fecaca; padding: 1rem; border-radius: 8px; margin-bottom: 1.5rem; }
+    @media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
 
 {% block body %}
-<div class="page-header">
-    <div>
-        <h1>{{ mode == 'edit' ? 'Édition de l\'offre' : 'Nouvelle Publication' }}</h1>
-        <p>Diffusez vos opportunités de stage au sein du réseau CESI.</p>
-    </div>
+<div class="page-header" style="margin-bottom: 2rem; padding-top: 2rem;">
+    <h1>Publier une offre</h1>
+    <p>Remplissez les détails pour attirer les meilleurs candidats.</p>
 </div>
 
-{# Use your global .notice classes for errors #}
 {% if error %}
-    <div class="notice notice-error">
-        <div class="notice-icon">⚠️</div>
-        <p><strong>Erreur :</strong> {{ error }}</p>
+    <div class="error-notice">
+        <strong>Erreur :</strong> {{ error }}
     </div>
 {% endif %}
 
-<div class="company-form card">
-    <form action="{{ mode == 'edit' ? '/offers/update/' ~ offer.id : '/offers/store' }}" method="POST" class="card-body">
-        
-        <div class="info-section">
-            <span class="section-label">Poste & Entreprise</span>
-            <div class="form-grid">
-                <div class="form-group span-full">
-                    <label for="title">Titre de l'offre</label>
-                    <input type="text" name="title" id="title" value="{{ offer.title }}" placeholder="ex: Développeur PHP Fullstack (H/F)" required>
-                </div>
+<form action="" method="POST" class="card" style="padding: 30px;">
 
-                <div class="form-group">
-                    <label for="site_id">Site d'affectation</label>
-                    <select name="site_id" id="site_id" required>
-                        <option value="">— Choisir un site —</option>
-                        {% for site in sites %}
-                            <option value="{{ site.id }}" {{ offer.site_id == site.id ? 'selected' : '' }}>
-                                {{ site.company_name }} ({{ site.city }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
+    <span class="label-group">Poste & Entreprise</span>
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label for="title">Titre de l'offre</label>
+        <input type="text" name="title" id="title" placeholder="ex: Développeur PHP Fullstack" required style="width: 100%;"/>
+    </div>
 
-                <div class="form-group">
-                    <label for="hourly_rate">Gratification (€/h)</label>
-                    <input type="number" step="0.01" name="hourly_rate" id="hourly_rate" value="{{ offer.hourly_rate }}" placeholder="ex: 4.35">
-                </div>
+    <div class="grid-2" style="margin-bottom: 1.5rem;">
+        <div class="form-group">
+            <label for="company_id">Entreprise</label>
+            <select name="company_id" id="company_id" required style="width: 100%;">
+                <option value="">— Choisir —</option>
+                {% for company in companies %}
+                    <option value="{{ company.id }}">{{ company.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="location">Ville / Lieu</label>
+            <input type="text" name="location" id="location" placeholder="ex: Nancy (54)" required style="width: 100%;"/>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <span class="label-group">Détails & Compétences</span>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label for="description">Description</label>
+            <textarea name="description" id="description" rows="5" placeholder="Missions, environnement technique..." style="width: 100%; font-family: inherit;"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="required_skills">Compétences (séparées par des virgules)</label>
+            <input type="text" name="required_skills" id="required_skills" placeholder="PHP, Symfony, Docker..." style="width: 100%;"/>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <span class="label-group">Publication</span>
+        <div class="grid-2">
+            <div class="form-group">
+                <label for="state">Statut</label>
+                <select name="state" id="state" style="width: 100%;">
+                    <option value="draft">Brouillon (Privé)</option>
+                    <option value="open">Publié (Public)</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="expires_at">Expire le (Optionnel)</label>
+                <input type="date" name="expires_at" id="expires_at" style="width: 100%;">
             </div>
         </div>
+    </div>
 
-        <div class="info-section">
-            <span class="section-label">Missions & Compétences</span>
-            <div class="form-grid">
-                <div class="form-group span-full">
-                    <label for="description">Description détaillée</label>
-                    <textarea name="description" id="description" rows="8" placeholder="Décrivez les missions, l'équipe et l'environnement technique...">{{ offer.description }}</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="start_date">Date de début prévue</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ offer.start_date }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="duration_weeks">Durée (en semaines)</label>
-                    <input type="number" name="duration_weeks" id="duration_weeks" value="{{ offer.duration_weeks }}" placeholder="ex: 16">
-                </div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <span class="section-label">Paramètres de publication</span>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="is_active">Visibilité</label>
-                    <select name="is_active" id="is_active">
-                        <option value="1" {{ offer.is_active ? 'selected' : '' }}>Publiée (Visible par tous)</option>
-                        <option value="0" {{ not offer.is_active ? 'selected' : '' }}>Brouillon (Masquée)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <a href="/offers" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">
-                {{ mode == 'edit' ? 'Mettre à jour' : 'Publier l\'offre' }}
-            </button>
-        </div>
-    </form>
-</div>
+    <div style="margin-top: 30px; display: flex; gap: 15px; justify-content: flex-end;">
+        <a href="/offers" class="btn btn-ghost">Annuler</a>
+        <button type="submit" class="btn btn-primary" style="padding: 12px 40px; cursor: pointer;">Enregistrer l'offre</button>
+    </div>
+</form>
 {% endblock %}

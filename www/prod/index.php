@@ -8,11 +8,13 @@ use App\Controller\CompanyController;
 use App\Models\ApplicationModel;
 use App\Models\RoleEnum;
 use App\Repository\CompanyRepository;
+use App\Repository\OfferRepository;
 use App\Repository\UserRepository;
 use App\Repository\ApplicationRepository;
 use App\Controllers\AuthController;
 use App\Controllers\ApplicationController;
-use App\Controller\SiteController;
+use App\Controllers\DashboardController;
+use App\Controllers\OfferController;
 use App\Util;
 
 // --- 1. SESSION & SECURITY ---
@@ -124,12 +126,58 @@ if (str_starts_with($path, '/profile')) {
     exit;
 }
 
+// ROUTES PRIVÉES (Dashboard Admin/Pilote)
+if ($path === '/admin/dashboard' || $path === '/pilote/dashboard') {
+    $ensureAuth();
+    (new DashboardController($twig))->index();
+    exit;
+}
+
+if ($path === '/dashboard/pilotes') {
+    $ensureAuth();
+    (new DashboardController($twig))->pilots();
+    exit;
+}
+
+if ($path === '/dashboard/etudiants') {
+    $ensureAuth();
+    (new DashboardController($twig))->students();
+    exit;
+}
+
+// ROUTES OFFRES (migrées)
+if (str_starts_with($path, '/offers')) {
+    $offerCtrl = new OfferController(new OfferRepository($pdo), new CompanyRepository($pdo), $twig);
+
+    if ($path === '/offers') {
+        $offerCtrl->index();
+        exit;
+    }
+
+    if ($path === '/offers/publish') {
+        $ensureAuth();
+        $offerCtrl->publish();
+        exit;
+    }
+
+    if (preg_match('#^/offers/([a-fA-F0-9]{16,64})$#', $path, $m)) {
+        $offerCtrl->show($m[1]);
+        exit;
+    }
+}
+
 //// --- WEB ROUTES: COMPANY MANAGEMENT ---
 if (str_starts_with($path, '/app/companies')) {
-    //    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
+//    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
 
     $companyCtrl = new CompanyController(new CompanyRepository($pdo), $twig);
     $method = $_SERVER['REQUEST_METHOD'];
+
+    // 0. Route liste
+    if ($path === '/app/companies' && $method === 'GET') {
+        $companyCtrl->renderList();
+        exit;
+    }
 
     // 1. Route spécifique : Création
     if ($path === '/app/companies/new') {
@@ -139,10 +187,6 @@ if (str_starts_with($path, '/app/companies')) {
             $companyCtrl->handleFormSave('new');
         }
         exit;
-    }
-
-    if ($path === '/app/companies') {
-        $companyCtrl->renderList();
     }
 
     if (preg_match('#^/app/companies/([^/]+)$#', $path, $m)) {
@@ -179,91 +223,6 @@ if ($path === '/' || $path === '/index.php') {
         http_response_code(500);
         die("Erreur système.");
     }
-    exit;
-}
-
-// --- WEB ROUTES: OFFER MANAGEMENT ---
-if (str_starts_with($path, '/app/offers')) {
-    $offerRepo = new \App\Repository\OfferRepository($pdo);
-    $offerCtrl = new \App\Controllers\OfferController($twig, $offerRepo, $pdo);
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    // 1. Search Route (The Board)
-    if ($path === '/app/offers/search') {
-        $offerCtrl->search();
-        exit;
-    }
-
-    // 2. Creation Route
-    if ($path === '/app/offers/create') {
-        if ($method === 'GET') {
-            $offerCtrl->create();
-        } else {
-            $offerCtrl->store();
-        }
-        exit;
-    }
-
-    // --- WEB ROUTES: OFFER MANAGEMENT ---
-    if (preg_match('#^/app/offers/(show|edit|delete|update)/([a-fA-F0-9]{32})$#', $path, $matches)) {
-        $action = $matches; // Action string
-        $id = $matches;     // ID string (The 32-char Hex)
-
-        switch ($action) {
-            case 'show':
-                // Pass $id (string), not $matches (array)
-                $offerCtrl->show($id);
-                break;
-
-            case 'edit':
-                $offerCtrl->edit($id);
-                break;
-
-            case 'update':
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $offerCtrl->update($id);
-                }
-                break;
-
-            case 'delete':
-                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-                    $offerCtrl->destroy($id);
-                }
-                break;
-        }
-        exit;
-    }
-
-    // 4. Default List View (if just /offers)
-    if ($path === '/app/offers') {
-        $offerCtrl->index();
-        exit;
-    }
-}
-
-// --- WEB ROUTES: SITE MANAGEMENT ---
-if (str_starts_with($path, '/app/sites')) {
-    $repo = new CompanyRepository($pdo);
-    $siteCtrl = new SiteController($repo);
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    // Handle Save (Create/Update)
-    if ($path === '/app/sites/save' && $method === 'POST') {
-        $siteCtrl->handleSave();
-        exit;
-    }
-
-    // Handle Delete: /app/sites/delete/{hex32}
-    if (preg_match('#^/app/sites/delete/([a-fA-F0-9]{32})$#', $path, $m)) {
-        $siteCtrl->delete($m);
-        exit;
-    }
-}
-
-// --- AJAX/API ROUTES ---
-if (preg_match('#^/app/companies/([a-fA-F0-9]{32})/sites$#', $path, $m)) {
-    $repo = new CompanyRepository($pdo);
-    (new CompanyController($repo, $twig))->getSitesByCompany($m[1]);
     exit;
 }
 

@@ -1,0 +1,84 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Dashboard — SF Prosit{% endblock %}
+
+{% block head %}
+<style>
+    .dashboard-layout {
+        display: grid;
+        grid-template-columns: 260px 1fr;
+        gap: 1.25rem;
+        margin-top: 1.5rem;
+    }
+
+    .dashboard-sidebar {
+        border: 1px solid var(--clr-border);
+        background: var(--clr-surface);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+        height: fit-content;
+        position: sticky;
+        top: 1rem;
+    }
+
+    .dashboard-sidebar h3 {
+        margin: 0 0 0.9rem;
+        font-size: 0.9rem;
+        color: var(--clr-text-muted);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .dashboard-nav {
+        display: grid;
+        gap: 0.6rem;
+    }
+
+    .dashboard-nav .btn {
+        display: block;
+        width: 100%;
+        text-align: left;
+    }
+
+    .dashboard-content {
+        border: 1px solid var(--clr-border);
+        background: var(--clr-surface);
+        border-radius: var(--border-radius);
+        padding: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+        .dashboard-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .dashboard-sidebar {
+            position: static;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="page-header" style="padding-top: 2rem;">
+    <h1>Dashboard Admin/Pilote</h1>
+    <p>Acces rapide aux pages de gestion.</p>
+</div>
+
+<div class="dashboard-layout">
+    <aside class="dashboard-sidebar">
+        <h3>Navigation Dashboard</h3>
+        <div class="dashboard-nav">
+            <a class="btn btn-primary" href="/app/companies">Gestion des entreprises</a>
+            <a class="btn btn-primary" href="/offers">Gestion des offres</a>
+            <a class="btn btn-primary" href="/dashboard/pilotes">Gestion des pilotes</a>
+            <a class="btn btn-primary" href="/dashboard/etudiants">Gestion des etudiants</a>
+        </div>
+    </aside>
+
+    <section class="dashboard-content">
+        <h2 style="margin-top: 0;">Bienvenue {{ user.first_name|default('') }}</h2>
+        <p class="text-muted">Utilisez la barre laterale pour ouvrir les modules de gestion.</p>
+    </section>
+</div>
+{% endblock %}
