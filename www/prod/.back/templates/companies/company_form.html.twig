@@ -56,7 +56,7 @@
                     <div class="form-grid">
                         <div class="form-group">
                             <label for="email">Email de contact <span class="text-muted">(optionnel)</span></label>
-                            <input type="email" name="email" value="{{ company.email.asString()|default('') }}">
+                            <input type="email" name="email" id="email" value="{{ company.email|default('') }}" placeholder="contact@entreprise.fr">
                         </div>
                         <div class="form-group">
                             <label for="phone">Téléphone <span class="text-muted">(optionnel)</span></label>

@@ -5,24 +5,42 @@ namespace App\Models;
 class OfferModel
 {
     public $id;
-    public $title;
-    public $description;
-    public $location;
+    public $company_id;
     public $company_name;
-    
-    // --- ADD THESE TO FIX THE TWIG ERRORS ---
-    public $hourly_rate;    // Matches your DB column and Twig variable
-    public $start_date;     // For the editor form
-    public $duration_weeks; // For the editor form
-    public $is_active;      // For the visibility toggle
-    public $site_id;        // To handle the relationship in the form
-    // ----------------------------------------
-
-    public $required_skills;
-    public $published_at;
+    public $title;
+    public $position;
+    public $location;
+    public $description;
+    public $state;
+    public $salary_min;
+    public $salary_max;
+    public $salary_currency; // Added
+    public $created_at;       // Added
+    public $published_at;     // Added
+    public $job_type;
+    public $remote_type;      // Added
+    public $required_skills;  // FIXED: Was missing, causing your error
+    public $application_deadline; // Added
+    public $experience_level; // Added
+    public $education_level;  // Added
     public $views_count;
+    public $company_bio;
 
-    // ... Keep your existing JOB_TYPES and REMOTE_TYPES constants ...
+    // Strict list of Job Types
+    public const JOB_TYPES = [
+        'full-time',
+        'part-time',
+        'contract',
+        'internship',
+        'apprenticeship'
+    ];
+
+    // Strict list of Remote Types
+    public const REMOTE_TYPES = [
+        'office',
+        'hybrid',
+        'remote'
+    ];
 
     /**
      * Transforme un tableau associatif SQL en objet Offer
@@ -31,8 +49,6 @@ class OfferModel
     {
         $offer = new self();
         foreach ($data as $key => $value) {
-            // This is why it was failing: property_exists was returning false 
-            // because hourly_rate wasn't defined in this class!
             if (property_exists($offer, $key)) {
                 $offer->$key = $value;
             }
@@ -41,17 +57,31 @@ class OfferModel
     }
 
     /**
-     * Helper to avoid "null" crashes in the creation form
+     * Exemple de logique métier dans le Model
      */
-    public function __construct() {
-        // Initialize defaults if needed
-        $this->is_active = 1;
-        $this->hourly_rate = 0.0;
+    public function isHighSalary(): bool
+    {
+        return $this->salary_max > 50000;
+    }
+
+    public function getDisplayTitle(): string
+    {
+        return $this->position ?? $this->title ?? 'Sans titre';
     }
 
     public function getSkillsArray(): array
     {
-        if (empty($this->required_skills)) return [];
+        // Now $this->required_skills is defined!
+        if (empty($this->required_skills))
+            return [];
         return array_map('trim', explode(',', $this->required_skills));
+    }
+
+    public function formatSalary(): string
+    {
+        if (!$this->salary_min && !$this->salary_max)
+            return "N/C";
+        $currency = $this->salary_currency ?? 'EUR';
+        return "{$this->salary_min} - {$this->salary_max} {$currency}";
     }
 }

@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Models\RoleEnum;
 use Twig\Environment;
 use PharIo\Manifest\Email;
-use App\Util;
 
 abstract class BaseController
 {
@@ -68,12 +66,12 @@ abstract class BaseController
 
     protected function isSuperUser(): bool
     {
-        return Util::getRole() === RoleEnum::Admin;
+        return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
     }
 
     protected function isPilote(): bool
     {
-        return Util::getRole() === RoleEnum::Pilote;
+        return isset($_SESSION['role']) && $_SESSION['role'] === 'pilote';
     }
 
     protected function isPrivileged(): bool

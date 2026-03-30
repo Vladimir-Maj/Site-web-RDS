@@ -13,6 +13,9 @@
 
 			{% if user %}
 				{# If user is logged in #}
+				{% if user.role == 'admin' or user.role == 'pilote' %}
+					<a href="{{ user.role == 'admin' ? '/admin/dashboard' : '/pilote/dashboard' }}" class="{{ currentPage|default('') == 'dashboard' ? 'active' : '' }}">Dashboard</a>
+				{% endif %}
 				<a
 					href="/profile" class="{{ currentPage|default('') == 'profile' ? 'active' : '' }}" title="Mon Compte">
 					{# Use the 'default' filter to provide a fallback if first_name is missing #}
