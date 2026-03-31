@@ -282,9 +282,14 @@ class CompanyRepository
 
         try {
             $this->pdo->beginTransaction();
-
-            // On supprime d'abord les sites pour respecter les FK
-            $this->deleteSitesByCompany($id);
+            $siteRepo = new CompanySiteRepository($this->pdo);
+            /** @var CompanySiteModel[] $sites */
+            $sites = $siteRepo->getSitesByCompany($id);
+            //on evite les orphelins en supprimant les sites liés avant de supprimer l'entreprise
+            // (((touts les orphelins doivent être supprimés)))
+            foreach ($sites as $site) {
+                $siteRepo->deleteSiteById($site->id);
+            }
 
             $stmt = $this->pdo->prepare("DELETE FROM company WHERE id = UNHEX(?)");
             $res = $stmt->execute([$id]);
@@ -300,22 +305,9 @@ class CompanyRepository
 
     public function deleteSitesByCompany(string $companyId): bool
     {
-        if (!$this->isValidHex($companyId))
-            return false;
-        $stmt = $this->pdo->prepare("DELETE FROM company_site WHERE company_id = UNHEX(?)");
-        return $stmt->execute([$companyId]);
-    }
 
-    /**
-     * Supprime un site spécifique par son ID
-     */
-    public function deleteSiteById(string $siteId): bool
-    {
-        if (!$this->isValidHex($siteId)) {
-            return false;
-        }
+        $siteRepo = new CompanySiteRepository($this->pdo);
+        return $siteRepo->deleteSitesByCompany($companyId);
 
-        $stmt = $this->pdo->prepare("DELETE FROM company_site WHERE id = UNHEX(?)");
-        return $stmt->execute([$siteId]);
     }
 }

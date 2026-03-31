@@ -1,17 +1,20 @@
 {# .back/views/offers/offer_editor.html.twig #}
 {% extends "base.html.twig" %}
 
-{% block title %}{{ mode == 'edit' ? 'Modifier' : 'Publier' }} une offre — StageFlow{% endblock %}
+{% block title %}
+	{{ mode == 'edit' ? 'Modifier' : 'Publier' }}
+	une offre — StageFlow
+{% endblock %}
 
 {% block body %}
 <div class="page-header">
-    <div>
-        <h1>{{ mode == 'edit' ? 'Édition de l\'offre' : 'Nouvelle Publication' }}</h1>
+	<div>
+		<h1>{{ mode == 'edit' ? 'Édition de l\'offre' : 'Nouvelle Publication' }}</h1>
         <p>Diffusez vos opportunités de stage au sein du réseau CESI.</p>
     </div>
 </div>
 
-{# Use your global .notice classes for errors #}
+{# Global notice classes for errors #}
 {% if error %}
     <div class="notice notice-error">
         <div class="notice-icon">⚠️</div>
@@ -20,8 +23,11 @@
 {% endif %}
 
 <div class="company-form card">
-    <form action="{{ mode == 'edit' ? '/offers/update/' ~ offer.id : '/offers/store' }}" method="POST" class="card-body">
+    <form action="{{ mode == 'edit' ? '/app/offers/update/' ~ offer.id : '/app/offers/new' }}" method="POST" class="card-body">
         
+        {# CSRF Security #}
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
         <div class="info-section">
             <span class="section-label">Poste & Entreprise</span>
             <div class="form-grid">
@@ -30,64 +36,127 @@
                     <input type="text" name="title" id="title" value="{{ offer.title }}" placeholder="ex: Développeur PHP Fullstack (H/F)" required>
                 </div>
 
+                {# 1. Company Selection (Triggers AJAX) #}
                 <div class="form-group">
-                    <label for="site_id">Site d'affectation</label>
-                    <select name="site_id" id="site_id" required>
-                        <option value="">— Choisir un site —</option>
-                        {% for site in sites %}
-                            <option value="{{ site.id }}" {{ offer.site_id == site.id ? 'selected' : '' }}>
-                                {{ site.company_name }} ({{ site.city }})
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="hourly_rate">Gratification (€/h)</label>
-                    <input type="number" step="0.01" name="hourly_rate" id="hourly_rate" value="{{ offer.hourly_rate }}" placeholder="ex: 4.35">
-                </div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <span class="section-label">Missions & Compétences</span>
-            <div class="form-grid">
-                <div class="form-group span-full">
-                    <label for="description">Description détaillée</label>
-                    <textarea name="description" id="description" rows="8" placeholder="Décrivez les missions, l'équipe et l'environnement technique...">{{ offer.description }}</textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label for="start_date">Date de début prévue</label>
-                    <input type="date" name="start_date" id="start_date" value="{{ offer.start_date }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="duration_weeks">Durée (en semaines)</label>
-                    <input type="number" name="duration_weeks" id="duration_weeks" value="{{ offer.duration_weeks }}" placeholder="ex: 16">
-                </div>
-            </div>
-        </div>
-
-        <div class="info-section">
-            <span class="section-label">Paramètres de publication</span>
-            <div class="form-grid">
-                <div class="form-group">
-                    <label for="is_active">Visibilité</label>
-                    <select name="is_active" id="is_active">
-                        <option value="1" {{ offer.is_active ? 'selected' : '' }}>Publiée (Visible par tous)</option>
-                        <option value="0" {{ not offer.is_active ? 'selected' : '' }}>Brouillon (Masquée)</option>
-                    </select>
-                </div>
-            </div>
-        </div>
-
-        <div class="form-actions">
-            <a href="/offers" class="btn btn-ghost">Annuler</a>
-            <button type="submit" class="btn btn-primary">
-                {{ mode == 'edit' ? 'Mettre à jour' : 'Publier l\'offre' }}
+                    <label for="company_id">Entreprise</label>
+                    <select name="company_id" id="company_id" required>
+                        <option value="">— Choisir une entreprise —</option>
+                        {% for company in companies %}
+                            <option value="{{ company.id }}" {{ (offer.company_id == company.id) ? 'selected' : '' }}>
+			{{ company.name }}
+		</option>
+	{% endfor %}
+</select></div>{# 2. Dependent Site Selection #}<div class="form-group">
+<label for="site_id">Site d'affectation</label>
+<select name="site_id" id="site_id" required {{ mode != 'edit' ? 'disabled' : '' }}>
+	{% if mode == 'edit' %}
+		{% for site in sites %}
+			<option value="{{ site.id }}" {{ offer.site_id == site.id ? 'selected' : '' }}>
+				{{ site.city }}
+				({{ site.address }})
+			</option>
+		{% endfor %}
+	{% else %}
+		<option value="">— Sélectionnez d'abord une entreprise —</option>
+	{% endif %}
+</select></div><div class="form-group">
+<label for="hourly_rate">Gratification (€/h)</label>
+<input type="number" step="0.01" name="hourly_rate" id="hourly_rate" value="{{ offer.hourly_rate }}" placeholder="ex: 4.35"></div></div></div><div class="info-section"><span class="section-label">Missions & Compétences</span><div class="form-grid"><div class="form-group span-full">
+<label for="description">Description détaillée</label>
+<textarea name="description" id="description" rows="8" placeholder="Décrivez les missions, l'équipe et l'environnement technique...">{{ offer.description }}</textarea></div><div class="form-group">
+<label for="start_date">Date de début prévue</label>
+<input type="date" name="start_date" id="start_date" value="{{ offer.start_date }}"></div><div class="form-group">
+<label for="duration_weeks">Durée (en semaines)</label>
+<input type="number" name="duration_weeks" id="duration_weeks" value="{{ offer.duration_weeks }}" placeholder="ex: 16"></div></div></div><div class="info-section"><span class="section-label">Paramètres de publication</span><div class="form-grid"><div class="form-group">
+<label for="is_active">Visibilité</label>
+<select name="is_active" id="is_active">
+	<option value="1" {{ offer.is_active ? 'selected' : '' }}>Publiée (Visible par tous)</option>
+	<option value="0" {{ not offer.is_active ? 'selected' : '' }}>Brouillon (Masquée)</option>
+</select></div></div></div><div class="form-actions"><a href="/app/offers" class="btn btn-ghost">Annuler</a><button type="submit" class="btn btn-primary">{{ mode == 'edit' ? 'Mettre à jour' : 'Publier l\'offre' }}
             </button>
         </div>
     </form>
 </div>
+
+<script>
+/**
+ * Helper to send JS errors/logs to the PHP CLI (error_log)
+ * Use this to see what's happening in your terminal
+ */
+const remoteLog = (message, data = {}) => {
+    console.log(`[Debug] ${message}`, data);
+    // Optional: Send this to a PHP endpoint if you want it in the server CLI
+    // fetch('/api/debug/log', {
+    //     method: 'POST',
+    //     body: JSON.stringify({ message, data, url: window.location.href })
+    // }).catch(() => {}); 
+};
+
+document.addEventListener('DOMContentLoaded', function() {
+    remoteLog("DOM Content Loaded - Script Initializing");
+
+    const companySelect = document.getElementById('company_id');
+    const siteSelect = document.getElementById('site_id');
+
+    if (!companySelect || !siteSelect) {
+        remoteLog("CRITICAL: Elements not found", { 
+            hasCompanySelect: !!companySelect, 
+            hasSiteSelect: !!siteSelect 
+        });
+        return;
+    }
+
+    companySelect.addEventListener('change', function() {
+        const companyId = this.value;
+        remoteLog("Event: Change detected", { selectedCompanyId: companyId });
+
+        if (!companyId) {
+            remoteLog("Empty company selected, resetting site dropdown");
+            siteSelect.innerHTML = '<option value="">— Sélectionnez d\'abord une entreprise —</option>';
+            siteSelect.disabled = true;
+            return;
+        }
+
+        const apiUrl = `/api/companies/${companyId}/sites`;
+        remoteLog("Initiating Fetch", { url: apiUrl });
+
+        fetch(apiUrl)
+            .then(response => {
+                remoteLog("Fetch Response Status", { 
+                    status: response.status, 
+                    ok: response.ok,
+                    type: response.type 
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return response.text(); // Get as text first to debug non-JSON responses
+            })
+            .then(text => {
+                remoteLog("Raw Response Body", { bodyPreview: text.substring(0, 200) });
+                try {
+                    const data = JSON.parse(text);
+                    remoteLog("Parsed JSON Data", { count: data.length, items: data });
+                    
+                    // Update Dropdown
+                    siteSelect.innerHTML = '<option value="">— Choisir un site —</option>';
+                    data.forEach(site => {
+                        const option = document.createElement('option');
+                        option.value = site.id;
+                        option.textContent = `${site.city} (${site.address || ''})`;
+                        siteSelect.appendChild(option);
+                    });
+                    siteSelect.disabled = false;
+                    remoteLog("Dropdown updated successfully");
+                } catch (e) {
+                    remoteLog("JSON Parse Error", { error: e.message, rawText: text });
+                }
+            })
+            .catch(error => {
+                remoteLog("FETCH ERROR (Catch Block)", { message: error.message });
+            });
+    });
+});
+</script>
 {% endblock %}

@@ -8,66 +8,135 @@ use App\Repository\ApplicationRepository;
 use Twig\Environment;
 use App\Util;
 
-class ApplicationController extends BaseController {
+class ApplicationController extends BaseController
+{
     private ApplicationRepository $repo;
 
-    public function __construct(ApplicationRepository $repo, Environment $twig) {
+    public function __construct(ApplicationRepository $repo, Environment $twig)
+    {
         parent::__construct($twig);
         $this->repo = $repo;
     }
 
+    // --- SECTION : VUES WEB (Rendu Twig) ---
+
     /**
-     * @throws \RuntimeException Si l'application n'existe pas
+     * GET /app/apply/{offerId}
+     * Affiche le formulaire de candidature pour une offre spécifique
      */
-    public function showJson(string $applicationId): void {
-        $application = $this->repo->findById($applicationId);
+    public function viewApply(string $offerId): void
+    {
+        echo $this->twig->render('applications/apply.html.twig', [
+            'offer_id' => $offerId
+        ]);
+    }
 
-        if (!$application) {
-            $this->renderJsonError("Application not found", 404);
+    /**
+     * POST /app/apply/submit
+     * Traitement classique de formulaire avec redirection
+     */
+    public function doApply(): void
+    {
+        $application = ApplicationModel::fromArray([
+            'student_id'        => Util::getUserId(),
+            'offer_id'          => $_POST['offer_id'] ?? '',
+            'cv_path'           => $_POST['cv_path'] ?? null,
+            'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
+            'status'            => 'pending'
+        ]);
+
+        if ($this->repo->push($application)) {
+            header('Location: /app/my-applications?status=success');
+        } else {
+            header('Location: /app/apply/' . $application->offer_id . '?error=save_failed');
         }
-
-        header('Content-Type: application/json');
-        echo json_encode($application); 
         exit;
     }
 
-    /**
-     * @return array Liste des candidatures pour l'étudiant connecté
-     */
-    public function listForStudent(): array {
-        // On utilise l'ID en session, injecté par le middleware d'auth
-        return $this->repo->findByStudent(Util::getUserId());
-    }
-
-    public function apply(ApplicationModel $application): void {
-        $this->repo->push($application);
-    }
+    // --- SECTION : API AJAX (JSON) ---
 
     /**
-     * @throws \RuntimeException
+     * POST /api/apply
+     * Création d'une candidature via AJAX
      */
-    public function delete(string $applicationId): void {
-        // On vérifie juste l'existence, le middleware a déjà validé le droit de supprimer
-        $application = $this->repo->findById($applicationId);
+    public function applyAjax(): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
 
-        if (!$application) {
-            $this->abort(404, "Application not found.");
+        if (empty($input['offer_id'])) {
+            $this->jsonResponse(['error' => 'ID de l\'offre manquant'], 400);
         }
 
-        $this->repo->delete($applicationId);
+        $application = ApplicationModel::fromArray([
+            'student_id'        => Util::getUserId(),
+            'offer_id'          => $input['offer_id'],
+            'cv_path'           => $input['cv_path'] ?? null,
+            'cover_letter_path' => $input['cover_letter_path'] ?? null,
+            'status'            => 'pending'
+        ]);
+
+        if ($this->repo->push($application)) {
+            $this->jsonResponse(['status' => 'success', 'data' => $application], 201);
+        }
+
+        $this->jsonResponse(['error' => 'Erreur lors de la sauvegarde'], 500);
+    }
+
+    /**
+     * DELETE /api/applications/{id}
+     * Suppression AJAX avec vérification de propriété
+     */
+    public function deleteAjax(string $id): void
+    {
+        $app = $this->repo->findById($id);
+
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
+        }
+
+        // Sécurité résiduelle : Seul le propriétaire (ou un admin via le routeur) peut supprimer
+        if (!$this->repo->isOwner($app->id, $app->student_id) || $this->isSuperUser()) {
+            $this->jsonResponse(['error' => 'Action non autorisée'], 403);
+        }
+
+        $this->repo->delete($id) 
+            ? $this->jsonResponse(['status' => 'deleted']) 
+            : $this->jsonResponse(['error' => 'Échec de la suppression'], 500);
+    }
+
+    /**
+     * GET /api/applications/{id}
+     * Récupère les détails d'une candidature en JSON
+     */
+    public function showJson(string $id): void
+    {
+        $app = $this->repo->findById($id);
         
-        // Redirection avec un paramètre de succès pour le feedback UI
-        header('Location: /index.php?page=my-applications&status=deleted');
-        exit;
+        $app ? $this->jsonResponse($app) : $this->jsonResponse(['error' => 'Not found'], 404);
     }
 
     /**
-     * Helper privé pour uniformiser les erreurs JSON
+     * PATCH /api/applications/status
+     * Mise à jour du statut par un Pilote ou Admin
      */
-    private function renderJsonError(string $message, int $code): void {
-        header('Content-Type: application/json');
-        http_response_code($code);
-        echo json_encode(["error" => $message]);
-        exit;
+    public function updateStatusAjax(): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $id = $input['id'] ?? null;
+        $status = $input['status'] ?? null;
+
+        if (!$id || !$status) {
+            $this->jsonResponse(['error' => 'Données incomplètes'], 400);
+        }
+
+        $app = $this->repo->findById($id);
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Inexistant'], 404);
+        }
+
+        $app->status = $status;
+        $this->repo->push($app); // Utilise push pour l'Update
+
+        $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
     }
 }

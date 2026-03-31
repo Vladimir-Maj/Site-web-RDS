@@ -1,0 +1,110 @@
+/* ===================================================
+   STAGEFLOW — RESPONSIVE FORMS.CSS
+   Input Fields, Grid Layouts, and Search Bars
+   =================================================== */
+
+/* ---------- FORM LAYOUTS ---------- */
+/* ---------- FORM LAYOUTS ---------- */
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem; /* Un peu plus d'espace pour la lisibilité */
+    align-items: start;
+}
+
+@media (min-width: 640px) {
+    .form-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    /* Force ces éléments à prendre toute la largeur */
+    .span-full, 
+    .section-label, 
+    .info-section,
+    .form-section-header {
+        grid-column: 1 / -1;
+    }
+}
+
+/* ---------- INPUT ELEMENTS ---------- */
+.form-group label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--clr-text);
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    font-family: inherit;
+    font-size: 1rem; 
+    color: var(--clr-text);
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    padding: 0.6rem 0.75rem;
+    width: 100%;
+    border-radius: var(--border-radius-btn);
+    transition: border-color 0.2s, box-shadow 0.2s;
+    appearance: none;
+}
+
+/* Base Focus State (Purple Glow) */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.2);
+}
+
+/* ---------- VALIDATION UI (PRIORITY) ---------- */
+
+/* 1. Invalid State: Red border/glow (Only when user has interacted) */
+.form-group input:not(:placeholder-shown):invalid:focus,
+.form-group select:not(:placeholder-shown):invalid:focus {
+    border-color: #e74c3c !important;
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
+}
+
+/* 2. Valid State: Green border when valid and not empty */
+.form-group input:not(:placeholder-shown):valid,
+.form-group select:not(:placeholder-shown):valid {
+    border-color: #2ecc71 !important;
+}
+
+/* 3. Password Mismatch (Triggered by JS) */
+.password-mismatch {
+    border-color: #e74c3c !important;
+    background-color: #fff6f6 !important;
+}
+
+/* 4. Error Hint (Visible when previous input is invalid) */
+.error-hint {
+    color: #e74c3c;
+    font-size: 0.8rem;
+    margin-top: 0.3rem;
+    display: none;
+}
+
+input:invalid + .error-hint {
+    display: block;
+}
+
+/* ---------- SEARCH BAR ---------- */
+.search-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    padding: 1.25rem;
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+}
+
+@media (min-width: 768px) {
+    .search-bar {
+        flex-direction: row;
+        align-items: flex-end;
+    }
+}

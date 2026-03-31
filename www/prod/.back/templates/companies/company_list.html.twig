@@ -1,128 +1,152 @@
+{# .back/views/companies/company_list.html.twig #}
 {% extends "base.html.twig" %}
 
-{% block title %}Liste des Entreprises — SF Prosit{% endblock %}
+{% block title %}Entreprises — StageFlow
+{% endblock %}
 
 {% block body %}
-<div class="page-wrapper">
-    <main class="main">
-        <header class="page-header mt-3">
-            <div class="header-flex">
-                <div>
-                    <h1>Entreprises</h1>
-                    <p>Consultez et gérez les organisations enregistrées.</p>
-                </div>
-                <a href="/app/companies/new" class="btn btn-primary">
-                    + Nouvelle Entreprise
-                </a>
-            </div>
-        </header>
+	<div class="page-header">
+		<div style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
+			<div>
+				<h1>Annuaire des entreprises</h1>
+				<p>Consultez et gérez les organisations partenaires de la plateforme.</p>
+			</div>
+			<a href="/app/companies/new" class="btn btn-primary">
+				+ Nouvelle entreprise
+			</a>
+		</div>
+	</div>
 
-        {# --- Section Filtres --- #}
-        <section class="card mt-2">
-            <form method="GET" action="/app/companies" class="card-body filter-form">
-                <div class="form-grid-4">
-                    <div class="form-group">
-                        <label for="f-name">Recherche</label>
-                        <input type="text" name="name" id="f-name" value="{{ filters.name|default('') }}" placeholder="Nom, SIREN...">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="f-sector">Secteur</label>
-                        <select name="sector_id" id="f-sector">
-                            <option value="">Tous les secteurs</option>
-                            {% for sector in sectors %}
-                                {# Fixed the syntax error here #}
-                                <option value="{{ sector.id }}" {{ filters.sector_id|default('') == sector.id ? 'selected' : '' }}>
-                                    {{ sector.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+	{# --- Filter Section: Mirroring the Offer Search Module --- #}
+	<section class="card search-bar" style="display: block; width: 100%; padding: 1.5rem; margin-bottom: 2rem;">
+		<form method="GET" action="/app/companies">
+			<div class="form-grid">
 
-                    <div class="form-group">
-                        <label for="f-status">Statut</label>
-                        <select name="status" id="f-status">
-                            <option value="">Tous</option>
-                            {# Replaced app.request.query.get with filters variable #}
-                            <option value="active" {{ filters.status|default('') == 'active' ? 'selected' : '' }}>Actif</option>
-                            <option value="pending" {{ filters.status|default('') == 'pending' ? 'selected' : '' }}>En attente</option>
-                        </select>
-                    </div>
+				<div class="form-group">
+					<label for="f-name">Recherche libre</label>
+					<input type="text" name="name" id="f-name" placeholder="Nom, SIREN..." value="{{ filters.name|default('') }}">
+				</div>
 
-                    <div class="form-actions-inline">
-                        <button type="submit" class="btn btn-secondary">Filtrer</button>
-                        <a href="/app/companies" class="btn btn-link">Réinitialiser</a>
-                    </div>
-                </div>
-            </form>
-        </section>
+				<div class="form-group">
+					<label for="f-sector">Secteur d'activité</label>
+					<select name="sector_id" id="f-sector">
+						<option value="">Tous les secteurs</option>
+						{% for sector in sectors %}
+							<option value="{{ sector.id }}" {{ filters.sector_id|default('') == sector.id ? 'selected' : '' }}>
+								{{ sector.name }}
+							</option>
+						{% endfor %}
+					</select>
+				</div>
 
-        {# --- Tableau des résultats --- #}
-        <div class="card mt-2">
-            <div class="table-responsive">
-                <table class="table">
-                    <thead>
-                        <tr>
-                            <th>Entreprise</th>
-                            <th>Secteur</th>
-                            <th>Localisation</th>
-                            <th>Statut</th>
-                            <th class="text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for company in companies %}
-                            <tr>
-                                <td>
-                                    <div class="company-cell">
-                                        {% if company.logo_url is defined and company.logo_url %}
-                                            <img src="{{ company.logo_url }}" alt="" class="avatar-sm">
-                                        {% endif %}
-                                        <div>
-                                            <strong>{{ company.name }}</strong><br>
-                                            <small class="text-muted">SIREN: {{ company.siren }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>{{ company.sector_name|default('N/A') }}</td>
-                                <td>{{ company.location|default('-') }}</td>
-                                <td>
-                                    <span class="badge {{ company.is_active ? 'badge-success' : 'badge-warning' }}">
-                                        {{ company.is_active ? 'Actif' : 'En attente' }}
-                                    </span>
-                                </td>
-                                <td class="text-right">
-                                    <a href="/app/companies/{{ company.id }}" class="btn btn-sm btn-ghost">Modifier</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="5" class="text-center py-3">Aucune entreprise trouvée.</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+				<div class="form-group">
+					<label for="f-status">Statut de visibilité</label>
+					<select name="status" id="f-status">
+						<option value="">Tous les statuts</option>
+						<option value="active" {{ filters.status|default('') == 'active' ? 'selected' : '' }}>Actif</option>
+						<option value="pending" {{ filters.status|default('') == 'pending' ? 'selected' : '' }}>En attente</option>
+					</select>
+				</div>
 
-            {# --- Pagination --- #}
-            {% set currentPage = filters.page|default(1) %}
-            <div class="card-footer pagination-wrapper">
-                <p class="text-muted small">Affichage de {{ companies|length }} résultats</p>
-                <nav class="pagination">
-                    {% if currentPage > 1 %}
-                        {# We use app.request.query as an array and the 'merge' filter #}
-                        <a href="?{{ app.request.query|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-sm btn-ghost">Précédent</a>
-                    {% endif %}
-                    
-                    <span class="page-number">Page {{ currentPage }}</span>
+				<div class="form-group" style="display: flex; align-items: flex-end;">
+					<button type="submit" class="btn btn-primary" style="width: 100%;">
+						🔍 Filtrer la liste
+					</button>
+				</div>
+			</div>
 
-                    {% if companies|length == 10 %}
-                        <a href="?{{ app.request.query|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-sm btn-ghost">Suivant</a>
-                    {% endif %}
-                </nav>
-            </div>
-        </div>
+			<div style="margin-top: 1.2rem; display: flex; justify-content: flex-start;">
+				<a href="/app/companies" class="text-sm text-muted">✕ Réinitialiser les filtres</a>
+			</div>
+		</form>
+	</section>
 
-    </main>
-</div>
+	{# --- Results Counter --- #}
+	<div class="notice notice-info">
+		<div class="notice-icon">📊</div>
+		<p>
+			<strong>{{ companies|length }}</strong>
+			organisation{{ companies|length > 1 ? 's' : '' }}
+			affichée{{ companies|length > 1 ? 's' : '' }}
+			selon vos critères.</p>
+	</div>
+
+	{# --- Results List: Styled like the Offer List --- #}
+	<div class="company-list">
+		<div class="card" style="padding: 0; overflow: hidden;">
+			<div class="table-responsive">
+				<table class="table" style="width: 100%; border-collapse: collapse;">
+					<thead style="background: var(--bg-alt); border-bottom: 1px solid var(--border-color);">
+						<tr>
+							<th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Organisation</th>
+							<th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Secteur</th>
+							<th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Localisation</th>
+							<th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Statut</th>
+							<th style="padding: 1rem; text-align: right;" class="text-sm text-muted">Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for company in companies %}
+							<tr style="border-bottom: 1px solid var(--border-color);">
+								<td style="padding: 1rem;">
+									<div
+										style="display: flex; align-items: center; gap: 12px;">
+										{# Check if the key exists AND isn't empty #}
+										{% if company.logo_url is defined and company.logo_url is not empty %}
+											<img src="{{ company.logo_url }}" alt="" style="width: 40px; height: 40px; border-radius: 4px; object-fit: contain; background: #fff; border: 1px solid var(--border-color);">
+										{% else %}
+											{# Safe fallback if key is missing or null #}
+											<div style="width: 40px; height: 40px; border-radius: 4px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🏢</div>
+										{% endif %}
+										<div>
+											<div style="font-weight: 600;">{{ company.name }}</div>
+											<div class="text-xs text-muted">SIREN
+												{{ company.siren }}</div>
+										</div>
+									</div>
+								</td>
+								<td style="padding: 1rem;" class="text-sm">{{ company.sector_name|default('Non spécifié') }}</td>
+								<td style="padding: 1rem;" class="text-sm">{{ company.location|default('-') }}</td>
+								<td style="padding: 1rem;">
+									<span class="badge {{ company.is_active ? 'badge-success' : 'badge-warning' }}" style="font-size: 0.75rem; padding: 2px 8px;">
+										{{ company.is_active ? '● Actif' : '○ En attente' }}
+									</span>
+								</td>
+								<td style="padding: 1rem; text-align: right;">
+									<a href="/app/companies/{{ company.id }}" class="btn btn-ghost btn-sm">Gérer</a>
+								</td>
+							</tr>
+						{% else %}
+							<tr>
+								<td colspan="5" style="padding: 4rem 2rem; text-align: center;">
+									<div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
+									<h3 class="text-muted">Aucune entreprise répertoriée</h3>
+									<p class="text-sm">Modifiez vos filtres ou créez une nouvelle fiche.</p>
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+
+	{# --- Pagination: Mirrored from the Search page --- #}
+	{% set currentPage = filters.page|default(1) %}
+	{% if companies|length > 0 %}
+		<div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 3rem;">
+			{% if currentPage > 1 %}
+				<a href="?{{ app.request.query|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-ghost">← Précédent</a>
+			{% endif %}
+
+			<span class="text-sm text-muted">Page
+				<strong>{{ currentPage }}</strong>
+			</span>
+
+			{% if companies|length >= 10 %}
+				{# Assuming 10 is the limit per page #}
+				<a href="?{{ app.request.query|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-ghost">Suivant →</a>
+			{% endif %}
+		</div>
+	{% endif %}
 {% endblock %}

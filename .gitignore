@@ -2,3 +2,5 @@
 /www/cdn/uploads/*
 /www/prod/vendor/
 /gitignore/
+
+*.patch

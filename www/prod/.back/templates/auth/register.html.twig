@@ -1,73 +1,128 @@
+{# .back/views/auth/register.html.twig #}
 {% extends "base.html.twig" %}
 
+{% block title %}Créer un compte — StageFlow{% endblock %}
+
 {% block body %}
-    <main class="container">
-        <div class="auth-container" style="max-width: 500px; margin: 2rem auto;">
-            <h1 style="text-align: center; margin-bottom: 2rem;">Créer un compte</h1>
+<main class="container">
+    {# On ajoute une surcharge de max-width ici pour passer de 400px à 800px #}
+    <div class="auth-container auth-container-lg mt-3" style="max-width: 800px;">
+        
+        <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
+            <h1>Créer un compte</h1>
+            <p class="text-muted">Rejoignez la plateforme StageFlow dès aujourd'hui.</p>
+        </div>
 
-            {% if error %}
-                <div class="alert alert-error" style="background: #f8d7da; color: #721c24; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
-                    {{ error }}
-                </div>
-            {% endif %}
+        {# Utilisation de ta classe .company-form .card-body pour profiter du "paper feel" pro #}
+        <section class="card company-form" style="border: var(--border-width) solid var(--clr-border); border-radius: var(--border-radius); background: var(--clr-surface);">
+            <div class="card-body" style="padding: clamp(1.5rem, 5vw, 3rem);">
+                
+                <form id="registerForm" method="POST" action="/register">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-            {% if success %}
-                <div class="alert alert-success" style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 4px; margin-bottom: 1.5rem;">
-                    {{ success }}
-                    <div style="margin-top: 1rem; text-align: center;">
-                        <a href="/login" class="btn btn-primary">Se connecter maintenant</a>
-                    </div>
-                </div>
-            {% endif %}
+                    {# Section 01: Utilisation de ta classe .section-label de features.css #}
+                    <span class="section-label">01. Identité & Profil</span>
 
-            {% if not success %}
-                <section class="card" style="padding: 2rem; border: 1px solid var(--clr-border); border-radius: 8px;">
-                    <form method="POST" action="/register">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="first_name" style="display: block; margin-bottom: 0.5rem;">Prénom</label>
-                            {# CHANGED: name="first_name" to match your PHP Controller #}
-                            <input type="text" id="first_name" name="first_name" 
-                                   value="{{ old.first_name|default('') }}" 
-                                   required autofocus placeholder="ex: Jean">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="first_name">Prénom</label>
+                            <input type="text" id="first_name" name="first_name" value="{{ old.first_name|default('') }}" placeholder="ex: Jean" required autofocus pattern=".{2,}" title="Le prénom doit faire au moins 2 caractères.">
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="email" style="display: block; margin-bottom: 0.5rem;">Email</label>
-                            <input type="email" id="email" name="email" 
-                                   value="{{ old.email|default('') }}" 
-                                   required placeholder="ex: jean.dupont@email.com">
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="role" style="display: block; margin-bottom: 0.5rem;">Je suis un :</label>
-                            <select id="role" name="role" style="width: 100%; padding: 0.5rem;">
-                                <option value="student" {{ old.role|default('') == 'student' ? 'selected' : '' }}>Étudiant</option>
-                                <option value="pilote" {{ old.role|default('') == 'pilote' ? 'selected' : '' }}>Pilote</option>
+                        <div class="form-group">
+                            <label for="role">Je suis un :</label>
+                            <select id="role" name="role" required>
+                                <option value="" disabled {{ (old.role is not defined) ? 'selected' : '' }}>-- Choisir --</option>
+                                <option value="student" {{ (old.role|default('') == 'student') ? 'selected' : '' }}>Étudiant</option>
+                                <option value="pilote" {{ (old.role|default('') == 'pilote') ? 'selected' : '' }}>Pilote</option>
                             </select>
                         </div>
 
-                        <div class="form-group" style="margin-bottom: 1rem;">
-                            <label for="password" style="display: block; margin-bottom: 0.5rem;">Mot de passe</label>
-                            <input type="password" id="password" name="password" required minlength="8" placeholder="8 caractères minimum">
+                        <div class="form-group span-full">
+                            <label for="email">Email professionnel</label>
+                            <input type="email" id="email" name="email" value="{{ old.email|default('') }}" placeholder="ex: jean.dupont@email.com" required pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Veuillez entrer une adresse email valide.">
                         </div>
-
-                        <div class="form-group" style="margin-bottom: 1.5rem;">
-                            <label for="confirm_password" style="display: block; margin-bottom: 0.5rem;">Confirmer le mot de passe</label>
-                            <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="width: 100%; padding: 0.8rem; cursor: pointer;">
-                            S'inscrire
-                        </button>
-                    </form>
-
-                    <div class="form-footer" style="margin-top: 1.5rem; text-align: center; font-size: 0.9rem;">
-                        Déjà un compte ? <a href="/login" style="text-decoration: underline;">Connectez-vous ici</a>.
                     </div>
-                </section>
-            {% endif %}
-        </div>
-    </main>
+
+                    {# Section 02: Sécurité avec ton style info-section #}
+                    <div class="info-section" style="margin-top: 2.5rem;">
+                        <span class="section-label">02. Sécurité</span>
+                        
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" name="password" required minlength="8" placeholder="8+ caractères">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">Confirmation</label>
+                                <input type="password" id="confirm_password" name="confirm_password" required minlength="8" placeholder="Répétez le mot de passe">
+                            </div>
+                            
+                            <div id="passwordError" class="span-full" style="display: none; color: var(--clr-danger); font-size: 0.85rem; margin-top: -0.5rem;">
+                                ❌ Les mots de passe ne correspondent pas.
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Footer avec bordure pointillée comme ton exemple d'entreprise #}
+                    <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--clr-border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+                        <a href="/login" class="text-muted" style="font-size: 0.9rem; text-decoration: none;">Déjà inscrit ? Connexion</a>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">
+                            🚀 Créer mon compte
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registerForm');
+            const password = document.getElementById('password');
+            const confirmPassword = document.getElementById('confirm_password');
+            const passwordError = document.getElementById('passwordError');
+            const patternInputs = document.querySelectorAll('input[pattern], input[required]');
+
+            // Validation de correspondance des mots de passe
+            function validatePasswords() {
+                if (confirmPassword.value === "") {
+                    confirmPassword.setCustomValidity("");
+                    passwordError.style.display = "none";
+                    return;
+                }
+
+                if (password.value !== confirmPassword.value) {
+                    confirmPassword.setCustomValidity("Mismatch");
+                    passwordError.style.display = "block";
+                } else {
+                    confirmPassword.setCustomValidity("");
+                    passwordError.style.display = "none";
+                }
+            }
+
+            password.addEventListener('input', validatePasswords);
+            confirmPassword.addEventListener('input', validatePasswords);
+
+            // Nettoyage automatique des espaces
+            form.querySelectorAll('input:not([type="password"])').forEach(input => {
+                input.addEventListener('blur', () => {
+                    input.value = input.value.trim();
+                });
+            });
+
+            // Gestion des messages d'erreur via l'attribut 'title'
+            patternInputs.forEach(input => {
+                input.addEventListener('invalid', (e) => {
+                    e.target.setCustomValidity("");
+                    if (!e.target.validity.valid) {
+                        e.target.setCustomValidity(e.target.title || "Champ requis");
+                    }
+                });
+                input.addEventListener('input', (e) => e.target.setCustomValidity(""));
+            });
+        });
+    </script>
 {% endblock %}
