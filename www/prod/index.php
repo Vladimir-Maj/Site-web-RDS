@@ -261,9 +261,41 @@ if (str_starts_with($path, '/app/sites')) {
 }
 
 // --- AJAX/API ROUTES ---
+
+// Existant
 if (preg_match('#^/app/companies/([a-fA-F0-9]{32})/sites$#', $path, $m)) {
     $repo = new CompanyRepository($pdo);
     (new CompanyController($repo, $twig))->getSitesByCompany($m[1]);
+    exit;
+}
+
+// Applications : GET /api/applications  (liste de l'étudiant connecté)
+if ($path === '/api/applications' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new ApplicationController($applicationRepo, $twig))->listForStudentJson();
+    exit;
+}
+
+// Applications : GET /api/applications/{id}
+if (preg_match('#^/api/applications/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new ApplicationController($applicationRepo, $twig))->showJson($m[1]);
+    exit;
+}
+
+// Applications : DELETE /api/applications/{id}
+if (preg_match('#^/api/applications/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    (new ApplicationController($applicationRepo, $twig))->deleteJson($m[1]);
+    exit;
+}
+
+// Offers : GET /api/offers/search
+if ($path === '/api/offers/search' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new OfferController($twig, $offerRepo, $pdo))->searchJson();
+    exit;
+}
+
+// Users : GET /api/users/{id}
+if (preg_match('#^/api/users/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new UserController($userRepo, $twig))->getUserByIdJson($m[1]);
     exit;
 }
 
