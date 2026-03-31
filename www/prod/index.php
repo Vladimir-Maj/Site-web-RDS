@@ -75,17 +75,19 @@ $everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student-
 
 // ── AUTH (public) ────────────────────────────────────────────────────────────
 
-$router->add('GET', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('POST', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('GET', '/logout', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->logout());
-$router->add('GET', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
-$router->add('POST', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
+$router->add('GET', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->login());
+$router->add('POST', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->login());
+$router->add('GET', '/logout', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->logout());
+$router->add('GET', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->register());
+$router->add('POST', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->register());
 
 // ── PROFILE (any authenticated role) ─────────────────────────────────────────
 
-$router->add('GET', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
-$router->add('POST', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->uploadCv(), roles: $everyone);
+$router->add('GET', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->profile(), roles: $everyone);
+$router->add('POST', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->profile(), roles: $everyone);
+$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->uploadCv(), roles: $everyone);
+
+$router->add('GET', '/app/students/new', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->registerStudent(), roles: [RoleEnum::Pilote->value]);
 
 // ── HOME / CATALOGUE ──────────────────────────────────────────────────────────
 
@@ -158,6 +160,7 @@ $router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', function ($p, $pdo
     $siteHandler($pdo, $twig)->getSitesJson($p[0]);
 }, roles: $staff);
 
+// pourquoi pas de @SuppressWarning... language de singes
 $skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
 
 $router->add('GET', '/app/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
@@ -171,15 +174,15 @@ $router->add('GET', '/api/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $t
 
 // ── APPLICATIONS ─────────────────────────────────────────────────────────────
 
-$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), $twig);
+$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), $twig);
 
 
 // Rendu HTML du formulaire (GET)
 $router->add(
     'GET',
     '/app/offers/([a-fA-F0-9]{32})/apply',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p),
-    roles: ['etudiant']
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]),
+    roles: [RoleEnum::Student->value]
 );
 
 // Soumission classique de formulaire (POST)

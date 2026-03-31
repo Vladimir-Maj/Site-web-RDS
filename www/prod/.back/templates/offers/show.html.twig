@@ -1,92 +1,106 @@
 {# .back/views/offers/show.html.twig #}
 {% extends "base.html.twig" %}
 
-{% block title %}{{ offer.title }} — StageFlow{% endblock %}
+{% block title %}
+	{{ offer.title }}
+	— StageFlow
+{% endblock %}
 
 {% block body %}
-    <div class="page-header">
-        <div>
-            <a href="/app/offers" class="btn btn-ghost" style="border: none; padding-left: 0;">← Retour au catalogue</a>
-            <h1 class="mt-1">{{ offer.title }}</h1>
-            <p>Publié le {{ offer.published_at|date("d/m/Y") }} par <strong>{{ offer.company_name }}</strong></p>
-        </div>
-        
-        {# Ensure isPrivileged matches your RoleEnum checks (Admin/Pilote) #}
-        {% if isPrivileged %}
-            <div style="display: flex; gap: 10px;">
-                {# Link to Edit: /app/offers/edit/[HEX_ID] #}
-                <a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">Modifier</a>
-                
-                {# Delete Form: Matches router POST /app/offers/delete/([a-fA-F0-9]{32}) #}
-                <form action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');">
-                    {# Always include CSRF for state-changing actions #}
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-danger">Supprimer</button>
-                </form>
-            </div>
-        {% endif %}
-    </div>
+	<div class="page-header">
+		<div>
+			<a href="/app/offers" class="btn btn-ghost" style="border: none; padding-left: 0;">← Retour au catalogue</a>
+			<h1 class="mt-1">{{ offer.title }}</h1>
+			<p>Publié le
+				{{ offer.published_at|date("d/m/Y") }}
+				par
+				<strong>{{ offer.company_name }}</strong>
+			</p>
+		</div>
 
-    <div class="profile-layout">
-        <aside>
-            <div class="card user-card">
-                <div class="avatar-circle">🏢</div>
-                <h3>{{ offer.company_name }}</h3>
-                <p class="text-sm text-muted">{{ offer.location }}</p>
+		{# Ensure isPrivileged matches your RoleEnum checks (Admin/Pilote) #}
+		{% if isPrivileged %}
+			<div
+				style="display: flex; gap: 10px;">
+				{# Link to Edit: /app/offers/edit/[HEX_ID] #}
+				<a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">Modifier</a>
 
-                <div class="data-grid mt-3" style="text-align: left;">
-                    <div class="data-item">
-                        <span class="data-label">Gratification</span>
-                        <span class="data-value">{{ offer.hourly_rate|default('N/C') }} €/h</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">Durée</span>
-                        <span class="data-value">{{ offer.duration_weeks|default('?') }} semaines</span>
-                    </div>
-                    <div class="data-item">
-                        <span class="data-label">Début</span>
-                        <span class="data-value">{{ offer.start_date ? offer.start_date|date("d/m/Y") : 'À définir' }}</span>
-                    </div>
-                </div>
+				{# Delete Form: Matches router POST /app/offers/delete/([a-fA-F0-9]{32}) #}
+				<form
+					action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');">
+					{# Always include CSRF for state-changing actions #}
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<button type="submit" class="btn btn-danger">Supprimer</button>
+				</form>
+			</div>
+		{% endif %}
+	</div>
 
-                {# Future logic: /app/offers/show/[HEX_ID]/apply #}
-                <form action="/app/offers/show/{{ offer.id }}/apply" method="POST">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <button type="submit" class="btn btn-primary w-100 mt-3" style="width: 100%; padding: 10px;">
-                        Postuler via StageFlow
-                    </button>
-                </form>
-            </div>
-            
-            <div class="notice notice-warn mt-2">
-                <p class="text-sm">Attention : Ne partagez jamais vos coordonnées bancaires lors d'une candidature.</p>
-            </div>
-        </aside>
+	<div class="profile-layout">
+		<aside>
+			<div class="card user-card">
+				<div class="avatar-circle">🏢</div>
+				<h3>{{ offer.company_name }}</h3>
+				<p class="text-sm text-muted">{{ offer.location }}</p>
 
-        <section>
-            <div class="legal-section">
-                <div class="legal-section-header">
-                    <h2>Description du poste</h2>
-                </div>
-                <div class="legal-section-body">
-                    <p style="white-space: pre-wrap;">{{ offer.description|default('Aucune description fournie.') }}</p>
-                </div>
-            </div>
+				<div class="data-grid mt-3" style="text-align: left;">
+					<div class="data-item">
+						<span class="data-label">Gratification</span>
+						<span class="data-value">{{ offer.hourly_rate|default('N/C') }}
+							€/h</span>
+					</div>
+					<div class="data-item">
+						<span class="data-label">Durée</span>
+						<span class="data-value">{{ offer.duration_weeks|default('?') }}
+							semaines</span>
+					</div>
+					<div class="data-item">
+						<span class="data-label">Début</span>
+						<span class="data-value">{{ offer.start_date ? offer.start_date|date("d/m/Y") : 'À définir' }}</span>
+					</div>
+				</div>
 
-            {% if offer.required_skills %}
-                <div class="legal-section mt-2">
-                    <div class="legal-section-header">
-                        <h2>Compétences requises</h2>
-                    </div>
-                    <div class="legal-section-body">
-                        <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                            {% for skill in offer.required_skills|split(',') %}
-                                <span class="tag tag-slate">{{ skill|trim }}</span>
-                            {% endfor %}
-                        </div>
-                    </div>
-                </div>
-            {% endif %}
-        </section>
-    </div>
+				{# Future logic: /app/offers/show/[HEX_ID]/apply #}
+				{# Future logic: /app/offers/[HEX_ID]/apply #}
+				<form
+					action="/app/offers/{{ offer.id }}/apply" method="GET">
+					{# If this is just a redirect to a form page, GET is fine. 
+					       If this were an immediate action, you'd use POST. #}
+					<button type="submit" class="btn btn-primary w-100 mt-3" style="width: 100%; padding: 10px;">
+						Postuler via StageFlow
+					</button>
+				</form>
+			</div>
+
+			<div class="notice notice-warn mt-2">
+				<p class="text-sm">Attention : Ne partagez jamais vos coordonnées bancaires lors d'une candidature.</p>
+			</div>
+		</aside>
+
+		<section>
+			<div class="legal-section">
+				<div class="legal-section-header">
+					<h2>Description du poste</h2>
+				</div>
+				<div class="legal-section-body">
+					<p style="white-space: pre-wrap;">{{ offer.description|default('Aucune description fournie.') }}</p>
+				</div>
+			</div>
+
+			{% if offer.required_skills %}
+				<div class="legal-section mt-2">
+					<div class="legal-section-header">
+						<h2>Compétences requises</h2>
+					</div>
+					<div class="legal-section-body">
+						<div style="display: flex; gap: 8px; flex-wrap: wrap;">
+							{% for skill in offer.required_skills|split(',') %}
+								<span class="tag tag-slate">{{ skill|trim }}</span>
+							{% endfor %}
+						</div>
+					</div>
+				</div>
+			{% endif %}
+		</section>
+	</div>
 {% endblock %}

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Models\PromotionModel;
 use PDO;
 use PharIo\Manifest\Email;
 use App\Models\UserModel;
@@ -143,15 +144,100 @@ class UserRepository
         ]);
     }
 
-    public function makeStudent(string $userHexId, string $status = 'Searching'): bool
-    {
-        $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)");
-        return $stmt->execute([$userHexId, $status]);
-    }
+    /**
+ * Specializes a user as a student and enrolls them in a promotion.
+ */
+public function makeStudent(string $userHexId, string $promoHexId, string $status = 'Searching'): bool
+{
+    try {
+        // Start transaction if not already started by the caller
+        $this->pdo->beginTransaction();
 
+        // 1. Insert into the student specialization table
+        $sqlStudent = "INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)";
+        $stmtStudent = $this->pdo->prepare($sqlStudent);
+        $stmtStudent->execute([$userHexId, $status]);
+
+        // 2. Insert into the associative table student_enrollment
+        $sqlEnroll = "INSERT INTO student_enrollment (promotion_id, student_id, enrolled_at) 
+                      VALUES (UNHEX(?), UNHEX(?), NOW())";
+        $stmtEnroll = $this->pdo->prepare($sqlEnroll);
+        $stmtEnroll->execute([$promoHexId, $userHexId]);
+
+        $this->pdo->commit();
+        return true;
+    } catch (\Exception $e) {
+        // Rollback if either insert fails (e.g., promo_id doesn't exist)
+        if ($this->pdo->inTransaction()) {
+            $this->pdo->rollBack();
+        }
+        // Log $e->getMessage() here
+        return false;
+    }
+}
     public function delete(string $hexId): bool
     {
         $stmt = $this->pdo->prepare("DELETE FROM user WHERE id = UNHEX(?)");
         return $stmt->execute([$hexId]);
+    }
+
+    /**
+     * Gets the most recently assigned promotion for a specific pilot.
+     */
+    /**
+     * Gets the most recently assigned promotion for a specific pilot.
+     */
+    public function getPromoByPilote(string $pilotHexId): ?PromotionModel
+    {
+        $sql = "SELECT 
+                    HEX(p.id) as id, 
+                    p.label, 
+                    p.academic_year, 
+                    HEX(p.campus_id) as campus_id
+                FROM promotion p
+                INNER JOIN promotion_assignment pa ON p.id = pa.promotion_id
+                WHERE pa.pilot_id = UNHEX(?)
+                ORDER BY pa.assigned_at DESC
+                LIMIT 1";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$pilotHexId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? PromotionModel::fromArray($row) : null;
+    }
+
+    /**
+     * Gets all students belonging to the latest promotion assigned to a pilot.
+     * Returns an array of UserModel objects.
+     */
+    public function getStudentsByPilote(string $pilotHexId): array
+    {
+        $sql = "SELECT 
+                HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
+                'student' as role, s.status
+            FROM user u
+            INNER JOIN student s ON u.id = s.user_id
+            INNER JOIN student_enrollment se ON s.user_id = se.student_id
+            INNER JOIN promotion_assignment pa ON se.promotion_id = pa.promotion_id
+            WHERE pa.pilot_id = UNHEX(:pilot_id)
+            AND pa.assigned_at = (
+                SELECT MAX(assigned_at) 
+                FROM promotion_assignment 
+                WHERE pilot_id = UNHEX(:pilot_id_sub)
+            )";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'pilot_id' => $pilotHexId,
+            'pilot_id_sub' => $pilotHexId
+        ]);
+
+        $students = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $students[] = UserModel::fromArray($row);
+        }
+
+        return $students;
     }
 }

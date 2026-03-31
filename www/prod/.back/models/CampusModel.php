@@ -1,7 +1,8 @@
 <?php
-// models/BaseModel.php
 declare(strict_types=1);
+
 namespace App\Models;
+
 class CampusModel extends BaseModel {
     public string $id;
     public string $name;
