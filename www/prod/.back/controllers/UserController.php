@@ -35,6 +35,27 @@ class UserController extends BaseController
         return $this->repo->findById($id);
     }
 
+    public function getUserByIdJson(string $id): void
+    {
+        if (!$this->isTargetOrPrivileged($id)) {
+            $this->jsonError("Forbidden", 403);
+        }
+    
+        $user = $this->repo->findById($id);
+    
+        if (!$user) {
+            $this->jsonError("User not found", 404);
+        }
+    
+        $this->jsonResponse([
+            'id'         => $user->id,
+            'email'      => $user->email->asString(),
+            'first_name' => $user->first_name,
+            'last_name'  => $user->last_name,
+            'role'       => $user->role->value,
+        ]);
+    }
+
     public function makeUser(UserModel $user): UserModel
     {
         //TODO: add user creation limit to prevent filling the DB.
