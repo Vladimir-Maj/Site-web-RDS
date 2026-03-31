@@ -1,9 +1,9 @@
 {# .back/views/offers/offer_search.html.twig #}
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% block title %}Rechercher une offre — StageFlow{% endblock %}
 
-{% block body %}
+{% block dashboard_content %}
     <div class="page-header">
         <div>
             <h1>Trouver votre opportunité</h1>
@@ -13,7 +13,7 @@
 
     {# --- Filter Section: Styled as a Terminal Search Module --- #}
     <section class="card search-bar" style="display: block; width: 100%; padding: 1.5rem; margin-bottom: 2rem;">
-        <form method="GET" action="/app/offers">
+        <form method="GET" action="/app/offers/search">
             <div class="form-grid">
                 
                 <div class="form-group">
@@ -39,7 +39,7 @@
             </div>
             
             <div style="margin-top: 1.2rem; display: flex; justify-content: space-between; align-items: center;">
-                <a href="/app/offers" class="text-sm text-muted">✕ Réinitialiser les filtres</a>
+                <a href="/app/offers/search" class="text-sm text-muted">✕ Réinitialiser les filtres</a>
                 
                 {# Hidden inputs to preserve filters when sorting #}
                 <div class="sort-select">
@@ -69,7 +69,7 @@
                 <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
                 <h3 class="text-muted">Aucun résultat trouvé</h3>
                 <p class="text-sm">Essayez de simplifier vos mots-clés ou d'élargir la zone géographique.</p>
-                <a href="/app/offers" class="btn btn-ghost mt-2">Voir toutes les offres</a>
+                <a href="/app/offers/search" class="btn btn-ghost mt-2">Voir toutes les offres</a>
             </div>
         {% endfor %}
     </div>

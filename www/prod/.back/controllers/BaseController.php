@@ -128,16 +128,6 @@ abstract class BaseController
         exit;
     }
 
-    /**
-     * Helper to standardize JSON output
-     */
-    protected function jsonResponse(mixed $data, int $status = 200): void
-    {
-        header('Content-Type: application/json', true, $status);
-        echo json_encode($data);
-        exit;
-    }
-
     public function abortIfNotPriv(): bool
     {
         if ($this->isPrivileged() == false) {

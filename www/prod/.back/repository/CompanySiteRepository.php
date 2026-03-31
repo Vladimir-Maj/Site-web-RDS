@@ -56,8 +56,30 @@ class CompanySiteRepository
      */
     public function deleteSiteById(string $hexId): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM company_site WHERE id = UNHEX(:id)");
-        return $stmt->execute(['id' => $hexId]);
+        try {
+            $this->db->beginTransaction();
+
+            // 1️⃣ Delete dependent records FIRST
+            $stmt = $this->db->prepare("
+            DELETE FROM child_table 
+            WHERE site_id = UNHEX(:id)
+        ");
+            $stmt->execute(['id' => $hexId]);
+
+            // 2️⃣ Delete the site itself
+            $stmt = $this->db->prepare("
+            DELETE FROM company_site 
+            WHERE id = UNHEX(:id)
+        ");
+            $stmt->execute(['id' => $hexId]);
+
+            $this->db->commit();
+            return true;
+
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
     }
 
     /**

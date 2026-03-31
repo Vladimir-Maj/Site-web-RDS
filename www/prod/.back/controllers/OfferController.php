@@ -55,7 +55,8 @@ class OfferController extends BaseController
             'mode' => 'edit',
             'offer' => $offer,
             'sites' => $sites,
-            'csrf_token' => Util::getCSRFToken() // Pass to view
+            'csrf_token' => Util::getCSRFToken(), // Pass to view
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -108,7 +109,8 @@ class OfferController extends BaseController
             'filters' => $filters,
             'page' => $page,
             'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged()
+            'isPrivileged' => $this->isPrivileged(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -147,7 +149,8 @@ class OfferController extends BaseController
             'count' => $totalCount,
             'page' => $page,
             'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged()
+            'isPrivileged' => $this->isPrivileged(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -208,7 +211,10 @@ class OfferController extends BaseController
             'sites' => [],
             'isPrivileged' => $this->isPrivileged(),
             'offer' => new OfferModel(),
-            'csrf_token' => Util::getCSRFToken() // Pass to view
+            'csrf_token' => Util::getCSRFToken() ,// Pass to view
+            // Pass a new empty model instead of null
+            'offer' => new OfferModel(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -230,7 +236,7 @@ class OfferController extends BaseController
         ];
 
         if ($this->offerRepository->create($data)) {
-            header('Location: /offers?success=1');
+            header('Location: /dashboard/offers?success=1');
             exit;
         }
 

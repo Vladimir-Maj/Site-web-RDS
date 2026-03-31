@@ -1,181 +1,174 @@
-{# .back/views/companies/company_form.html.twig #}
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% set isNew = (id == 'new') %}
 {% set companyName = company.name|default('') %}
 
 {% block title %}
-	{{ isNew ? 'Créer une Entreprise' : 'Modifier ' ~ companyName }}
-	— StageFlow
+    {{ isNew ? 'Créer une Entreprise' : 'Modifier ' ~ companyName }}
+    — StageFlow
 {% endblock %}
 
-{% block body %}
+{% block dashboard_content %}
 <div class="page-header">
-	<div>
-		<h1>{{ isNew ? 'Nouvelle Entreprise' : 'Modifier l\'organisation' }}</h1>
-            <p>Gérez les informations légales et l'identité visuelle de {{ isNew ? 'votre structure' : companyName }}.</p>
-	</div>
+    <div>
+        <h1>{{ isNew ? 'Nouvelle Entreprise' : 'Modifier l\'organisation' }}</h1>
+        <p>Gérez les informations légales et l'identité visuelle de {{ isNew ? 'votre structure' : companyName }}.</p>
+    </div>
 </div>
 
 {# --- Notifications --- #}
 {% if error %}
-	<div class="notice notice-error mb-2">
-		<div class="notice-icon">⚠️</div>
-		<p>
-			<strong>Erreur :</strong>
-			{{ error }}</p>
-	</div>
+    <div class="notice notice-error mb-2">
+        <div class="notice-icon">⚠️</div>
+        <p>
+            <strong>Erreur :</strong>
+            {{ error }}
+        </p>
+    </div>
 {% endif %}
 
 {% if success %}
-	<div class="notice notice-info mb-2">
-		<div class="notice-icon">✅</div>
-		<p>Données enregistrées avec succès !</p>
-	</div>
+    <div class="notice notice-info mb-2">
+        <div class="notice-icon">✅</div>
+        <p>Données enregistrées avec succès !</p>
+    </div>
 {% endif %}
 
 <section class="card company-form-container" style="padding: 2rem; margin-bottom: 2rem;">
-	<button type="link" onclick="window.location.href='/app/companies/{{ id }}/sites'; return false;" class="btn btn-danger" style="display: {{ isNew ? 'none' : 'inline-block' }};">
-		 Sites
-	</button>
-	<form id="companyForm" action="/app/companies/{{ id }}" method="POST">
-		<input
-		type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <button type="button" onclick="window.location.href='/dashboard/companies/{{ id }}/sites'; return false;" class="btn btn-danger" style="display: {{ isNew ? 'none' : 'inline-block' }}; margin-bottom: 1rem;">
+         Sites
+    </button>
 
-		{# --- Group 1: Identity & Legal --- #}
-		<div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
-			<h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">01. Identité & Légal</h3>
-		</div>
+    <form id="companyForm" action="/dashboard/companies/{{ id }}" method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-		<div class="form-grid mb-3">
-			<div class="form-group">
-				<label for="name">Nom de l'entreprise</label>
-				<input type="text" name="name" id="name" value="{{ companyName }}" placeholder="ex: Tech Solutions SAS" required>
-			</div>
-			<div class="form-group">
-				<label for="siren">Numéro SIREN</label>
-				<input type="text" name="siren" id="siren" value="{{ company.siren|default('') }}" placeholder="9 chiffres (ex: 123 456 789)" pattern="([0-9\s\.]{9,15})" title="Le SIREN doit contenir exactement 9 chiffres." required>
-			</div>
-			<div class="form-group">
-				<label for="sector_id">Secteur d'activité</label>
-				<select name="sector_id" id="sector_id" required>
-					<option value="" disabled {{ company.sector_id is not defined ? 'selected' : '' }}>-- Choisir --</option>
-					{% for sector in sectors %}
-						<option value="{{ sector.id }}" {{ (company.sector_id|default('') == sector.id) ? 'selected' : '' }}>
-							{{ sector.name }}
-						</option>
-					{% endfor %}
-				</select>
-			</div>
-		</div>
+        {# --- Group 1: Identity & Legal --- #}
+        <div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+            <h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">01. Identité & Légal</h3>
+        </div>
 
-		{# --- Group 2: Presence & Contact --- #}
-		<div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
-			<h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">02. Présence & Contact</h3>
-		</div>
-
-		<div class="form-grid mb-3">
-			<div class="form-group">
-				<label for="email">Email de contact</label>
-				<input type="email" name="email" id="email" value="{{ company.email.asString()|default('') }}" placeholder="contact@entreprise.fr" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Veuillez entrer une adresse email valide.">
-			</div>
-			<div class="form-group">
-				<label for="phone">Téléphone</label>
-				<input type="tel" name="phone" id="phone" value="{{ company.phone|default('') }}" placeholder="01 23 45 67 89" pattern="^(\+?[0-9\s\-\.]{9,20})$" title="Format valide : 01 23 45 67 89 ou +33 6 ...">
-			</div>
-			<div class="form-group">
-				<label for="location">Siège Social</label>
-				<input type="text" name="location" id="location" value="{{ company.location|default('') }}" placeholder="Ville, Pays">
-			</div>
-			<div class="form-group span-full">
-				<label for="website">Site Web (URL)</label>
-				<input type="url" name="website" id="website" value="{{ company.website|default('') }}" placeholder="https://www.entreprise.fr" pattern="https?://.+" title="L'URL doit commencer par http:// ou https://">
-			</div>
-		</div>
-
-		{# --- Group 3: Content & Visual --- #}
-		<div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
-			<h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">03. Contenu & Visuel</h3>
-		</div>
-
-		<div class="form-group mb-2">
-			<label for="description">Description de l'entreprise</label>
-			<textarea name="description" id="description" rows="4" placeholder="Présentez l'activité et les valeurs de l'entreprise...">{{ company.description|default('') }}</textarea>
-		</div>
-
-		<div class="form-grid mb-3">
-			<div class="form-group">
-				<label for="logo_url">URL du Logo (Image)</label>
-				<input type="text" name="logo_url" id="logo_url" value="{{ company.logo_url|default('') }}" placeholder="https://lien-vers-image.png" pattern="https?://.*\.(?:png|jpg|jpeg|gif|svg|webp)" title="L'URL doit pointer vers une image valide (png, jpg, etc.)">
-			</div>
-			<div class="form-group">
-				<label for="status">Statut de visibilité</label>
-				{% set isActive = isNew ? true : (company.is_active|default(false)) %}
-				<select name="status" id="status">
-					<option value="active" {{ isActive ? 'selected' : '' }}>🟢 Actif (Visible par tous)</option>
-					<option value="pending" {{ not isActive ? 'selected' : '' }}>🟡 En attente / Privé</option>
-				</select>
-			</div>
-		</div>
-
-		{# --- Actions --- #}
-		<div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-			<a href="/app/companies" class="text-sm text-muted">✕ Abandonner les modifications</a>
-
-			<div style="display: flex; gap: 1rem;">
-
-				<button type="submit" class="btn btn-primary">
-					{{ isNew ? '🚀 Créer l\'entreprise' : '💾 Mettre à jour' }}
-                    </button>
-                </div>
+        <div class="form-grid mb-3">
+            <div class="form-group">
+                <label for="name">Nom de l'entreprise</label>
+                <input type="text" name="name" id="name" value="{{ companyName }}" placeholder="ex: Tech Solutions SAS" required>
             </div>
-        </form>
-    </section>
+            <div class="form-group">
+                <label for="siren">Numéro SIREN</label>
+                <input type="text" name="siren" id="siren" value="{{ company.siren|default('') }}" placeholder="9 chiffres (ex: 123 456 789)" pattern="([0-9\s\.]{9,15})" title="Le SIREN doit contenir exactement 9 chiffres." required>
+            </div>
+            <div class="form-group">
+                <label for="sector_id">Secteur d'activité</label>
+                <select name="sector_id" id="sector_id" required>
+                    <option value="" disabled {{ company.sector_id is not defined ? 'selected' : '' }}>-- Choisir --</option>
+                    {% for sector in sectors %}
+                        <option value="{{ sector.id }}" {{ (company.sector_id|default('') == sector.id) ? 'selected' : '' }}>
+                            {{ sector.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
 
-     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const form = document.getElementById('companyForm');
-            const phoneInput = document.getElementById('phone');
-            const sirenInput = document.getElementById('siren');
-            const patternInputs = document.querySelectorAll('input[pattern]');
+        {# --- Group 2: Presence & Contact --- #}
+        <div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
+            <h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">02. Présence & Contact</h3>
+        </div>
 
-            /**
-             * Strips spaces/dots/dashes to ensure clean DB data
-             */
-            const standardize = (el) => {
-                let val = el.value.trim();
-                if (!val) return;
+        <div class="form-grid mb-3">
+            <div class="form-group">
+                <label for="email">Email de contact</label>
+                <input type="email" name="email" id="email" value="{{ company.email.asString()|default('') }}" placeholder="contact@entreprise.fr" pattern="[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$" title="Veuillez entrer une adresse email valide.">
+            </div>
+            <div class="form-group">
+                <label for="phone">Téléphone</label>
+                <input type="tel" name="phone" id="phone" value="{{ company.phone|default('') }}" placeholder="01 23 45 67 89" pattern="^(\+?[0-9\s\-\.]{9,20})$" title="Format valide : 01 23 45 67 89 ou +33 6 ...">
+            </div>
+            <div class="form-group">
+                <label for="location">Siège Social</label>
+                <input type="text" name="location" id="location" value="{{ company.location|default('') }}" placeholder="Ville, Pays">
+            </div>
+            <div class="form-group span-full">
+                <label for="website">Site Web (URL)</label>
+                <input type="url" name="website" id="website" value="{{ company.website|default('') }}" placeholder="https://www.entreprise.fr" pattern="https?://.+" title="L'URL doit commencer par http:// ou https://">
+            </div>
+        </div>
 
-                if (el.id === 'phone') {
-                    const hasPlus = val.startsWith('+');
-                    val = val.replace(/[^0-9]/g, '');
-                    el.value = hasPlus ? '+' + val : val;
-                } else if (el.id === 'siren') {
-                    el.value = val.replace(/[^0-9]/g, '');
-                }
-            };
+        {# --- Group 3: Content & Visual --- #}
+        <div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
+            <h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">03. Contenu & Visuel</h3>
+        </div>
 
-            // Standardize when user leaves the field
-            [phoneInput, sirenInput].forEach(el => {
-                if (el) el.addEventListener('blur', () => standardize(el));
-            });
+        <div class="form-group mb-2">
+            <label for="description">Description de l'entreprise</label>
+            <textarea name="description" id="description" rows="4" placeholder="Présentez l'activité et les valeurs de l'entreprise...">{{ company.description|default('') }}</textarea>
+        </div>
 
-            // Handle custom validation messages via the 'title' attribute
-            patternInputs.forEach(input => {
-                input.addEventListener('invalid', (e) => {
-                    e.target.setCustomValidity("");
-                    if (!e.target.validity.valid) {
-                        e.target.setCustomValidity(e.target.title);
-                    }
-                });
-                input.addEventListener('input', (e) => e.target.setCustomValidity(""));
-            });
+        <div class="form-grid mb-3">
+            <div class="form-group">
+                <label for="logo_url">URL du Logo (Image)</label>
+                <input type="text" name="logo_url" id="logo_url" value="{{ company.logo_url|default('') }}" placeholder="https://lien-vers-image.png" pattern="https?://.*\.(?:png|jpg|jpeg|gif|svg|webp)" title="L'URL doit pointer vers une image valide (png, jpg, etc.)">
+            </div>
+            <div class="form-group">
+                <label for="status">Statut de visibilité</label>
+                {% set isActive = isNew ? true : (company.is_active|default(false)) %}
+                <select name="status" id="status">
+                    <option value="active" {{ isActive ? 'selected' : '' }}>🟢 Actif (Visible par tous)</option>
+                    <option value="pending" {{ not isActive ? 'selected' : '' }}>🟡 En attente / Privé</option>
+                </select>
+            </div>
+        </div>
 
-            // Final standardization before submit
-            form.addEventListener('submit', () => {
-                standardize(phoneInput);
-                standardize(sirenInput);
-            });
+        {# --- Actions --- #}
+        <div class="form-actions" style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+            <a href="/dashboard/companies" class="text-sm text-muted">✕ Annuler</a>
+            <div style="display: flex; gap: 1rem;">
+                <button type="submit" class="btn btn-primary">
+                    {{ isNew ? '🚀 Créer l\'entreprise' : '💾 Mettre à jour' }}
+                </button>
+            </div>
+        </div>
+    </form>
+</section>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.getElementById('companyForm');
+        const phoneInput = document.getElementById('phone');
+        const sirenInput = document.getElementById('siren');
+        const patternInputs = document.querySelectorAll('input[pattern]');
+
+        const standardize = (el) => {
+            if (!el) return;
+            let val = el.value.trim();
+            if (!val) return;
+
+            if (el.id === 'phone') {
+                const hasPlus = val.startsWith('+');
+                val = val.replace(/[^0-9]/g, '');
+                el.value = hasPlus ? '+' + val : val;
+            } else if (el.id === 'siren') {
+                el.value = val.replace(/[^0-9]/g, '');
+            }
+        };
+
+        [phoneInput, sirenInput].forEach(el => {
+            if (el) el.addEventListener('blur', () => standardize(el));
         });
-    </script>
+
+        patternInputs.forEach(input => {
+            input.addEventListener('invalid', (e) => {
+                e.target.setCustomValidity("");
+                if (!e.target.validity.valid) {
+                    e.target.setCustomValidity(e.target.title);
+                }
+            });
+            input.addEventListener('input', (e) => e.target.setCustomValidity(""));
+        });
+
+        form.addEventListener('submit', () => {
+            standardize(phoneInput);
+            standardize(sirenInput);
+        });
+    });
+</script>
 {% endblock %}

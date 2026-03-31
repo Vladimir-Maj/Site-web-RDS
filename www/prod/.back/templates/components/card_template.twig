@@ -46,4 +46,52 @@
             {% endif %}
         </div>
     </div>
+</div>{# .back/views/components/card_template.twig #}
+<div class="card offer-card">
+    <div class="card-header">
+        <div>
+            {# Using the modern property names and CSS tags #}
+            <h3 class="mb-1">{{ offer.title }}</h3>
+            <div class="card-meta">
+                <span>
+                    <i class="icon">🏢</i> {{ offer.company_name|default('Entreprise inconnue') }}
+                </span>
+                <span>
+                    <i class="icon">📍</i> {{ offer.location|default('Non localisé') }}
+                </span>
+            </div>
+        </div>
+        
+        {# Dynamic Tag based on is_active boolean #}
+        <span class="tag {{ offer.is_active ? 'tag-green' : 'tag-slate' }}">
+            {{ offer.is_active ? 'OUVERT' : 'ARCHIVÉ' }}
+        </span>
+    </div>
+    
+    <div class="card-body">
+        <p>
+            {{ offer.description|length > 130 ? offer.description|slice(0, 130) ~ '...' : offer.description }}
+        </p>
+        
+        <div class="card-actions">
+            {# Primary Action #}
+            <a href="/app/offers/show/{{ offer.id }}" class="btn btn-primary">
+                Voir l'offre
+            </a>
+
+            {# Conditional Admin/Pilote Actions #}
+            {% if isPrivileged %}
+                <a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">
+                    Modifier
+                </a>
+                
+                {# Delete via a small form or specialized link for CSRF safety #}
+                <form action="/app/offers/delete/{{ offer.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette offre ?');">
+                    <button type="submit" class="btn btn-danger">
+                        Supprimer
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
 </div>
