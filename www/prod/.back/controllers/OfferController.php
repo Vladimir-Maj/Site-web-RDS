@@ -213,7 +213,6 @@ class OfferController extends BaseController
             'offer' => new OfferModel(),
             'csrf_token' => Util::getCSRFToken() ,// Pass to view
             // Pass a new empty model instead of null
-            'offer' => new OfferModel(),
             'sidebar_active' => 'offers'
         ]);
     }
@@ -249,7 +248,7 @@ class OfferController extends BaseController
     public function destroy(string $id): void
     {
         if ($this->offerRepository->delete($id)) {
-            header('Location: /app/offers?deleted=1');
+            header('Location: /dashboard/offers?deleted=1');
             exit;
         }
 

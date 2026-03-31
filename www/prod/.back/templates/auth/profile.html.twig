@@ -44,11 +44,11 @@
 						{# State: CV Exists #}
 						<div style="display: flex; gap: 1rem; align-items: center;">
 							<a href="{{ user.cv_path }}" class="btn btn-primary" target="_blank">Voir mon CV actuel</a>
-							<a href="/profile/upload-cv" class="btn btn-ghost">Modifier le fichier</a>
+							<a href="/dashboard/profile/upload-cv" class="btn btn-ghost">Modifier le fichier</a>
 						</div>
 					{% else %}
 						{# State: Interactive Drop Zone #}
-						<form action="/profile/upload-cv" method="POST" enctype="multipart/form-data" id="quickUploadForm">
+						<form action="/dashboard/profile/upload-cv" method="POST" enctype="multipart/form-data" id="quickUploadForm">
 							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 							<label id="drop-zone" style="display: block; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8fafc;">
 								<span style="font-size: 2.5rem; display: block; margin-bottom: 1rem;">📄</span>

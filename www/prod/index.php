@@ -2,6 +2,7 @@
 // prod/index.php
 declare(strict_types=1);
 
+use App\Controllers\CVFast;
 use App\Models\ApplicationModel;
 use App\Models\RoleEnum;
 use App\Repository\CompanyRepository;
@@ -59,6 +60,7 @@ $student = [RoleEnum::Student->value];
 
 // ── AUTH & REGISTRATION ──────────────────────────────────────────────────────
 $authHandler = fn($pdo, $twig) => new AuthController(new UserRepository($pdo), $twig, $pdo);
+$cvHandler = fn($pdo, $twig) => new CVFast(new UserRepository($pdo), $twig, $pdo);
 
 $router->add('GET',  '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
 $router->add('POST', '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
@@ -68,7 +70,11 @@ $router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twi
 
 $router->add('GET',  '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
 $router->add('POST', '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+$router->add('POST', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+$router->add('GET', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+
+
+$router->add('GET', '/api/profile/get-cvs',        fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()), roles: RoleEnum::Student);
 
 // ── DASHBOARDS (Integrated from dashboard branch) ───────────────────────────
 $dashHandler = fn($pdo, $twig) => new DashboardController($twig);
@@ -133,8 +139,8 @@ $router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twi
 // ── APPLICATIONS ─────────────────────────────────────────────────────────────
 $appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), $twig);
 
-$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p), roles: $student);
-$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p), roles: $student);
+$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]), roles: $student);
+$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]), roles: $student);
 $router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), roles: $staff);
 // --- 6. DISPATCH ---
 $router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

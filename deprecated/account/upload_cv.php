@@ -22,7 +22,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['cv_file'])) {
     $file = $_FILES['cv_file'];
 
     // Configuration CDN
-    $cdnUploadDir = '/var/www/html/cdn/uploads/cvs/';
+    $cdnUploadDir =$baseDir. '/var/www/html/cdn/uploads/cvs/';
     if (!is_dir($cdnUploadDir)) {
         mkdir($cdnUploadDir, 0775, true);
     }

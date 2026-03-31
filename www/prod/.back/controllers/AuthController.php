@@ -24,9 +24,13 @@ class AuthController extends BaseController
         $this->pdo = $pdo;
     }
 
+
+
     public function uploadCv(): void
     {
-        // 1. Auth Check using our new Util
+        $cvFast = new CVFast($this->userRepository, $this->pdo, $this->twig);
+
+        // 1. Auth check
         if (!Util::isLoggedIn()) {
             header('Location: /login');
             exit;
@@ -37,57 +41,49 @@ class AuthController extends BaseController
         $userId = Util::getUserId();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // 2. CSRF Protection
-            $token = $_POST['csrf_token'] ?? '';
-            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
-                $this->abort(403, "Jeton CSRF invalide.");
+
+            // 2. CSRF protection
+            $submittedToken = $_POST['csrf_token'] ?? '';
+            if (!hash_equals(Util::getCSRFToken(), $submittedToken)) {
+                $this->jsonResponse(['error' => 'Jeton CSRF invalide.'], 403);
             }
 
             $file = $_FILES['cv_file'] ?? null;
+            $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] === '1';
 
-            // 3. File Validation
+            // 3. File validation
             if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
                 $error = ($file && $file['error'] === UPLOAD_ERR_INI_SIZE)
-                    ? "Le fichier dépasse la limite autorisée par le serveur."
+                    ? "Le fichier dépasse la limite autorisée."
                     : "Erreur lors de l'envoi du fichier.";
+            } elseif (mime_content_type($file['tmp_name']) !== 'application/pdf') {
+                $error = "Seuls les fichiers PDF sont autorisés.";
+            } elseif ($file['size'] > 2 * 1024 * 1024) {
+                $error = "Le fichier est trop lourd (max 2 Mo).";
             } else {
-                $allowedTypes = ['application/pdf'];
-                $maxSize = 2 * 1024 * 1024; // 2MB
 
-                // Use mime_content_type for better security than $file['type']
-                $realMimeType = mime_content_type($file['tmp_name']);
+                // 4. Path configuration
+                $uploadDir = '/var/www/html/cdn/uploads/cvs/';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
 
-                if (!in_array($realMimeType, $allowedTypes)) {
-                    $error = "Seuls les fichiers PDF sont autorisés.";
-                } elseif ($file['size'] > $maxSize) {
-                    $error = "Le fichier est trop lourd (max 2 Mo).";
+                // 5. Move file
+                $originalName = basename($file['name']);
+                $fileName = 'cv_' . bin2hex(random_bytes(8)) . '.pdf';
+                $destPath = $uploadDir . $fileName;
+
+                if (!move_uploaded_file($file['tmp_name'], $destPath)) {
+                    $error = "Erreur système lors du déplacement du fichier.";
                 } else {
-                    // 4. Path Configuration
-                    // Adjusting levels to reach /cdn/uploads/cvs/ from /prod/index.php context
-                    $baseDir = dirname(__DIR__, 2);
-                    $uploadDir = $baseDir . '/../cdn/uploads/cvs/';
-                    error_log("BaseDir" . $uploadDir);
+                    $publicPath = '/cdn/uploads/cvs/' . $fileName;
 
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0775, true);
-                    }
-
-                    // 5. File Execution & DB Update
-                    $fileName = 'cv_' . bin2hex(random_bytes(8)) . '.pdf';
-                    $destPath = $uploadDir . $fileName;
-
-                    if (move_uploaded_file($file['tmp_name'], $destPath)) {
-                        $publicPath = '/cdn/uploads/cvs/' . $fileName;
-
-                        try {
-                            $this->userRepository->updateCvPath($userId, $publicPath);
-                            $success = "Votre CV a été mis à jour avec succès.";
-                        } catch (\Exception $e) {
-                            error_log("DB Update Error: " . $e->getMessage());
-                            $error = "Erreur lors de l'enregistrement en base de données.";
-                        }
+                    // 6. Delegate DB work to CVFast
+                    if ($cvFast->store($userId, $originalName, $publicPath, $isPrimary)) {
+                        $success = "Votre CV a été ajouté avec succès.";
                     } else {
-                        $error = "Erreur système lors du déplacement du fichier.";
+                        unlink($destPath); // clean up orphaned file on DB failure
+                        $error = "Erreur lors de l'enregistrement en base de données.";
                     }
                 }
             }
@@ -96,9 +92,10 @@ class AuthController extends BaseController
         echo $this->twig->render('auth/upload_cv.html.twig', [
             'error' => $error,
             'success' => $success,
-            'csrf_token' => $_SESSION['csrf_token']
+            'csrf_token' => Util::getCSRFToken(),
         ]);
     }
+
 
     public function register(): void
     {
@@ -196,7 +193,7 @@ class AuthController extends BaseController
     public function registerStudent(): void
     {
 
-    $repo = new UserRepository($this->pdo);
+        $repo = new UserRepository($this->pdo);
         // 1. Security Check: Only privileged users (Pilots/Admins)
         if (!$this->isPrivileged()) {
             $this->abort(403, "Accès refusé. Seuls les pilotes peuvent inscrire des étudiants.");
