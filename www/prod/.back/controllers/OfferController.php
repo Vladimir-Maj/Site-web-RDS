@@ -140,6 +140,30 @@ class OfferController extends BaseController
         ]);
     }
 
+    public function searchJson(): void
+    {
+        $filters = [
+            'keyword'  => $_GET['keyword'] ?? null,
+            'city'     => $_GET['city'] ?? null,
+            'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
+            'sort'     => $_GET['sort'] ?? 'recent',
+        ];
+    
+        $limit  = 10;
+        $page   = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $offset = ($page - 1) * $limit;
+    
+        $results    = $this->offerRepository->advancedSearch($filters, $limit, $offset);
+        $totalCount = $results['total'] ?? 0;
+    
+        $this->jsonResponse([
+            'data'        => $results['data'] ?? [],
+            'total'       => $totalCount,
+            'page'        => $page,
+            'total_pages' => (int) ceil($totalCount / $limit),
+        ]);
+    }
+
     /**
      * GET /offers/{id}
      */
