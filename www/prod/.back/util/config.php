@@ -19,14 +19,25 @@ spl_autoload_register(function ($class_name) {
     $sources = [
         $root . '/.back/models/',
         $root . '/.back/repository/',
-        $root . '/.back/util'
+        $root . '/.back/controllers/',
+        $root . '/.back/util/'
     ];
 
+    // Support namespaced classes by resolving both fully-qualified path and short class name.
+    $relativeClass = str_replace('\\', DIRECTORY_SEPARATOR, ltrim($class_name, '\\'));
+    $shortClass = basename($relativeClass);
+
     foreach ($sources as $source) {
-        $file = $source . $class_name . '.php';
-        if (file_exists($file)) {
-            require_once $file;
-            return;
+        $candidates = [
+            $source . $relativeClass . '.php',
+            $source . $shortClass . '.php'
+        ];
+
+        foreach ($candidates as $file) {
+            if (file_exists($file)) {
+                require_once $file;
+                return;
+            }
         }
     }
 });

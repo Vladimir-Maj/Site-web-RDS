@@ -72,6 +72,7 @@ class CompanyController extends BaseController
             'sectors'   => $sectors,
             'filters'   => $filters,
             'csrf'      => Util::getCSRFToken(),
+            'sidebar_active' => 'companies',
             'app' => [
                 'request' => ['query' => $_GET, 'uri' => $_SERVER['REQUEST_URI']]
             ]
@@ -93,7 +94,8 @@ class CompanyController extends BaseController
             'sectors'    => $sectors,
             'csrf_token' => Util::getCSRFToken(),
             'error'      => $_SESSION['flash_error'] ?? null,
-            'success'    => $_GET['success'] ?? null
+            'success'    => $_GET['success'] ?? null,
+            'sidebar_active' => 'companies'
         ]);
         
         unset($_SESSION['flash_error']);

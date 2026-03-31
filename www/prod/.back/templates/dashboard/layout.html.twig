@@ -1,0 +1,33 @@
+{% extends "base.html.twig" %}
+
+{% block body %}
+<div class="dashboard-shell">
+    <aside class="dashboard-sidebar">
+        <h2 class="dashboard-sidebar-title">Dashboard</h2>
+        <p class="dashboard-role">Role: {{ user.role|default('guest')|upper }}</p>
+
+        <nav class="dashboard-menu">
+            <a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
+                Gestion des entreprises
+            </a>
+            <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
+                Gestion des offres
+            </a>
+            {% if user and user.role == 'admin' %}
+                <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
+                    Gestion des pilotes
+                </a>
+            {% endif %}
+            {% if user and (user.role == 'admin' or user.role == 'pilote') %}
+                <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
+                    Gestion des etudiants
+                </a>
+            {% endif %}
+        </nav>
+    </aside>
+
+    <section class="dashboard-main">
+        {% block dashboard_content %}{% endblock %}
+    </section>
+</div>
+{% endblock %}
