@@ -1,0 +1,76 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Inscrire un Étudiant — StageFlow{% endblock %}
+
+{% block body %}
+<main class="container">
+    <div class="auth-container auth-container-lg mt-3" style="max-width: 800px;">
+        
+        <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
+            <h1>Nouvelle Inscription</h1>
+            <p class="text-muted">Enregistrez un nouvel étudiant dans votre promotion.</p>
+        </div>
+
+        <section class="card company-form" style="border: var(--border-width) solid var(--clr-border); border-radius: var(--border-radius); background: var(--clr-surface);">
+            <div class="card-body" style="padding: clamp(1.5rem, 5vw, 3rem);">
+                
+                {# Updated Action: Points to a specific student creation route #}
+                <form id="registerStudentForm" method="POST" action="/register">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    
+                    {# Hidden field to force the 'student' role in your controller #}
+                    <input type="hidden" name="role" value="student">
+
+                    <span class="section-label">01. Informations de l'Étudiant</span>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="first_name">Prénom</label>
+                            <input type="text" id="first_name" name="first_name" placeholder="ex: Jean" required autofocus>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="last_name">Nom</label>
+                            <input type="text" id="last_name" name="last_name" placeholder="ex: Dupont" required>
+                        </div>
+
+                        <div class="form-group span-full">
+                            <label for="email">Email Étudiant</label>
+                            <input type="email" id="email" name="email" placeholder="ex: jean.dupont@viacesi.fr" required>
+                        </div>
+
+                        {# Promotion Selection: Pre-filled with the Pilot's current promo if available #}
+                        <div class="form-group span-full">
+                            <label for="promotion_id">Assigner à la Promotion</label>
+                            <select id="promotion_id" name="promotion_id" required>
+                                {% if current_promo %}
+                                    <option value="{{ current_promo.id }}" selected>{{ current_promo.label }} ({{ current_promo.academic_year }})</option>
+                                {% else %}
+                                    <option value="" disabled selected>-- Aucune promotion trouvée --</option>
+                                {% endif %}
+                            </select>
+                            <small class="text-muted">L'étudiant sera automatiquement inscrit dans cette promotion.</small>
+                        </div>
+                    </div>
+
+                    <div class="info-section" style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(var(--clr-primary-rgb), 0.05); border-radius: var(--border-radius); border: 1px solid var(--clr-border);">
+                        <span class="section-label" style="color: var(--clr-primary);">02. Accès & Sécurité</span>
+                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
+                            <strong>Note :</strong> Un mot de passe provisoire sera généré automatiquement. 
+                            L'étudiant pourra le modifier lors de sa première connexion.
+                        </p>
+                        {# We don't send a password, the Backend generates it #}
+                    </div>
+
+                    <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--clr-border); display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
+                        <a href="/pilot/dashboard" class="btn btn-secondary" style="text-decoration: none;">Annuler</a>
+                        <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">
+                            ✅ Valider l'inscription
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+{% endblock %}

@@ -5,16 +5,19 @@ namespace App\Controllers;
 
 use App\Models\ApplicationModel;
 use App\Repository\ApplicationRepository;
+use App\Repository\OfferRepository;
 use Twig\Environment;
 use App\Util;
 
 class ApplicationController extends BaseController
 {
     private ApplicationRepository $repo;
+    private OfferRepository $offerRepository;
 
-    public function __construct(ApplicationRepository $repo, Environment $twig)
+    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, Environment $twig)
     {
         parent::__construct($twig);
+        $this->offerRepository = $offerRepository;
         $this->repo = $repo;
     }
 
@@ -26,8 +29,24 @@ class ApplicationController extends BaseController
      */
     public function viewApply(string $id): void
     {
-        echo $this->twig->render('applications/apply.html.twig', [
-            'offer_id' => $id
+        $off = $this->offerRepository->findById($id);
+        $usr = Util::getUser();
+
+        // Diagnostic — remove once fixed
+        if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
+            // Class name that failed to deserialize
+            $className = (array) $off;
+            error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
+        }
+
+        echo $this->twig->render('offers/apply.html.twig', [
+            'offer_id' => $id,
+            'offer' => is_object($off) ? (array) $off : $off,
+            'user' => $usr,
+            'title' => 'Candidature à l\'offre',
+            'error' => 0,
+            'success' => 0,
+            'csrf_token' => Util::getCSRFToken()
         ]);
     }
 
@@ -38,15 +57,15 @@ class ApplicationController extends BaseController
     public function doApply(string $id): void
     {
         $application = ApplicationModel::fromArray([
-            'student_id'        => Util::getUserId(),
-            'offer_id'          => $id,
-            'cv_path'           => $_POST['cv_path'] ?? null,
+            'student_id' => Util::getUserId(),
+            'offer_id' => $id,
+            'cv_path' => $_POST['cv_path'] ?? null,
             'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
-            'status'            => 'pending'
+            'status' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
-            header('Location: /app/my-applications?status=success');
+            header('Location: /app/offers/my-applications?status=success');
         } else {
             header("Location: /app/offers/{$id}/apply?error=save_failed");
         }
@@ -64,11 +83,11 @@ class ApplicationController extends BaseController
         $input = json_decode(file_get_contents('php://input'), true);
 
         $application = ApplicationModel::fromArray([
-            'student_id'        => Util::getUserId(),
-            'offer_id'          => $id,
-            'cv_path'           => $input['cv_path'] ?? null,
+            'student_id' => Util::getUserId(),
+            'offer_id' => $id,
+            'cv_path' => $input['cv_path'] ?? null,
             'cover_letter_path' => $input['cover_letter_path'] ?? null,
-            'status'            => 'pending'
+            'status' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
@@ -94,8 +113,8 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }
 
-        $this->repo->delete($id) 
-            ? $this->jsonResponse(['status' => 'deleted']) 
+        $this->repo->delete($id)
+            ? $this->jsonResponse(['status' => 'deleted'])
             : $this->jsonResponse(['error' => 'Échec de la suppression'], 500);
     }
 
@@ -105,7 +124,7 @@ class ApplicationController extends BaseController
     public function showJson(string $id): void
     {
         $app = $this->repo->findById($id);
-        
+
         if (!$app) {
             $this->jsonResponse(['error' => 'Not found'], 404);
         }
@@ -131,7 +150,7 @@ class ApplicationController extends BaseController
         }
 
         $app->status = $status;
-        $this->repo->push($app); 
+        $this->repo->push($app);
 
         $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
     }

@@ -75,17 +75,19 @@ $everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student-
 
 // ── AUTH (public) ────────────────────────────────────────────────────────────
 
-$router->add('GET', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('POST', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('GET', '/logout', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->logout());
-$router->add('GET', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
-$router->add('POST', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
+$router->add('GET', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->login());
+$router->add('POST', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->login());
+$router->add('GET', '/logout', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->logout());
+$router->add('GET', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->register());
+$router->add('POST', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->register());
 
 // ── PROFILE (any authenticated role) ─────────────────────────────────────────
 
-$router->add('GET', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
-$router->add('POST', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->uploadCv(), roles: $everyone);
+$router->add('GET', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->profile(), roles: $everyone);
+$router->add('POST', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->profile(), roles: $everyone);
+$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->uploadCv(), roles: $everyone);
+
+$router->add('GET', '/app/students/new', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig, $pdo))->registerStudent(), roles: [RoleEnum::Pilote->value]);
 
 // ── HOME / CATALOGUE ──────────────────────────────────────────────────────────
 
@@ -151,24 +153,35 @@ $router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) 
 // NOTE: Moved to /api/ prefix to avoid duplicate route conflict with GET /app/companies/{id}/sites above
 
 
-// Sites
-$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->getSitesJson($p[0]), roles: $staff);
- 
-// Skills
-$router->add('GET',    '/api/skills',                           fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
-$router->add('POST',   '/api/skills/create',                    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),      roles: $staff);
-$router->add('PATCH',  '/api/skills/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p[0]), roles: $staff);
-$router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p[0]), roles: $staff);
- 
-// Applications
-$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), $twig);
- 
-$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]),        roles: $student);
-$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]),          roles: $student);
-$router->add('POST',   '/api/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->applyAjax($p[0]),        roles: $student);
-$router->add('GET',    '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->showJson($p[0]),         roles: $everyone);
-$router->add('DELETE', '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->deleteAjax($p[0]),       roles: $everyone);
-$router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: $staff);
+// ── SITES ───────────────────────────────────────────────────────────────────
+$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->getSitesJson($p), roles: $staff);
+
+// ── SKILLS ──────────────────────────────────────────────────────────────────
+$skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
+
+// HTML Routes
+$router->add('GET',  '/app/skills',        fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(),      roles: $staff);
+$router->add('POST', '/app/skills/save',   fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(), roles: $staff);
+
+// API Routes (AJAX)
+$router->add('GET',    '/api/skills',                        fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
+$router->add('POST',   '/api/skills/create',                 fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),         roles: $staff);
+$router->add('PATCH',  '/api/skills/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p),  roles: $staff);
+$router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p),  roles: $staff);
+
+// ── APPLICATIONS ─────────────────────────────────────────────────────────────
+// Note: Kept OfferRepository from 'main' as it's likely needed for application logic
+$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), $twig);
+
+// HTML Routes
+$router->add('GET',  '/app/offers/([a-fA-F0-9]{32})/apply', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p), roles: $student);
+$router->add('POST', '/app/offers/([a-fA-F0-9]{32})/apply', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p),   roles: $student);
+
+// API Routes (AJAX)
+$router->add('POST',   '/api/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->applyAjax($p),        roles: $student);
+$router->add('GET',    '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->showJson($p),         roles: $everyone);
+$router->add('DELETE', '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->deleteAjax($p),       roles: $everyone);
+$router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), roles: $staff);
 
 // --- 5. DISPATCH ---
 // TODO: Remove the debug session logger below before deploying to production

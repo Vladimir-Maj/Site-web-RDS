@@ -5,6 +5,7 @@ namespace App\Controllers;
 use App\Repository\UserRepository;
 use App\Models\UserModel;
 use App\Models\RoleEnum;
+use PDO;
 use Twig\Environment;
 use PharIo\Manifest\Email;
 use App\Util;
@@ -12,12 +13,15 @@ use App\Util;
 class AuthController extends BaseController
 {
     private UserRepository $userRepository;
+    private PDO $pdo;
 
 
-    public function __construct(UserRepository $userRepository, Environment $twig)
+
+    public function __construct(UserRepository $userRepository, Environment $twig, PDO $pdo)
     {
         $this->userRepository = $userRepository;
         $this->twig = $twig;
+        $this->pdo = $pdo;
     }
 
     public function uploadCv(): void
@@ -176,11 +180,95 @@ class AuthController extends BaseController
         Util::setRole($user->role);
         Util::setUserData([
             'id' => $user->id,
-            'role' => $user->role->value,
             'first_name' => $user->first_name,
-            'email' => $user->email->asString()
+            'last_name' => $user->last_name,
+            'email' => $user->email instanceof Email
+                ? $user->email->asString()   // you already use this in the Twig templates
+                : (string) $user->email,
+            'role' => $user->role instanceof RoleEnum ? $user->role->value : $user->role,
         ]);
     }
+
+    /**
+     * GET: Renders the student registration form.
+     * POST: Processes the registration and generates a temporary password.
+     */
+    public function registerStudent(): void
+    {
+
+    $repo = new UserRepository($this->pdo);
+        // 1. Security Check: Only privileged users (Pilots/Admins)
+        if (!$this->isPrivileged()) {
+            $this->abort(403, "Accès refusé. Seuls les pilotes peuvent inscrire des étudiants.");
+        }
+
+        // --- HANDLE GET REQUEST ---
+        if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+            // Fetch the pilot's current promotion to pre-fill the form
+            // Assuming the logged-in user's ID is stored in the session
+            $pilotId = $_SESSION['user_id'] ?? '';
+            $currentPromo = $repo->getPromoByPilote($pilotId);
+
+            $this->twig->render('auth/register_student.html.twig', [
+                'current_promo' => $currentPromo,
+                'csrf_token' => Util::getCSRFToken()
+            ]);
+            echo "page rendered";
+            return;
+        }
+
+        // --- HANDLE POST REQUEST ---
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            // CSRF Validation (Crucial for security)
+            if (!Util::validateCsrfToken($_POST['csrf_token'] ?? '')) {
+                $this->abort(403, "CSRF token invalid.");
+            }
+
+            // 1. Data Collection
+            $email = $_POST['email'] ?? '';
+            $firstName = $_POST['first_name'] ?? '';
+            $lastName = $_POST['last_name'] ?? '';
+            $promoId = $_POST['promotion_id'] ?? '';
+
+            if (empty($email) || empty($firstName) || empty($lastName) || empty($promoId)) {
+                $this->abort(400, "Tous les champs sont obligatoires.");
+            }
+
+            // 2. Generate Temporary Password
+            $tempPassword = bin2hex(random_bytes(4)); // e.g., 'a1b2c3d4'
+            $hashedPassword = password_hash($tempPassword, PASSWORD_BCRYPT);
+
+            // 3. Create User Model
+            $user = new UserModel();
+            $user->email = $email;
+            $user->password = $hashedPassword;
+            $user->first_name = $firstName;
+            $user->last_name = $lastName;
+            $user->role = RoleEnum::Student;
+            $user->is_active = true;
+
+            // 4. Persistence Logic
+            // push() handles the 'user' table
+            $newHexId = $repo->push($user);
+
+            if ($newHexId) {
+                // makeStudent() handles 'student' and 'student_enrollment' tables
+                $success = $repo->makeStudent($newHexId, $promoId, 'Searching');
+
+                if ($success) {
+                    // Store temp password in session to show it ONCE on the next page
+                    $_SESSION['temp_password_display'] = $tempPassword;
+                    $_SESSION['flash_success'] = "L'étudiant $firstName $lastName a été créé avec succès.";
+
+                    header("Location: /pilot/students");
+                    exit;
+                }
+            }
+
+            $this->abort(500, "Une erreur est survenue lors de la création de l'étudiant.");
+        }
+    }
+
 
     public function login(): void
     {
@@ -206,8 +294,12 @@ class AuthController extends BaseController
                     Util::setUserId((string) $user->id);
                     Util::setRole($role);
                     Util::setUserData([
+                        'id' => $user->id,
                         'first_name' => $user->first_name,
-                        'email' => $user->email,
+                        'last_name' => $user->last_name,
+                        'email' => $user->email instanceof Email
+                            ? $user->email->asString()   // you already use this in the Twig templates
+                            : (string) $user->email,
                         'role' => $user->role instanceof RoleEnum ? $user->role->value : $user->role,
                     ]);
                     $this->handleRoleRedirection($role);
