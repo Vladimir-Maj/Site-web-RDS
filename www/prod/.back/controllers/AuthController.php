@@ -188,46 +188,52 @@ class AuthController extends BaseController
         $lastEmail = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // 1. Correct the CSRF Check
-            $userToken = $_POST['csrf_token'] ?? '';
-            $storedToken = Util::getCSRFToken(); // This ensures a token is in session
-
-            // Standard comparison: if tokens don't match, kill the request
-            if (empty($userToken) || !hash_equals($storedToken, $userToken)) {
-                http_response_code(403);
-                die("CSRF token mismatch");
-            }
-
             $lastEmail = trim($_POST['email'] ?? '');
             $password = $_POST['password'] ?? '';
-
             $user = $this->userRepository->findByEmail($lastEmail);
 
             if ($user && password_verify($password, $user->password)) {
-                $this->setSession($user);
-                $this->handleRoleRedirection($user->role);
-                return;
-            }
+                // $user->role is already a RoleEnum — no tryFrom() needed
+                $role = $user->role instanceof RoleEnum
+                    ? $user->role
+                    : RoleEnum::tryFrom($user->role);
 
-            $error = "Identifiants invalides.";
+                if (!$role) {
+                    $error = "Rôle utilisateur invalide.";
+                } else {
+                    session_regenerate_id(true);
+                    Util::setCSRFToken(bin2hex(random_bytes(32)));
+                    Util::setUserId((string) $user->id);
+                    Util::setRole($role);
+                    Util::setUserData([
+                        'first_name' => $user->first_name,
+                        'email' => $user->email,
+                        'role' => $user->role instanceof RoleEnum ? $user->role->value : $user->role,
+                    ]);
+                    $this->handleRoleRedirection($role);
+                    return;
+                }
+            } else {
+                $error = "Identifiants invalides.";
+            }
         }
 
         echo $this->twig->render('auth/login.html.twig', [
             'error' => $error,
             'last_email' => $lastEmail,
-            'csrf_token' => Util::getCSRFToken()
+            'csrf_token' => Util::getCSRFToken(),
         ]);
     }
 
+
     public function profile(): void
     {
-        // Safety check (though index.php middleware usually handles this)
-        if (empty(Util::getCSRFToken())) {
+        if (!Util::isLoggedIn()) {
             header('Location: /login');
             exit;
         }
 
-        $user = $this->userRepository->findById($_SESSION['user_id']);
+        $user = $this->userRepository->findById(Util::getUserId());
 
         if (!$user) {
             $this->logout();

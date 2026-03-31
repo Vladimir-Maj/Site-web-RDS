@@ -24,6 +24,21 @@ class Util
         return $_SESSION["csrf_token"];
     }
 
+    public static function validateCSRFToken(string $token): bool
+{
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+
+    $storedToken = Util::getCSRFToken();
+
+    if (!$storedToken || !hash_equals($storedToken, $token)) {
+        return false;
+    }
+
+    return true;
+}
+
     public static function getUserId(): ?string
     {
         return $_SESSION['user_id'] ?? null;

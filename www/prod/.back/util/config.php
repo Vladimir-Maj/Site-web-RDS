@@ -61,24 +61,31 @@ class Router
     public function run(string $requestUri, string $requestMethod): void
     {
         $path = parse_url($requestUri, PHP_URL_PATH);
-        $role = Util::getRole();
-        $userRole = $role?->value ?? 'guest';
-        
+        $requestMethod = strtoupper($requestMethod);
+        $userRole = Util::getRole()?->value ?? 'guest';
+
         foreach ($this->routes as $route) {
-            $pattern = "#^" . $route['path'] . "$#";
-            if ($requestMethod === $route['method'] && preg_match($pattern, $path, $matches)) {
+            if ($requestMethod === $route['method'] && preg_match("#^" . $route['path'] . "$#", $path, $matches)) {
                 array_shift($matches);
 
-                // 1. Check Matrix Roles
+                // 1. Protection CSRF pour les méthodes d'écriture
+                if (in_array($requestMethod, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
+                    // On récupère le token soit dans le POST, soit dans les Headers (pour l'AJAX)
+                    $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+
+                    if (!Util::validateCSRFToken($token)) {
+                        $this->forbidden("Jeton CSRF invalide ou manquant.");
+                    }
+                }
+
+                // 2. Vérification des Rôles
                 if ($route['roles'] !== null && !in_array($userRole, $route['roles'])) {
                     $this->forbidden();
                 }
 
-                // 2. Check Custom Predicate (Ownership)
-                if ($route['predicate'] !== null) {
-                    if (!$route['predicate']($matches, $this->pdo)) {
-                        $this->forbidden();
-                    }
+                // 3. Vérification du Prédicat (Ownership)
+                if ($route['predicate'] !== null && !$route['predicate']($matches, $this->pdo)) {
+                    $this->forbidden();
                 }
 
                 $route['handler']($matches, $this->pdo, $this->twig);

@@ -21,25 +21,25 @@ class ApplicationController extends BaseController
     // --- SECTION : VUES WEB (Rendu Twig) ---
 
     /**
-     * GET /app/apply/{offerId}
-     * Affiche le formulaire de candidature pour une offre spécifique
+     * GET /app/offers/{id}/apply
+     * Affiche le formulaire de candidature
      */
-    public function viewApply(string $offerId): void
+    public function viewApply(string $id): void
     {
         echo $this->twig->render('applications/apply.html.twig', [
-            'offer_id' => $offerId
+            'offer_id' => $id
         ]);
     }
 
     /**
-     * POST /app/apply/submit
+     * POST /app/offers/{id}/apply
      * Traitement classique de formulaire avec redirection
      */
-    public function doApply(): void
+    public function doApply(string $id): void
     {
         $application = ApplicationModel::fromArray([
             'student_id'        => Util::getUserId(),
-            'offer_id'          => $_POST['offer_id'] ?? '',
+            'offer_id'          => $id,
             'cv_path'           => $_POST['cv_path'] ?? null,
             'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
             'status'            => 'pending'
@@ -48,7 +48,7 @@ class ApplicationController extends BaseController
         if ($this->repo->push($application)) {
             header('Location: /app/my-applications?status=success');
         } else {
-            header('Location: /app/apply/' . $application->offer_id . '?error=save_failed');
+            header("Location: /app/offers/{$id}/apply?error=save_failed");
         }
         exit;
     }
@@ -56,20 +56,16 @@ class ApplicationController extends BaseController
     // --- SECTION : API AJAX (JSON) ---
 
     /**
-     * POST /api/apply
+     * POST /api/offers/{id}/apply
      * Création d'une candidature via AJAX
      */
-    public function applyAjax(): void
+    public function applyAjax(string $id): void
     {
         $input = json_decode(file_get_contents('php://input'), true);
 
-        if (empty($input['offer_id'])) {
-            $this->jsonResponse(['error' => 'ID de l\'offre manquant'], 400);
-        }
-
         $application = ApplicationModel::fromArray([
             'student_id'        => Util::getUserId(),
-            'offer_id'          => $input['offer_id'],
+            'offer_id'          => $id,
             'cv_path'           => $input['cv_path'] ?? null,
             'cover_letter_path' => $input['cover_letter_path'] ?? null,
             'status'            => 'pending'
@@ -84,7 +80,6 @@ class ApplicationController extends BaseController
 
     /**
      * DELETE /api/applications/{id}
-     * Suppression AJAX avec vérification de propriété
      */
     public function deleteAjax(string $id): void
     {
@@ -94,8 +89,8 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
         }
 
-        // Sécurité résiduelle : Seul le propriétaire (ou un admin via le routeur) peut supprimer
-        if (!$this->repo->isOwner($app->id, $app->student_id) || $this->isSuperUser()) {
+        // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
+        if ($app->student_id !== Util::getUserId() && !$this->isPrivileged()) {
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }
 
@@ -106,36 +101,37 @@ class ApplicationController extends BaseController
 
     /**
      * GET /api/applications/{id}
-     * Récupère les détails d'une candidature en JSON
      */
     public function showJson(string $id): void
     {
         $app = $this->repo->findById($id);
         
-        $app ? $this->jsonResponse($app) : $this->jsonResponse(['error' => 'Not found'], 404);
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Not found'], 404);
+        }
+
+        $this->jsonResponse($app);
     }
 
     /**
-     * PATCH /api/applications/status
-     * Mise à jour du statut par un Pilote ou Admin
+     * PATCH /api/applications/{id}/status
      */
-    public function updateStatusAjax(): void
+    public function updateStatusAjax(string $id): void
     {
         $input = json_decode(file_get_contents('php://input'), true);
-        $id = $input['id'] ?? null;
         $status = $input['status'] ?? null;
 
-        if (!$id || !$status) {
-            $this->jsonResponse(['error' => 'Données incomplètes'], 400);
+        if (!$status) {
+            $this->jsonResponse(['error' => 'Statut manquant'], 400);
         }
 
         $app = $this->repo->findById($id);
         if (!$app) {
-            $this->jsonResponse(['error' => 'Inexistant'], 404);
+            $this->jsonResponse(['error' => 'Candidature inexistante'], 404);
         }
 
         $app->status = $status;
-        $this->repo->push($app); // Utilise push pour l'Update
+        $this->repo->push($app); 
 
         $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
     }

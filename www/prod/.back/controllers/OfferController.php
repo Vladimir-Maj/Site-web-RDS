@@ -219,9 +219,6 @@ class OfferController extends BaseController
      */
     public function destroy(string $id): void
     {
-        $this->abortIfNotPriv();
-        $this->validateCSRF(); // SAFE
-
         if ($this->offerRepository->delete($id)) {
             header('Location: /offers?deleted=1');
             exit;

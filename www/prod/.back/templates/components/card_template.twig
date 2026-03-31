@@ -27,7 +27,7 @@
         
         <div class="card-actions">
             {# Primary Action #}
-            <a href="/offers/show/{{ offer.id }}" class="btn btn-primary">
+            <a href="/app/offers/show/{{ offer.id }}" class="btn btn-primary">
                 Voir l'offre
             </a>
 
@@ -38,7 +38,7 @@
                 </a>
                 
                 {# Delete via a small form or specialized link for CSRF safety #}
-                <form action="/offers/delete/{{ offer.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette offre ?');">
+                <form action="/app/offers/delete/{{ offer.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette offre ?');">
                     <button type="submit" class="btn btn-danger">
                         Supprimer
                     </button>

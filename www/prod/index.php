@@ -22,9 +22,9 @@ use App\Util;
 // --- 1. SESSION & SECURITY (must come before config.php) ---
 session_set_cookie_params([
     'lifetime' => 0,
-    'path'     => '/',
-    'domain'   => '',
-    'secure'   => true,
+    'path' => '/',
+    'domain' => '',
+    'secure' => true,
     'httponly' => true,
     'samesite' => 'Strict',
 ]);
@@ -75,35 +75,35 @@ $everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student-
 
 // ── AUTH (public) ────────────────────────────────────────────────────────────
 
-$router->add('GET',  '/login',    fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('POST', '/login',    fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
-$router->add('GET',  '/logout',   fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->logout());
-$router->add('GET',  '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
+$router->add('GET', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
+$router->add('POST', '/login', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->login());
+$router->add('GET', '/logout', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->logout());
+$router->add('GET', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
 $router->add('POST', '/register', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->register());
 
 // ── PROFILE (any authenticated role) ─────────────────────────────────────────
 
-$router->add('GET',  '/profile',           fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(),   roles: ['admin', 'pilote', 'etudiant']);
-$router->add('POST', '/profile',           fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(),   roles: ['admin', 'pilote', 'etudiant']);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->uploadCv(), roles: ['admin', 'pilote', 'etudiant']);
+$router->add('GET', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
+$router->add('POST', '/profile', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->profile(), roles: $everyone);
+$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => (new AuthController(new UserRepository($pdo), $twig))->uploadCv(), roles: $everyone);
 
 // ── HOME / CATALOGUE ──────────────────────────────────────────────────────────
 
 $router->add('GET', '/', function ($p, $pdo, $twig) {
     $offerRepo = new OfferRepository($pdo);
-    $limit  = 5;
-    $page   = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+    $limit = 5;
+    $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
     $offset = (max(1, $page) - 1) * $limit;
 
     try {
-        $offers      = $offerRepo->findPaginated($limit, $offset);
+        $offers = $offerRepo->findPaginated($limit, $offset);
         $totalOffers = $offerRepo->countAll();
 
         // 'user' and 'csrf_token' are now Twig globals — no need to pass them manually
         echo $twig->render('index.html.twig', [
-            'offers'      => $offers,
-            'totalPages'  => (int) ceil($totalOffers / $limit),
-            'page'        => $page,
+            'offers' => $offers,
+            'totalPages' => (int) ceil($totalOffers / $limit),
+            'page' => $page,
         ]);
     } catch (Exception $e) {
         error_log($e->getMessage());
@@ -114,22 +114,22 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
 
 // ── COMPANIES ─────────────────────────────────────────────────────────────────
 
-$router->add('GET',  '/app/companies',        fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->renderList(), roles: $staff);
-$router->add('GET',  '/app/companies/new',    fn($p, $pdo, $twig) =>(new CompanyController(new CompanyRepository($pdo), $twig))->renderForm('new'), roles: $staff);
-$router->add('POST', '/app/companies/new',    fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->handleFormSave('new'),  roles: $staff);
-$router->add('GET',  '/app/companies/([^/]+)', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->renderForm($p[0]),     roles: $staff);
+$router->add('GET', '/app/companies', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->renderList(), roles: $staff);
+$router->add('GET', '/app/companies/new', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->renderForm('new'), roles: $staff);
+$router->add('POST', '/app/companies/new', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->handleFormSave('new'), roles: $staff);
+$router->add('GET', '/app/companies/([^/]+)', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->renderForm($p[0]), roles: $staff);
 $router->add('POST', '/app/companies/([^/]+)', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->handleFormSave($p[0]), roles: $staff);
 
 // ── OFFERS ────────────────────────────────────────────────────────────────────
 
 $offerHandler = fn($pdo, $twig) => new OfferController($twig, new OfferRepository($pdo), $pdo);
 
-$router->add('GET',  '/app/offers',                          fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
-$router->add('GET',  '/app/offers/search',                   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
-$router->add('GET',  '/app/offers/new',                      fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(),     roles: $staff);
-$router->add('POST', '/app/offers/new',                      fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(),      roles: $staff);
-$router->add('GET',  '/app/offers/show/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show($p[0]));
-$router->add('GET',  '/app/offers/edit/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]),   roles: $staff);
+$router->add('GET', '/app/offers', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
+$router->add('GET', '/app/offers/search', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
+$router->add('GET', '/app/offers/new', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
+$router->add('POST', '/app/offers/new', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
+$router->add('GET', '/app/offers/show/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show($p[0]));
+$router->add('GET', '/app/offers/edit/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy($p[0]), roles: $staff);
 
@@ -141,11 +141,11 @@ $siteHandler = fn($pdo, $twig) => new SiteController(
     $twig
 );
 
-$router->add('GET',  '/app/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index($p[0]),   roles: $staff);
-$router->add('GET',  '/app/sites/new',                          fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(),           roles: $staff);
-$router->add('POST', '/app/sites/save',                         fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(),    roles: $staff);
-$router->add('GET',  '/app/sites/([a-fA-F0-9]{32})',            fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p[0]),     roles: $staff);
-$router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})',     fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p[0]),   roles: $staff);
+$router->add('GET', '/app/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index($p[0]), roles: $staff);
+$router->add('GET', '/app/sites/new', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
+$router->add('POST', '/app/sites/save', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
+$router->add('GET', '/app/sites/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p[0]), roles: $staff);
+$router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p[0]), roles: $staff);
 
 // ── AJAX: sites by company ────────────────────────────────────────────────────
 // NOTE: Moved to /api/ prefix to avoid duplicate route conflict with GET /app/companies/{id}/sites above
@@ -153,40 +153,80 @@ $router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})',     fn($p, $pdo, $tw
 
 // index.php
 
-$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', function($p, $pdo, $twig) use ($siteHandler) {
+$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', function ($p, $pdo, $twig) use ($siteHandler) {
     // $p is an array of matches. $p is your Hex ID string.
-    $siteHandler($pdo, $twig)->getSitesJson($p[0]); 
+    $siteHandler($pdo, $twig)->getSitesJson($p[0]);
 }, roles: $staff);
 
 $skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
 
-$router->add('GET',  '/app/skills',                fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
-$router->add('POST', '/app/skills/save',           fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(), roles: $staff);
+$router->add('GET', '/app/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
+$router->add('POST', '/app/skills/save', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(), roles: $staff);
 $router->add('POST', '/app/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->delete($p[0]), roles: $staff);
-$router->add('GET',  '/api/skills',               fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
+$router->add('GET', '/api/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
 
 // TODO: Implement CompanyController::getSitesByCompany() and wire it here
 //       Returns JSON list of sites for a given company (used by offer form dropdowns etc.)
 // $router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->getSitesByCompany($p[0]), roles: $staff);
 
 // ── APPLICATIONS ─────────────────────────────────────────────────────────────
-// TODO: Implement ApplicationController with the following routes:
-//       - GET  /app/applications                       → list all (admin/pilote) or own (etudiant)
-//       - POST /app/offers/show/{id}/apply             → student submits application
-//       - GET  /app/applications/{id}                  → view single application
-//       - POST /app/applications/delete/{id}           → student withdraws application
-//       - POST /app/applications/update-status/{id}    → admin/pilote updates status (accepted/rejected)
-// $appHandler = fn($pdo, $twig) => new ApplicationController($twig, new ApplicationRepository($pdo), $pdo);
-// $router->add('GET',  '/app/applications',                              fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->index(),           roles: ['admin', 'pilote', 'etudiant']);
-// $router->add('POST', '/app/offers/show/([a-fA-F0-9]{32})/apply',      fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->store($p[0]),       roles: ['etudiant']);
-// $router->add('GET',  '/app/applications/([a-fA-F0-9]{32})',            fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->show($p[0]),        roles: ['admin', 'pilote', 'etudiant']);
-// $router->add('POST', '/app/applications/delete/([a-fA-F0-9]{32})',     fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->destroy($p[0]),     roles: ['etudiant']);
-// $router->add('POST', '/app/applications/update-status/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatus($p[0]), roles: $staff);
+
+$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), $twig);
+
+
+// Rendu HTML du formulaire (GET)
+$router->add(
+    'GET',
+    '/app/offers/([a-fA-F0-9]{32})/apply',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p),
+    roles: ['etudiant']
+);
+
+// Soumission classique de formulaire (POST)
+$router->add(
+    'POST',
+    '/app/offers/([a-fA-F0-9]{32})/apply',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p),
+    roles: ['etudiant']
+);
+
+// API : Soumission AJAX (POST)
+$router->add(
+    'POST',
+    '/api/offers/([a-fA-F0-9]{32})/apply',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->applyAjax($p),
+    roles: ['etudiant']
+);
+
+// API : Détails d'une candidature (GET JSON)
+$router->add(
+    'GET',
+    '/api/applications/([a-fA-F0-9]{32})',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->showJson($p),
+    roles: $everyone
+);
+
+// API : Suppression / Retrait (DELETE ou POST selon votre front)
+$router->add(
+    'DELETE',
+    '/api/applications/([a-fA-F0-9]{32})',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->deleteAjax($p),
+    roles: $everyone
+);
+
+// API : Mise à jour du statut par le Staff (PATCH)
+$router->add(
+    'PATCH',
+    '/api/applications/([a-fA-F0-9]{32})/status',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p),
+    roles: $staff
+);
 
 // --- 5. DISPATCH ---
 // TODO: Remove the debug session logger below before deploying to production
 error_log('[SESSION DUMP] ' . print_r($_SESSION, true));
-error_log('[AUTH] userId=' . (Util::getUserId() ?? 'null')
+error_log(
+    '[AUTH] userId=' . (Util::getUserId() ?? 'null')
     . ' role=' . (Util::getRole()?->value ?? 'null')
     . ' path=' . parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH)
     . ' method=' . $_SERVER['REQUEST_METHOD']

@@ -132,11 +132,4 @@ abstract class BaseController
         }
         return true;
     }
-
-    /**
-     * user_id : UUIDv7
-     * email : string
-     * role : string ('admin', 'pilote', 'student')
-     * 
-     */
 }
