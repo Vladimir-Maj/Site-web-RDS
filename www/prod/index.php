@@ -151,76 +151,24 @@ $router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) 
 // NOTE: Moved to /api/ prefix to avoid duplicate route conflict with GET /app/companies/{id}/sites above
 
 
-// index.php
-
-$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', function ($p, $pdo, $twig) use ($siteHandler) {
-    // $p is an array of matches. $p is your Hex ID string.
-    $siteHandler($pdo, $twig)->getSitesJson($p[0]);
-}, roles: $staff);
-
-$skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
-
-$router->add('GET', '/app/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
-$router->add('POST', '/app/skills/save', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(), roles: $staff);
-$router->add('POST', '/app/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->delete($p[0]), roles: $staff);
-$router->add('GET', '/api/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
-
-// TODO: Implement CompanyController::getSitesByCompany() and wire it here
-//       Returns JSON list of sites for a given company (used by offer form dropdowns etc.)
-// $router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => (new CompanyController(new CompanyRepository($pdo), $twig))->getSitesByCompany($p[0]), roles: $staff);
-
-// ── APPLICATIONS ─────────────────────────────────────────────────────────────
-
+// Sites
+$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->getSitesJson($p[0]), roles: $staff);
+ 
+// Skills
+$router->add('GET',    '/api/skills',                           fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
+$router->add('POST',   '/api/skills/create',                    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),      roles: $staff);
+$router->add('PATCH',  '/api/skills/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p[0]), roles: $staff);
+$router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p[0]), roles: $staff);
+ 
+// Applications
 $appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), $twig);
-
-
-// Rendu HTML du formulaire (GET)
-$router->add(
-    'GET',
-    '/app/offers/([a-fA-F0-9]{32})/apply',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p),
-    roles: ['etudiant']
-);
-
-// Soumission classique de formulaire (POST)
-$router->add(
-    'POST',
-    '/app/offers/([a-fA-F0-9]{32})/apply',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p),
-    roles: ['etudiant']
-);
-
-// API : Soumission AJAX (POST)
-$router->add(
-    'POST',
-    '/api/offers/([a-fA-F0-9]{32})/apply',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->applyAjax($p),
-    roles: ['etudiant']
-);
-
-// API : Détails d'une candidature (GET JSON)
-$router->add(
-    'GET',
-    '/api/applications/([a-fA-F0-9]{32})',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->showJson($p),
-    roles: $everyone
-);
-
-// API : Suppression / Retrait (DELETE ou POST selon votre front)
-$router->add(
-    'DELETE',
-    '/api/applications/([a-fA-F0-9]{32})',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->deleteAjax($p),
-    roles: $everyone
-);
-
-// API : Mise à jour du statut par le Staff (PATCH)
-$router->add(
-    'PATCH',
-    '/api/applications/([a-fA-F0-9]{32})/status',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p),
-    roles: $staff
-);
+ 
+$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]),        roles: $student);
+$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]),          roles: $student);
+$router->add('POST',   '/api/offers/([a-fA-F0-9]{32})/apply',       fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->applyAjax($p[0]),        roles: $student);
+$router->add('GET',    '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->showJson($p[0]),         roles: $everyone);
+$router->add('DELETE', '/api/applications/([a-fA-F0-9]{32})',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->deleteAjax($p[0]),       roles: $everyone);
+$router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: $staff);
 
 // --- 5. DISPATCH ---
 // TODO: Remove the debug session logger below before deploying to production
