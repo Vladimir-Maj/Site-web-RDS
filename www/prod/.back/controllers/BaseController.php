@@ -21,6 +21,19 @@ abstract class BaseController
         }
     }
 
+    protected function jsonResponse(mixed $data, int $status = 200): void
+    {
+        header('Content-Type: application/json', true, $status);
+        http_response_code($status);
+        echo json_encode($data);
+        exit;
+    }
+    
+    protected function jsonError(string $message, int $status = 400): void
+    {
+        $this->jsonResponse(['error' => $message], $status);
+    }
+
     /**
      * Common Utility: Ensure user is logged in
      */
