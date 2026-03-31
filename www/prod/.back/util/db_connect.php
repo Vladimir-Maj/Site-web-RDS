@@ -2,11 +2,11 @@
 // prod/.back/util/db_connect.php
 
 // ===== LOCAL (Docker) =====
-$host = '127.0.0.1';         
-$port = 3306;             
-$db   = 'sql_db';      
-$user = 'root';             
-$pass = 'Vlad123MotDePasse!';
+$host = 'db';
+$port = 3306;
+$db   = 'sql_db';
+$user = 'website-local';
+$pass = '1234';
 
 /*
 // ===== PRODUCTION =====
