@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Util;
 use App\Repository\OfferRepository;
 use App\Repository\CompanyRepository;
 use App\Models\OfferModel;
@@ -11,16 +12,28 @@ use Twig\Environment;
 
 class OfferController extends BaseController
 {
-    /**
-     * We call parent::__construct to ensure Twig and Sessions are initialized
-     */
     public function __construct(
         Environment $twig,
-        private readonly OfferRepository $offerRepository
-        ,
+        private readonly OfferRepository $offerRepository,
         protected readonly PDO $pdo
     ) {
         parent::__construct($twig);
+
+        // Ensure a CSRF token exists
+        if (Util::getCSRFToken() === null) {
+            Util::setCSRFToken(bin2hex(random_bytes(32)));
+        }
+    }
+
+    /**
+     * Helper to verify token and abort if invalid
+     */
+    private function validateCSRF(): void
+    {
+        $token = $_POST['csrf_token'] ?? '';
+        if (empty($token) || $token !== Util::getCSRFToken()) {
+            $this->abort(403, "Requête invalide (CSRF Token mismatch).");
+        }
     }
 
     /**
@@ -35,14 +48,14 @@ class OfferController extends BaseController
             $this->abort(404, "Offre introuvable.");
         }
 
-        // Fetch sites to populate the dropdown in the editor
         $siteRepo = new CompanyRepository($this->pdo);
         $sites = $siteRepo->findSitesByCompany($offer->company_id);
 
         echo $this->twig->render('offers/offer_editor.html.twig', [
             'mode' => 'edit',
             'offer' => $offer,
-            'sites' => $sites
+            'sites' => $sites,
+            'csrf_token' => Util::getCSRFToken() // Pass to view
         ]);
     }
 
@@ -52,6 +65,7 @@ class OfferController extends BaseController
     public function update(string $id): void
     {
         $this->abortIfNotPriv();
+        $this->validateCSRF(); // SAFE
 
         $data = [
             'title' => $_POST['title'] ?? '',
@@ -76,24 +90,19 @@ class OfferController extends BaseController
      */
     public function index(): void
     {
-        // 1. Pagination Parameters
         $limit = 10;
         $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
         $offset = ($page - 1) * $limit;
 
-        // 2. Capture Filters
         $filters = [
             'keyword' => $_GET['q'] ?? null,
             'city' => $_GET['city'] ?? null,
         ];
 
-        // 3. Fetch Data & Total Count
-        // We use findPaginated (for the data) and countAll (for the logic)
         $offers = $this->offerRepository->findPaginated($limit, $offset);
         $totalOffers = $this->offerRepository->countAll();
         $totalPages = (int) ceil($totalOffers / $limit);
 
-        // 4. Render with ALL required variables
         echo $this->twig->render('offers/index.html.twig', [
             'offers' => $offers,
             'filters' => $filters,
@@ -154,7 +163,9 @@ class OfferController extends BaseController
         }
 
         echo $this->twig->render('offers/show.html.twig', [
-            'offer' => $offer
+            'offer' => $offer,
+            'isPrivileged' => $this->isPrivileged(),
+            'csrf_token' => Util::getCSRFToken() // Pass to view for
         ]);
     }
     /**
@@ -172,8 +183,9 @@ class OfferController extends BaseController
             'error' => null,
             'companies' => $companies,
             'sites' => [],
-            // Pass a new empty model instead of null
-            'offer' => new OfferModel()
+            'isPrivileged' => $this->isPrivileged(),
+            'offer' => new OfferModel(),
+            'csrf_token' => Util::getCSRFToken() // Pass to view
         ]);
     }
 
@@ -183,8 +195,8 @@ class OfferController extends BaseController
     public function store(): void
     {
         $this->abortIfNotPriv();
+        $this->validateCSRF(); // SAFE
 
-        // Basic CSRF/Validation logic here
         $data = [
             'title' => $_POST['title'] ?? '',
             'description' => $_POST['description'] ?? null,
@@ -207,8 +219,8 @@ class OfferController extends BaseController
      */
     public function destroy(string $id): void
     {
-        // Security check using your BaseController logic
         $this->abortIfNotPriv();
+        $this->validateCSRF(); // SAFE
 
         if ($this->offerRepository->delete($id)) {
             header('Location: /offers?deleted=1');

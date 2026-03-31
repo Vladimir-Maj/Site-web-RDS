@@ -8,7 +8,6 @@ use App\Models\RoleEnum;
 use Twig\Environment;
 use PharIo\Manifest\Email;
 use App\Util;
-use function PHPUnit\Framework\isEmpty;
 
 class AuthController extends BaseController
 {
@@ -62,7 +61,8 @@ class AuthController extends BaseController
                     // 4. Path Configuration
                     // Adjusting levels to reach /cdn/uploads/cvs/ from /prod/index.php context
                     $baseDir = dirname(__DIR__, 2);
-                    $uploadDir = $baseDir . '/cdn/uploads/cvs/';
+                    $uploadDir = $baseDir . '/../cdn/uploads/cvs/';
+                    error_log("BaseDir" . $uploadDir);
 
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0775, true);
@@ -170,7 +170,7 @@ class AuthController extends BaseController
         Util::setCSRFToken(
             bin2hex(random_bytes(32))
         );
-        
+
 
         Util::setUserId($user->id);
         Util::setRole($user->role);
@@ -188,9 +188,12 @@ class AuthController extends BaseController
         $lastEmail = '';
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            // CSRF Protection
-            $token = $_POST['csrf_token'] ?? '';
-            if (!isEmpty(Util::getCSRFToken()) || !hash_equals(Util::getCSRFToken(), $token)) {
+            // 1. Correct the CSRF Check
+            $userToken = $_POST['csrf_token'] ?? '';
+            $storedToken = Util::getCSRFToken(); // This ensures a token is in session
+
+            // Standard comparison: if tokens don't match, kill the request
+            if (empty($userToken) || !hash_equals($storedToken, $userToken)) {
                 http_response_code(403);
                 die("CSRF token mismatch");
             }

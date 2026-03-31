@@ -3,6 +3,7 @@
 
 declare(strict_types=1);
 
+use App\Util;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 use Twig\Extension\DebugExtension;
@@ -12,52 +13,33 @@ class TwigFactory
     /** @var Environment|null */
     private static ?Environment $twig = null;
 
-    /**
-     * Initializes and returns the Twig Environment
-     */
     public static function getTwig(): Environment
     {
         if (self::$twig === null) {
-            // 1. Set the path to your private templates folder
-            // __DIR__ is .back/util, so we go up one level to .back/templates
             $templateDir = __DIR__ . '/../templates';
 
             if (!is_dir($templateDir)) {
-                // This will show a clear error in your browser if the folder is missing
-                die("FATAL: Twig templates directory not found at: " . realpath(__DIR__ . '/..') . "/templates. Please create it.");
+                die("FATAL: Twig templates directory not found at: " . realpath(__DIR__ . '/..') . "/templates.");
             }
 
             $loader = new FilesystemLoader($templateDir);
 
-            // 2. Initialize the Environment
             self::$twig = new Environment($loader, [
-                'cache' => false, // Change to __DIR__ . '/../cache' for production speed
-                'debug' => true,  // Allows {{ dump() }} for troubleshooting
+                'cache' => APP_ENV === 'production' ? __DIR__ . '/../cache' : false,
+                'debug' => APP_ENV !== 'production',
                 'auto_reload' => true,
                 'strict_variables' => true,
             ]);
 
-            // 3. Add Extensions
             self::$twig->addExtension(new DebugExtension());
 
-            // 4. Add Global Variables
-            // This makes these available in every .twig file without passing them in the render() array
-            self::$twig->addGlobal('site_url', defined('SITE_URL') ? SITE_URL : '');
-
-            // Share session data (useful for checking if user is logged in)
-            if (session_status() === PHP_SESSION_NONE) {
-                session_start();
-            }
+            // ✅ Each global registered exactly once, using constants from config.php
+            self::$twig->addGlobal('cdn_url', CDN_URL);
+            self::$twig->addGlobal('site_url', defined('SITE_URL') ? SITE_URL : 'https://prod.stageflow.fr');
             self::$twig->addGlobal('session', $_SESSION);
-            self::$twig->addGlobal('user', $_SESSION['user'] ?? null);
-            // Helpful for absolute paths to assets
-            self::$twig->addGlobal('cdn_url', defined('CDN_URL') ? CDN_URL : '/cdn');
-            // .back/util/twig_factory.php
 
-            self::$twig->addGlobal('cdn_url', CDN_URL);   // From your config.php
-            self::$twig->addGlobal('site_url', "https://prod.stageflow.fr"); // From your config.php
-
-
+            // ✅ Single source of truth for user — always from Util, not raw $_SESSION
+            self::$twig->addGlobal('user', Util::getUser() ?? null);
         }
 
         return self::$twig;

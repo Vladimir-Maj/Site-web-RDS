@@ -1,0 +1,165 @@
+/* ===================================================
+   STAGEFLOW — RESPONSIVE COMPONENTS.CSS
+   Buttons, Cards, Tags, and Interactive Elements
+   =================================================== */
+
+/* ---------- BUTTONS ---------- */
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center; /* Center text on mobile if button goes full-width */
+    gap: .5rem;
+    font-family: var(--font);
+    font-size: .85rem;
+    padding: 0.6rem 1rem; /* Increased padding for better touch targets */
+    border: 1px solid var(--clr-border);
+    background: var(--clr-surface);
+    color: var(--clr-text);
+    cursor: pointer;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: var(--border-radius-btn);
+    transition: all 0.2s ease;
+    /* Prevent text selection on accidental double taps */
+    user-select: none;
+}
+
+/* Ensure buttons are easy to click on small screens */
+@media (max-width: 480px) {
+    .btn-full-mobile {
+        display: flex;
+        width: 100%;
+    }
+}
+
+.btn:hover {
+    border-color: var(--clr-text);
+    transform: translateY(-1px); /* Subtle lift effect */
+    
+    /* This dims light colors and brightens dark ones slightly */
+    filter: brightness(0.9) contrast(1.1); 
+}
+
+.btn-primary {
+    background: var(--clr-accent);
+    color: var(--clr-accent-inv);
+    border-color: var(--clr-accent);
+}
+
+.btn-primary:hover {
+    filter: brightness(1.2); /* Works for both light/dark themes */
+    border-color: var(--clr-accent);
+}
+
+/* ---------- CARDS ---------- */
+.card {
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    margin-bottom: 1rem;
+    border-radius: var(--border-radius);
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    overflow: hidden; /* Ensures child backgrounds don't bleed over corners */
+}
+
+.card:hover {
+    border-color: var(--clr-accent);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.card-header {
+    padding: 1rem;
+    border-bottom: 1px solid var(--clr-border-light);
+    display: flex;
+    flex-wrap: wrap; /* Allows tags/actions to drop to next line on narrow cards */
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.7rem;
+}
+
+.card-body {
+    padding: 1rem;
+    display: flex;
+    flex-direction: column; /* Stack vertically on mobile */
+    gap: 1rem;
+}
+
+/* On tablet/desktop, allow the body to split horizontally */
+@media (min-width: 640px) {
+    .card-body {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: flex-end;
+    }
+}
+
+.card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.2rem;
+}
+
+.card-meta span {
+    font-size: .8rem;
+    color: var(--clr-text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+/* ---------- TAGS ---------- */
+.tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: .7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    padding: .2rem .5rem;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+/* Use your light-dark variables for tags to ensure they work in both modes */
+.tag-green { background: var(--clr-tag-green); color: var(--clr-tag-green-t); }
+.tag-amber { background: var(--clr-tag-amber); color: var(--clr-tag-amber-t); }
+.tag-slate { background: var(--clr-tag-slate); color: var(--clr-tag-slate-t); }
+
+/* ---------- NOTICES & ALERTS ---------- */
+.notice, .status-alert {
+    display: flex;
+    gap: .8rem;
+    align-items: flex-start;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: .9rem;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--border-radius);
+}
+
+/* Use system colors for notices to respect dark mode automatic switching */
+.notice-info    { background: rgba(0, 123, 255, 0.1); border-color: #7986cb; }
+.notice-success { background: rgba(46, 125, 50, 0.1); border-color: var(--clr-success); }
+.notice-error   { background: rgba(183, 28, 28, 0.1); border-color: var(--clr-danger); }
+
+/* ---------- SEARCH & INPUTS ---------- */
+.search-bar {
+    width: 100%;
+    padding: 0.6rem 1rem;
+    border: 1px solid var(--clr-border);
+    border-radius: var(--border-radius);
+    background: var(--clr-surface);
+    color: var(--clr-text);
+    font-family: inherit;
+    transition: border-color 0.3s;
+}
+
+.search-bar:focus {
+    outline: none;
+    border-color: var(--clr-accent);
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.2);
+}
+
+.search-bar:hover {
+    border-color: var(--clr-text);
+}

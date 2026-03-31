@@ -19,6 +19,7 @@ class OfferModel
     public ?string $company_name = null;
     public ?string $location = null; // maps to s.city
     public ?string $address = null;
+    public ?string $required_skills = null;
 
     public static function fromArray(array $data): self
     {

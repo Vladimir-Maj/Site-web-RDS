@@ -39,13 +39,15 @@ class OfferRepository
      */
     public function findById(string $hexId): ?OfferModel
     {
-        $sql = "SELECT HEX(o.id) as id, o.*, 
-                       c.name as company_name, HEX(c.id) as company_id,
-                       s.city as location, s.address, HEX(s.id) as site_id
-                FROM internship_offer o
-                JOIN company_site s ON o.site_id = s.id
-                JOIN company c ON s.company_id = c.id
-                WHERE o.id = UNHEX(:id) LIMIT 1";
+        $sql = "SELECT o.*, 
+               HEX(o.id) as id,          -- overrides the binary o.id
+               c.name as company_name, 
+               HEX(c.id) as company_id,
+               s.city as location, s.address, HEX(s.id) as site_id
+        FROM internship_offer o
+        JOIN company_site s ON o.site_id = s.id
+        JOIN company c ON s.company_id = c.id
+        WHERE o.id = UNHEX(:id) LIMIT 1";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([':id' => $hexId]);
@@ -80,7 +82,7 @@ class OfferRepository
             ':site_id' => $data['site_id'] // Added this to match DB needs
         ]);
     }
-    
+
     /**
      * DELETE: Soft delete (is_active = 0)
      */
@@ -152,13 +154,17 @@ class OfferRepository
      */
     public function findPaginated(int $limit, int $offset): array
     {
-        $sql = "SELECT HEX(o.id) as id, o.*, c.name as company_name, HEX(c.id) as company_id, s.city as location 
-                FROM internship_offer o
-                JOIN company_site s ON o.site_id = s.id
-                JOIN company c ON s.company_id = c.id
-                WHERE o.is_active = 1
-                ORDER BY o.published_at DESC
-                LIMIT :limit OFFSET :offset";
+        $sql = "SELECT o.*, 
+               HEX(o.id) as id,          -- overrides the binary o.id
+               c.name as company_name, 
+               HEX(c.id) as company_id, 
+               s.city as location 
+        FROM internship_offer o
+        JOIN company_site s ON o.site_id = s.id
+        JOIN company c ON s.company_id = c.id
+        WHERE o.is_active = 1
+        ORDER BY o.published_at DESC
+        LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);

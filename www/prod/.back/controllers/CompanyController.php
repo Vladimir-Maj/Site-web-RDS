@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-namespace App\Controller;
+namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\CompanyModel;
@@ -44,15 +44,7 @@ class CompanyController extends BaseController
         }
     }
 
-    /**
-     * Helper to standardize JSON output
-     */
-    private function jsonResponse(mixed $data, int $status = 200): void
-    {
-        header('Content-Type: application/json', true, $status);
-        echo json_encode($data);
-        exit;
-    }
+    
 
     // -------------------------------------------------------------------------
     // View Rendering Methods

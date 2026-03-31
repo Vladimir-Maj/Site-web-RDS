@@ -104,6 +104,27 @@ abstract class BaseController
         return $this->isPrivileged() || $this->isSessionUser($id);
     }
 
+    /**
+     * Helper privé pour uniformiser les erreurs JSON
+     */
+    protected function renderJsonError(string $message, int $code): void
+    {
+        header('Content-Type: application/json');
+        http_response_code($code);
+        echo json_encode(["error" => $message]);
+        exit;
+    }
+
+    /**
+     * Helper to standardize JSON output
+     */
+    protected function jsonResponse(mixed $data, int $status = 200): void
+    {
+        header('Content-Type: application/json', true, $status);
+        echo json_encode($data);
+        exit;
+    }
+
     public function abortIfNotPriv(): bool
     {
         if ($this->isPrivileged() == false) {

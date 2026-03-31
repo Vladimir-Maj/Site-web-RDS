@@ -10,10 +10,17 @@
             <h1 class="mt-1">{{ offer.title }}</h1>
             <p>Publié le {{ offer.published_at|date("d/m/Y") }} par <strong>{{ offer.company_name }}</strong></p>
         </div>
+        
+        {# Ensure isPrivileged matches your RoleEnum checks (Admin/Pilote) #}
         {% if isPrivileged %}
             <div style="display: flex; gap: 10px;">
-                <a href="/offers/edit/{{ offer.id }}" class="btn btn-outline">Modifier</a>
-                <form action="/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');">
+                {# Link to Edit: /app/offers/edit/[HEX_ID] #}
+                <a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">Modifier</a>
+                
+                {# Delete Form: Matches router POST /app/offers/delete/([a-fA-F0-9]{32}) #}
+                <form action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');">
+                    {# Always include CSRF for state-changing actions #}
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     <button type="submit" class="btn btn-danger">Supprimer</button>
                 </form>
             </div>
@@ -42,7 +49,13 @@
                     </div>
                 </div>
 
-                <button class="btn btn-primary w-100 mt-3" style="width: 100%; padding: 10px;">Postuler via StageFlow</button>
+                {# Future logic: /app/offers/show/[HEX_ID]/apply #}
+                <form action="/app/offers/show/{{ offer.id }}/apply" method="POST">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <button type="submit" class="btn btn-primary w-100 mt-3" style="width: 100%; padding: 10px;">
+                        Postuler via StageFlow
+                    </button>
+                </form>
             </div>
             
             <div class="notice notice-warn mt-2">
