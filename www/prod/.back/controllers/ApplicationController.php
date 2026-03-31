@@ -39,6 +39,13 @@ class ApplicationController extends BaseController {
         return $this->repo->findByStudent(Util::getUserId());
     }
 
+    public function listForStudentJson(): void
+    {
+        // Le middleware auth a déjà vérifié la session
+        $applications = $this->repo->findByStudent(Util::getUserId());
+        $this->jsonResponse($applications);
+    }
+
     public function apply(ApplicationModel $application): void {
         $this->repo->push($application);
     }
@@ -59,6 +66,23 @@ class ApplicationController extends BaseController {
         // Redirection avec un paramètre de succès pour le feedback UI
         header('Location: /index.php?page=my-applications&status=deleted');
         exit;
+    }
+
+    public function deleteJson(string $applicationId): void
+    {
+        $application = $this->repo->findById($applicationId);
+    
+        if (!$application) {
+            $this->jsonError("Application not found", 404);
+        }
+    
+        // Vérification d'appartenance : seul l'étudiant propriétaire peut supprimer
+        if ($application->student_id !== Util::getUserId() && !$this->isPrivileged()) {
+            $this->jsonError("Forbidden", 403);
+        }
+    
+        $this->repo->delete($applicationId);
+        $this->jsonResponse(['success' => true, 'deleted_id' => $applicationId]);
     }
 
     /**
