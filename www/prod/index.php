@@ -104,8 +104,8 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
 
 $router->add('GET',  '/dashboard/offers',        fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
 $router->add('GET',  '/app/offers/search', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
-$router->add('GET',  '/app/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
-$router->add('POST', '/app/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
+$router->add('GET',  '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
+$router->add('POST', '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
 $router->add('GET',  '/app/offers/show/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show($p[0]));
 $router->add('GET',  '/app/offers/edit/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
