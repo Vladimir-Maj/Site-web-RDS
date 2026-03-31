@@ -5,69 +5,153 @@ namespace App\Controllers;
 
 use App\Models\ApplicationModel;
 use App\Repository\ApplicationRepository;
+use App\Repository\OfferRepository;
 use Twig\Environment;
 use App\Util;
 
-class ApplicationController extends BaseController {
+class ApplicationController extends BaseController
+{
     private ApplicationRepository $repo;
+    private OfferRepository $offerRepository;
 
-    public function __construct(ApplicationRepository $repo, Environment $twig) {
+    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, Environment $twig)
+    {
         parent::__construct($twig);
+        $this->offerRepository = $offerRepository;
         $this->repo = $repo;
     }
 
-    /**
-     * @throws \RuntimeException Si l'application n'existe pas
-     */
-    public function showJson(string $applicationId): void {
-        $application = $this->repo->findById($applicationId);
+    // --- SECTION : VUES WEB (Rendu Twig) ---
 
-        if (!$application) {
-            $this->renderJsonError("Application not found", 404);
+    /**
+     * GET /app/offers/{id}/apply
+     * Affiche le formulaire de candidature
+     */
+    public function viewApply(string $id): void
+    {
+        $off = $this->offerRepository->findById($id);
+        $usr = Util::getUser();
+
+        // Diagnostic — remove once fixed
+        if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
+            // Class name that failed to deserialize
+            $className = (array) $off;
+            error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
         }
 
-        header('Content-Type: application/json');
-        echo json_encode($application); 
+        echo $this->twig->render('offers/apply.html.twig', [
+            'offer_id' => $id,
+            'offer' => is_object($off) ? (array) $off : $off,
+            'user' => $usr,
+            'title' => 'Candidature à l\'offre',
+            'error' => 0,
+            'success' => 0,
+            'csrf_token' => Util::getCSRFToken()
+        ]);
+    }
+
+    /**
+     * POST /app/offers/{id}/apply
+     * Traitement classique de formulaire avec redirection
+     */
+    public function doApply(string $id): void
+    {
+        $application = ApplicationModel::fromArray([
+            'student_id' => Util::getUserId(),
+            'offer_id' => $id,
+            'cv_path' => $_POST['cv_path'] ?? null,
+            'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
+            'status' => 'pending'
+        ]);
+
+        if ($this->repo->push($application)) {
+            header('Location: /app/offers/my-applications?status=success');
+        } else {
+            header("Location: /app/offers/{$id}/apply?error=save_failed");
+        }
         exit;
     }
 
-    /**
-     * @return array Liste des candidatures pour l'étudiant connecté
-     */
-    public function listForStudent(): array {
-        // On utilise l'ID en session, injecté par le middleware d'auth
-        return $this->repo->findByStudent(Util::getUserId());
-    }
-
-    public function apply(ApplicationModel $application): void {
-        $this->repo->push($application);
-    }
+    // --- SECTION : API AJAX (JSON) ---
 
     /**
-     * @throws \RuntimeException
+     * POST /api/offers/{id}/apply
+     * Création d'une candidature via AJAX
      */
-    public function delete(string $applicationId): void {
-        // On vérifie juste l'existence, le middleware a déjà validé le droit de supprimer
-        $application = $this->repo->findById($applicationId);
+    public function applyAjax(string $id): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
 
-        if (!$application) {
-            $this->abort(404, "Application not found.");
+        $application = ApplicationModel::fromArray([
+            'student_id' => Util::getUserId(),
+            'offer_id' => $id,
+            'cv_path' => $input['cv_path'] ?? null,
+            'cover_letter_path' => $input['cover_letter_path'] ?? null,
+            'status' => 'pending'
+        ]);
+
+        if ($this->repo->push($application)) {
+            $this->jsonResponse(['status' => 'success', 'data' => $application], 201);
         }
 
-        $this->repo->delete($applicationId);
-        
-        // Redirection avec un paramètre de succès pour le feedback UI
-        header('Location: /index.php?page=my-applications&status=deleted');
-        exit;
+        $this->jsonResponse(['error' => 'Erreur lors de la sauvegarde'], 500);
     }
 
     /**
-     * Helper privé pour uniformiser les erreurs JSON
+     * DELETE /api/applications/{id}
      */
-    private function renderJsonError(string $message, int $code): void {
-        header('Content-Type: application/json');
-        http_response_code($code);
-        echo json_encode(["error" => $message]);
-        exit;
+    public function deleteAjax(string $id): void
+    {
+        $app = $this->repo->findById($id);
+
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
+        }
+
+        // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
+        if ($app->student_id !== Util::getUserId() && !$this->isPrivileged()) {
+            $this->jsonResponse(['error' => 'Action non autorisée'], 403);
+        }
+
+        $this->repo->delete($id)
+            ? $this->jsonResponse(['status' => 'deleted'])
+            : $this->jsonResponse(['error' => 'Échec de la suppression'], 500);
+    }
+
+    /**
+     * GET /api/applications/{id}
+     */
+    public function showJson(string $id): void
+    {
+        $app = $this->repo->findById($id);
+
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Not found'], 404);
+        }
+
+        $this->jsonResponse($app);
+    }
+
+    /**
+     * PATCH /api/applications/{id}/status
+     */
+    public function updateStatusAjax(string $id): void
+    {
+        $input = json_decode(file_get_contents('php://input'), true);
+        $status = $input['status'] ?? null;
+
+        if (!$status) {
+            $this->jsonResponse(['error' => 'Statut manquant'], 400);
+        }
+
+        $app = $this->repo->findById($id);
+        if (!$app) {
+            $this->jsonResponse(['error' => 'Candidature inexistante'], 404);
+        }
+
+        $app->status = $status;
+        $this->repo->push($app);
+
+        $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
     }
 }

@@ -1,0 +1,18 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Dashboard — StageFlow{% endblock %}
+
+{% block body %}
+
+    <div class="card mt-3">
+        <div class="card-header">
+            <h2>Dashboard</h2>
+            <span class="tag tag-green">Espace Staff</span>
+        </div>
+        <div class="card-body">
+            <p>Bienvenue sur votre tableau de bord, {{ user.first_name|default('visiteur') }}.</p>
+            <p class="text-muted">Utilisez le dashboard qui va bientot être crée pour naviguer vers les differentes gestion(entreprise, offre,
+            {% if user.role == 'admin' %} pilote, {% endif %} étudiant).</p>
+        </div>
+    </div>
+{% endblock %}

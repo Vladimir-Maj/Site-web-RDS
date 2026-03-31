@@ -1,9 +1,9 @@
 {# .back/views/offers/index.html.twig #}
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% block title %}Catalogue des Offres — StageFlow{% endblock %}
 
-{% block body %}
+{% block dashboard_content %}
     <div class="page-header">
         <div>
             <h1>Catalogue des Offres</h1>
@@ -11,13 +11,13 @@
         </div>
         {% if isPrivileged %}
             <div style="display: flex; gap: 10px;">
-                <a href="/offers/create" class="btn btn-primary">+ Publier</a>
+                <a href="/dashboard/offers/new" class="btn btn-primary">+ Publier</a>
             </div>
         {% endif %}
     </div>
 
     {# Search Bar using your .search-bar and .form-group classes #}
-    <form method="GET" action="/offers" class="search-bar">
+    <form method="GET" action="/app/offers" class="search-bar">
         <div class="form-group">
             <label>Mots-clés</label>
             <input type="text" name="q" placeholder="Titre, entreprise..." value="{{ filters.keyword }}">
@@ -27,7 +27,7 @@
             <input type="text" name="city" placeholder="Ville (ex: Nancy)" value="{{ filters.city }}">
         </div>
         <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
-        <a href="/offers" class="btn btn-ghost">Réinitialiser</a>
+        <a href="/app/offers" class="btn btn-ghost">Réinitialiser</a>
     </form>
 
     <div class="notice notice-info">

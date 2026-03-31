@@ -1,0 +1,145 @@
+/* ===================================================
+   STAGEFLOW — RESPONSIVE BASE.CSS
+   =================================================== */
+
+/* ---------- RESET & BOX MODEL ---------- */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    color-scheme: light dark;
+
+    /* Colors (Unchanged from your original) */
+    --clr-bg: light-dark(#f0f0f0, #121212);
+    --clr-surface: light-dark(#fafafa, #1e1e1e);
+    --clr-border: light-dark(#aaaaaa, #444444);
+    --clr-border-light: light-dark(#cccccc, #666666);
+    --clr-text: light-dark(#1a1a1a, #e0e0e0);
+    --clr-text-muted: light-dark(#666666, #999999);
+    --clr-accent: light-dark(#1a1a1a, #bb86fc);
+    --clr-accent-inv: light-dark(#f0f0f0, #121212);
+    --clr-danger : light-dark(#d32f2f, #cf6679);
+
+    /* Spacing & Layout Units (Responsive) */
+    --gap-base: 1rem;
+    --container-max-width: 1200px;
+    --section-padding: clamp(2rem, 5vw, 5rem);
+    
+    /* Borders */
+    --border-width: 0.125rem;
+    --border-radius: 8px;
+    --border-radius-btn: 6px;
+
+    --font: 'Noto Sans', system-ui, -apple-system, sans-serif;
+}
+
+/* ---------- THEME OVERRIDES ---------- */
+
+/* Force Light Mode */
+[data-theme="light"] {
+    color-scheme: light;
+    --clr-bg: #f0f0f0;
+    --clr-surface: #fafafa;
+    --clr-text: #1a1a1a;
+    --clr-text-muted: #666666;
+    --clr-accent: #1a1a1a;
+    --clr-border: #aaaaaa;
+}
+
+/* Force Dark Mode - Refined & Less Tacky */
+[data-theme="dark"] {
+    color-scheme: dark;
+    
+    /* A deep charcoal with a hint of blue/slate for depth */
+    --clr-bg: #1a1b1e; 
+    
+    /* Subtle elevation: slightly lighter than the background */
+    --clr-surface: #25262b; 
+    
+    /* Text: Use an off-white to reduce "glow" and eye strain */
+    --clr-text: #ececee;
+    --clr-text-muted: #909296;
+    
+    /* Accent: A sophisticated Slate Blue instead of neon purple */
+    --clr-accent: #74c0fc; 
+    
+    /* Borders: Softened so they don't box everything in too harshly */
+    --clr-border: #373a40;
+}
+
+/* ---------- RESPONSIVE TYPOGRAPHY ---------- */
+html {
+    /* Fluid typography: grows between 15px and 18px based on viewport */
+    font-size: clamp(15px, 0.8rem + 0.5vw, 18px);
+}
+
+body {
+    font-family: var(--font);
+    background: var(--clr-bg);
+    color: var(--clr-text);
+    line-height: 1.6; /* Slightly increased for better mobile readability */
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* Fluid Headings using clamp() */
+h1 { font-size: clamp(1.4rem, 5vw, 2.5rem); }
+h2 { font-size: clamp(1.2rem, 4vw, 2rem); }
+h3 { font-size: clamp(1.1rem, 3vw, 1.5rem); }
+h4 { font-size: 1rem; }
+
+/* ---------- RESPONSIVE LAYOUT UTILITIES ---------- */
+
+/* The 'Wrapper' - keeps content centered and padded on mobile */
+.container {
+    width: 100%;
+    max-width: var(--container-max-width);
+    margin-right: auto;
+    margin-left: auto;
+    padding-right: var(--gap-base);
+    padding-left: var(--gap-base);
+}
+
+/* Responsive Grid System */
+.grid {
+    display: grid;
+    gap: var(--gap-base);
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+/* Flex utilities for mobile-first stacking */
+.flex-stack {
+    display: flex;
+    flex-direction: column;
+    gap: var(--gap-base);
+}
+
+@media (min-width: 768px) {
+    .flex-stack {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+/* ---------- ELEMENTS ---------- */
+img, video, canvas, svg {
+    display: block;
+    max-width: 100%; /* Prevents images from breaking layouts */
+    height: auto;
+}
+
+a {
+    color: var(--clr-accent);
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+/* ---------- MARGINS (Responsive) ---------- */
+.mt-1 { margin-top: calc(var(--gap-base) * 0.5); }
+.mt-2 { margin-top: var(--gap-base); }
+.mt-3 { margin-top: calc(var(--gap-base) * 2); }

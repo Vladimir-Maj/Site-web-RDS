@@ -23,7 +23,18 @@
     {% include 'footer_template.html.twig' %}
 
     {# Global Scripts #}
-    <script src="{{ cdn_url }}/assets/scripts/theme-toggle.js"></script>
+<!--    <script src="{{ cdn_url }}/assets/scripts/theme-toggle.js"></script>-->
     {% block scripts %}{% endblock %}
 </body>
+
+<script>
+    // Critical: Set theme before the page renders to prevent flashing
+    (function() {
+        const saved = localStorage.getItem('stageflow-theme');
+        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (saved === 'dark' || (!saved && dark)) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+    })();
+</script>
 </html>

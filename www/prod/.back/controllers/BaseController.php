@@ -3,8 +3,10 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\RoleEnum;
 use Twig\Environment;
 use PharIo\Manifest\Email;
+use App\Util;
 
 abstract class BaseController
 {
@@ -17,6 +19,27 @@ abstract class BaseController
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
+    }
+
+    protected function jsonResponse(mixed $data, int $status = 200): void
+    {
+        // 1. Clear any whitespace or accidental output buffer
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
+        // 2. Set headers
+        header('Content-Type: application/json; charset=utf-8', true, $status);
+        http_response_code($status);
+
+        // 3. Output and stop everything else
+        echo json_encode($data);
+        exit;
+    }
+
+    protected function jsonError(string $message, int $status = 400): void
+    {
+        $this->jsonResponse(['error' => $message], $status);
     }
 
     /**
@@ -66,12 +89,12 @@ abstract class BaseController
 
     protected function isSuperUser(): bool
     {
-        return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+        return Util::getRole() === RoleEnum::Admin;
     }
 
     protected function isPilote(): bool
     {
-        return isset($_SESSION['role']) && $_SESSION['role'] === 'pilote';
+        return Util::getRole() === RoleEnum::Pilote;
     }
 
     protected function isPrivileged(): bool
@@ -102,6 +125,17 @@ abstract class BaseController
         return $this->isPrivileged() || $this->isSessionUser($id);
     }
 
+    /**
+     * Helper privé pour uniformiser les erreurs JSON
+     */
+    protected function renderJsonError(string $message, int $code): void
+    {
+        header('Content-Type: application/json');
+        http_response_code($code);
+        echo json_encode(["error" => $message]);
+        exit;
+    }
+
     public function abortIfNotPriv(): bool
     {
         if ($this->isPrivileged() == false) {
@@ -109,11 +143,4 @@ abstract class BaseController
         }
         return true;
     }
-
-    /**
-     * user_id : UUIDv7
-     * email : string
-     * role : string ('admin', 'pilote', 'student')
-     * 
-     */
 }

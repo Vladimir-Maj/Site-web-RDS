@@ -1,19 +1,24 @@
 <?php
 
 declare(strict_types=1);
-namespace App\Controller;
+namespace App\Controllers;
 use App\Controllers\BaseController;
+use App\Models\PromotionModel;
+use App\Models\RoleEnum;
 use App\Models\UserModel;
 use App\Repository\UserRepository;
+use App\Util;
 use PharIo\Manifest\Email;
+use Twig\Environment;
 
 class UserController extends BaseController
 {
     private UserRepository $repo;
 
-    public function __construct(UserRepository $repo)
+    public function __construct(UserRepository $repo, Environment $twig)
     {
         $this->repo = $repo;
+        $this->twig = $twig;
     }
 
     public function getUserFromMail(Email $mail): ?UserModel
@@ -24,7 +29,10 @@ class UserController extends BaseController
         return $this->repo->findByEmail($mail->asString());
     }
 
-    
+    public function getPromoByPilote(string $pid): ?PromotionModel
+    {
+        return $this->repo->getPromoByPilote($pid);
+    }
 
     public function getUserById(string $id, callable $isAuthorized): ?UserModel
     {
@@ -33,6 +41,27 @@ class UserController extends BaseController
         }
 
         return $this->repo->findById($id);
+    }
+
+    public function getUserByIdJson(string $id): void
+    {
+        if (!$this->isTargetOrPrivileged($id)) {
+            $this->jsonError("Forbidden", 403);
+        }
+    
+        $user = $this->repo->findById($id);
+    
+        if (!$user) {
+            $this->jsonError("User not found", 404);
+        }
+    
+        $this->jsonResponse([
+            'id'         => $user->id,
+            'email'      => $user->email->asString(),
+            'first_name' => $user->first_name,
+            'last_name'  => $user->last_name,
+            'role'       => $user->role->value,
+        ]);
     }
 
     public function makeUser(UserModel $user): UserModel

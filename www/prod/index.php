@@ -2,19 +2,24 @@
 // prod/index.php
 declare(strict_types=1);
 
-require_once __DIR__ . '/.back/util/config.php';
-
-use App\Controller\CompanyController;
+use App\Controllers\CVFast;
 use App\Models\ApplicationModel;
 use App\Models\RoleEnum;
 use App\Repository\CompanyRepository;
-use App\Repository\OfferRepository;
+use App\Repository\CompanySiteRepository;
+use App\Repository\SkillRepository;
 use App\Repository\UserRepository;
 use App\Repository\ApplicationRepository;
-use App\Controllers\AuthController;
+use App\Repository\OfferRepository;
+use App\Controllers\CompanyController;
+use App\Controllers\SiteController;
+use App\Controllers\SkillController;
+use App\Controllers\UserController;
+use App\Controllers\StudentController;
 use App\Controllers\ApplicationController;
-use App\Controllers\DashboardController;
+use App\Controllers\AuthController;
 use App\Controllers\OfferController;
+use App\Controllers\DashboardController;
 use App\Util;
 
 // --- 1. SESSION & SECURITY ---
@@ -24,208 +29,141 @@ session_set_cookie_params([
     'domain' => '',
     'secure' => true,
     'httponly' => true,
-    'samesite' => 'Strict'
+    'samesite' => 'Strict',
 ]);
-
-
 
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-if (empty(Util::getCSRFToken())) {
-    Util::setCSRFToken(bin2hex(random_bytes(32)));
-}
+// --- 2. REQUIRES & FACTORIES ---
+require_once __DIR__ . '/.back/util/config.php';
+require_once __DIR__ . '/.back/util/Router.php';
 
-function jsonResponse(mixed $data, int $status = 200): never
-{
+$twig = TwigFactory::getTwig();
+
+// --- 3. HELPERS ---
+function jsonResponse(mixed $data, int $status = 200): never {
     http_response_code($status);
     header('Content-Type: application/json');
     echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
     exit;
 }
 
-/**
- * Décode le body JSON de la requête entrante.
- * Lève une exception si le JSON est malformé.
- */
-function getJsonBody(): array
-{
-    $raw = file_get_contents('php://input');
-    $data = json_decode($raw, true);
+// --- 4. ROUTER SETUP ---
+$router = new Router($pdo, $twig);
 
-    if (!is_array($data)) {
-        jsonResponse(['error' => 'Invalid or missing JSON body.'], 400);
-    }
+$staff = [RoleEnum::Admin->value, RoleEnum::Pilote->value];
+$everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student->value];
+$student = [RoleEnum::Student->value];
 
-    return $data;
-}
+// --- 5. ROUTES ---
 
-// --- 2. MIDDLEWARES ---
+// ── AUTH & REGISTRATION ──────────────────────────────────────────────────────
+$authHandler = fn($pdo, $twig) => new AuthController(new UserRepository($pdo), $twig, $pdo);
+$cvHandler = fn($pdo, $twig) => new CVFast(new UserRepository($pdo), $twig, $pdo);
 
-/**
- * Vérifie si l'utilisateur est connecté
- */
-$ensureAuth = function () {
-    if (empty(Util::getUserId())) {
-        header('Location: /login');
-        exit;
-    }
-};
+$router->add('GET',  '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
+$router->add('POST', '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
+$router->add('GET',  '/logout',   fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->logout());
+$router->add('GET',  '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
+$router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
 
-/**
- * Autorise si Admin/Pilote OU si l'ID cible est celui de l'utilisateur connecté
- */
-$ensureSelfOrAdmin = function (?string $targetId = null, array $allowedRoles = ['admin', 'pilote']) {
-    if (empty(Util::getUserId())) {
-        header('Location: /login');
-        exit;
-    }
+$router->add('GET',  '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
+$router->add('POST', '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
+$router->add('POST', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+$router->add('GET', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
 
-    $userRole = Util::getRole() ?? 'guest';
-    $userId = Util::getUserId() ?? null;
 
-    $isStaff = in_array($userRole, $allowedRoles);
-    $isOwner = $targetId !== null && $targetId === $userId;
+$router->add('GET', '/api/profile/get-cvs',        fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()), roles: RoleEnum::Student);
 
-    if (!$isStaff && !$isOwner) {
-        http_response_code(403);
-        header('Content-Type: application/json');
-        echo json_encode(["error" => "Permission refusée."]);
-        exit;
-    }
-};
+// ── DASHBOARDS (Integrated from dashboard branch) ───────────────────────────
+$dashHandler = fn($pdo, $twig) => new DashboardController($twig);
+$compHandler = fn($pdo, $twig) => new CompanyController(new CompanyRepository($pdo), $twig);
 
-// --- 3. ROUTING ---
-$path = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
-$twig = TwigFactory::getTwig();
+$router->add('GET', '/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: $staff);
+$router->add('GET',  '/dashboard/companies',          fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);
 
-// ROUTES PUBLIQUES (Auth)
-switch ($path) {
-    case '/login':
-        (new AuthController(new UserRepository($pdo), $twig))->login();
-        exit;
-    case '/logout':
-        (new AuthController(new UserRepository($pdo), $twig))->logout();
-        exit;
-    case '/register':
-        (new AuthController(new UserRepository($pdo), $twig))->register();
-        exit;
-}
+// ── COMPANIES ────────────────────────────────────────────────────────────────
 
-// ROUTES PRIVÉES (Profil & Compte)
-if (str_starts_with($path, '/profile')) {
-    $ensureAuth();
-    $authCtrl = new AuthController(new UserRepository($pdo), $twig);
+$router->add('GET',  '/dashboard/companies/new',      fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm('new'), roles: $staff);
+$router->add('POST', '/dashboard/companies/new',      fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave('new'), roles: $staff);
+$router->add('GET',  '/dashboard/companies/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm($p[0]), roles: $staff);
+$router->add('POST', '/dashboard/companies/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave($p[0]), roles: $staff);
 
-    if ($path === '/profile') {
-        $authCtrl->profile();
-    } elseif ($path === '/profile/upload-cv') {
-        $authCtrl->uploadCv();
-    }
-    exit;
-}
+// ── OFFERS ───────────────────────────────────────────────────────────────────
+$offerHandler = fn($pdo, $twig) => new OfferController($twig, new OfferRepository($pdo), $pdo);
 
-// ROUTES PRIVÉES (Dashboard Admin/Pilote)
-if ($path === '/admin/dashboard' || $path === '/pilote/dashboard') {
-    $ensureAuth();
-    (new DashboardController($twig))->index();
-    exit;
-}
-
-if ($path === '/dashboard/pilotes') {
-    $ensureAuth();
-    (new DashboardController($twig))->pilots();
-    exit;
-}
-
-if ($path === '/dashboard/etudiants') {
-    $ensureAuth();
-    (new DashboardController($twig))->students();
-    exit;
-}
-
-// ROUTES OFFRES (migrées)
-if (str_starts_with($path, '/offers')) {
-    $offerCtrl = new OfferController(new OfferRepository($pdo), new CompanyRepository($pdo), $twig);
-
-    if ($path === '/offers') {
-        $offerCtrl->index();
-        exit;
-    }
-
-    if ($path === '/offers/publish') {
-        $ensureAuth();
-        $offerCtrl->publish();
-        exit;
-    }
-
-    if (preg_match('#^/offers/([a-fA-F0-9]{16,64})$#', $path, $m)) {
-        $offerCtrl->show($m[1]);
-        exit;
-    }
-}
-
-//// --- WEB ROUTES: COMPANY MANAGEMENT ---
-if (str_starts_with($path, '/app/companies')) {
-//    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
-
-    $companyCtrl = new CompanyController(new CompanyRepository($pdo), $twig);
-    $method = $_SERVER['REQUEST_METHOD'];
-
-    // 0. Route liste
-    if ($path === '/app/companies' && $method === 'GET') {
-        $companyCtrl->renderList();
-        exit;
-    }
-
-    // 1. Route spécifique : Création
-    if ($path === '/app/companies/new') {
-        if ($method === 'GET') {
-            $companyCtrl->renderForm('new');
-        } else {
-            $companyCtrl->handleFormSave('new');
-        }
-        exit;
-    }
-
-    if (preg_match('#^/app/companies/([^/]+)$#', $path, $m)) {
-        $id = $m[1]; // "create", "42", etc.
-        if ($method === 'GET') {
-            $companyCtrl->renderForm($id);
-        } else {
-            $companyCtrl->handleFormSave($id);
-        }
-        exit;
-    }
-}
-
-// --- 4. CATALOGUE / HOME (FALLBACK) ---
-if ($path === '/' || $path === '/index.php') {
-    $offerRepo = new \App\Repository\OfferRepository($pdo);
+$router->add('GET', '/', function ($p, $pdo, $twig) {
+    $offerRepo = new OfferRepository($pdo);
     $limit = 5;
-    $page = filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1;
+    $page = (int)(filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
     $offset = (max(1, $page) - 1) * $limit;
+    
+    // NOUVEAUTÉ : On stocke le résultat de countAll() dans une variable
+    $totalOffers = $offerRepo->countAll();
 
-    try {
-        $offers = $offerRepo->findPaginated($limit, $offset);
-        $totalOffers = $offerRepo->countAll();
+    echo $twig->render('index.html.twig', [
+        'offers' => $offerRepo->findPaginated($limit, $offset),
+        'totalPages' => (int) ceil($totalOffers / $limit),
+        'page' => $page,
+        'pageTitle' => 'Accueil - StageFlow',
+        // NOUVEAUTÉ : On envoie cette variable à Twig
+        'totalOffers' => $totalOffers
+    ]);
+});
 
-        TwigFactory::render('index.html.twig', [
-            'offers' => $offers,
-            'totalPages' => (int) ceil($totalOffers / $limit),
-            'page' => $page,
-            'csrf_token' => Util::getCSRFToken(),
-            'user' => Util::getUser() ?? null
-        ]);
-    } catch (Exception $e) {
-        error_log($e->getMessage());
-        http_response_code(500);
-        die("Erreur système.");
-    }
-    exit;
-}
+$router->add('GET',  '/dashboard/offers',        fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
+$router->add('GET',  '/app/offers/search', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
+$router->add('GET',  '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
+$router->add('POST', '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
+$router->add('GET',  '/app/offers/show/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show($p[0]));
+$router->add('GET',  '/app/offers/edit/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
+$router->add('POST', '/app/offers/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
+$router->add('POST', '/app/offers/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy($p[0]), roles: $staff);
 
-// 404
-http_response_code(404);
-die("Page non trouvée.");
+
+// ── PILOTS ───────────────────────────────────────────────────────────────────
+$pilotHandler = fn($pdo, $twig) => new \App\Controllers\PilotController(new UserRepository($pdo), $twig, $pdo);
+
+$router->add('GET',  '/dashboard/pilotes', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderList(), roles: [RoleEnum::Admin->value]);
+$router->add('GET',  '/dashboard/pilotes/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderEditForm($p[0]), roles: [RoleEnum::Admin->value]);
+$router->add('POST', '/dashboard/pilotes/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->handleUpdate($p[0]), roles: [RoleEnum::Admin->value]);
+
+// ── STUDENTS (CRUD Admin/Pilote) ─────────────────────────────────────────────
+$studentHandler = fn($pdo, $twig) => new StudentController(new UserRepository($pdo), $twig, $pdo);
+
+$router->add('GET',  '/dashboard/etudiants', fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderList(), roles: $staff);
+$router->add('GET',  '/dashboard/etudiants/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderEditForm($p[0]), roles: $staff);
+$router->add('POST', '/dashboard/etudiants/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->handleUpdate($p[0]), roles: $staff);
+
+$router->add('GET',  '/dashboard/etudiants/new', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(), roles: $staff);
+$router->add('POST', '/dashboard/etudiants/new', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(), roles: $staff);
+
+// ── SITES ────────────────────────────────────────────────────────────────────
+$siteHandler = fn($pdo, $twig) => new SiteController(new CompanySiteRepository($pdo), new CompanyRepository($pdo), $twig);
+
+$router->add('GET',  '/dashboard/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index($p[0]), roles: $staff);
+$router->add('GET',  '/dashboard/sites/new',      fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
+$router->add('POST', '/dashboard/sites/save',     fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
+$router->add('GET',  '/dashboard/sites/([a-fA-F0-9]{32})',           fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p[0]), roles: $staff);
+$router->add('POST', '/dashboard/sites/delete/([a-fA-F0-9]{32})',    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p[0]), roles: $staff);
+$router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getSitesByCompany($p[0]), roles: $staff);
+
+// ── SKILLS ───────────────────────────────────────────────────────────────────
+$skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
+
+$router->add('GET',    '/app/skills',        fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
+$router->add('GET',    '/api/skills',        fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
+$router->add('POST',   '/api/skills/create', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(), roles: $staff);
+$router->add('PATCH',  '/api/skills/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p), roles: $staff);
+$router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p), roles: $staff);
+
+// ── APPLICATIONS ─────────────────────────────────────────────────────────────
+$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), $twig);
+
+$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]), roles: $student);
+$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]), roles: $student);
+$router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), roles: $staff);
+// --- 6. DISPATCH ---
+$router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

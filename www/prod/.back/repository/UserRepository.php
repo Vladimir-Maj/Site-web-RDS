@@ -3,12 +3,14 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
+use App\Models\PromotionModel;
 use PDO;
 use PharIo\Manifest\Email;
 use App\Models\UserModel;
 use function PHPUnit\Framework\returnArgument;
+use App\Models\RoleEnum;
 
-class UserRepository 
+class UserRepository
 {
     private PDO $pdo;
 
@@ -20,11 +22,11 @@ class UserRepository
     /**
      * Finds a user and determines their role by checking specialized tables.
      */
-    public function findById(string $hexId): ?UserModel
+   public function findById(string $hexId): ?UserModel
     {
         $sql = "SELECT 
                 HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
-                s.cv_path, s.status, -- Added these fields from the student table
+                s.status,
                 CASE 
                     WHEN a.user_id IS NOT NULL THEN 'admin'
                     WHEN p.user_id IS NOT NULL THEN 'pilote'
@@ -43,7 +45,6 @@ class UserRepository
 
         return $row ? UserModel::fromArray($row) : null;
     }
-
 
 
     public function findByEmail(string|Email $email): ?UserModel
@@ -78,24 +79,56 @@ class UserRepository
      */
     public function push(UserModel $user): ?string
     {
-        $sql = "INSERT INTO user (email, password, first_name, last_name) 
-                VALUES (:email, :password, :first_name, :last_name)";
+        try {
+            $this->pdo->beginTransaction();
 
-        $stmt = $this->pdo->prepare($sql);
-        $success = $stmt->execute([
-            ':email' => $user->email->asString(),
-            ':password' => $user->password,
-            ':first_name' => $user->first_name,
-            ':last_name' => $user->last_name
-        ]);
+            // 1. Prepare and Execute User Insertion
+            // Note: Using UUID_TO_BIN(UUID()) if you aren't providing a UUID from PHP
+            $sql = "INSERT INTO user (id, email, password, first_name, last_name, is_active) 
+                VALUES (UUID_TO_BIN(UUID()), :email, :password, :first_name, :last_name, :is_active)";
 
-        if (!$success)
+            $stmt = $this->pdo->prepare($sql);
+            $stmt->execute([
+                ':email' => $user->email->asString(),
+                ':password' => $user->password, // Ensure this is hashed before calling push!
+                ':first_name' => $user->first_name,
+                ':last_name' => $user->last_name,
+                ':is_active' => $user->is_active ? 1 : 0
+            ]);
+
+            // 2. Retrieve the Binary ID we just created
+            $stmt = $this->pdo->prepare("SELECT id FROM user WHERE email = ?");
+            $stmt->execute([$user->email->asString()]);
+            $binaryId = $stmt->fetchColumn();
+
+            if (!$binaryId) {
+                throw new \Exception("Failed to retrieve created user ID.");
+            }
+
+            // 3. Handle Role Assignment
+            if ($user->role === RoleEnum::Admin) {
+                $stmt = $this->pdo->prepare("INSERT INTO administrator (user_id) VALUES (?)");
+                $stmt->execute([$binaryId]);
+                
+            } elseif ($user->role === RoleEnum::Pilote) {
+                $stmt = $this->pdo->prepare("INSERT INTO pilot (user_id) VALUES (?)");
+                $stmt->execute([$binaryId]);
+                
+            } elseif ($user->role === RoleEnum::Student) {
+                // C'EST ICI LA MAGIE ! 
+                // Dès que le compte 'user' est créé, on le déclare officiellement comme 'student'
+                $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (?, 'Searching')");
+                $stmt->execute([$binaryId]);
+            }
+
+            $this->pdo->commit();
+            return bin2hex($binaryId); // Return as hex string for the controller
+
+        } catch (\Exception $e) {
+            $this->pdo->rollBack();
+            // Log $e->getMessage() here if needed
             return null;
-
-        // Fetch the generated ID to return to the controller
-        $stmt = $this->pdo->prepare("SELECT HEX(id) FROM user WHERE email = ?");
-        $stmt->execute([$user->email->asString()]);
-        return $stmt->fetchColumn() ?: null;
+        }
     }
 
     public function updateCvPath(string $hexUserId, string $path): bool
@@ -115,16 +148,272 @@ class UserRepository
             'path_update' => $path
         ]);
     }
-    
-    public function makeStudent(string $userHexId, string $status = 'Searching'): bool
-    {
-        $stmt = $this->pdo->prepare("INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)");
-        return $stmt->execute([$userHexId, $status]);
-    }
 
+    /**
+ * Specializes a user as a student and enrolls them in a promotion.
+ */
+public function makeStudent(string $userHexId, string $promoHexId, string $status = 'Searching'): bool
+{
+    try {
+        // Start transaction if not already started by the caller
+        $this->pdo->beginTransaction();
+
+        // 1. Insert into the student specialization table
+        $sqlStudent = "INSERT INTO student (user_id, status) VALUES (UNHEX(?), ?)";
+        $stmtStudent = $this->pdo->prepare($sqlStudent);
+        $stmtStudent->execute([$userHexId, $status]);
+
+        // 2. Insert into the associative table student_enrollment
+        $sqlEnroll = "INSERT INTO student_enrollment (promotion_id, student_id, enrolled_at) 
+                      VALUES (UNHEX(?), UNHEX(?), NOW())";
+        $stmtEnroll = $this->pdo->prepare($sqlEnroll);
+        $stmtEnroll->execute([$promoHexId, $userHexId]);
+
+        $this->pdo->commit();
+        return true;
+    } catch (\Exception $e) {
+        // Rollback if either insert fails (e.g., promo_id doesn't exist)
+        if ($this->pdo->inTransaction()) {
+            $this->pdo->rollBack();
+        }
+        // Log $e->getMessage() here
+        return false;
+    }
+}
     public function delete(string $hexId): bool
     {
         $stmt = $this->pdo->prepare("DELETE FROM user WHERE id = UNHEX(?)");
         return $stmt->execute([$hexId]);
+    }
+
+    /**
+     * Gets the most recently assigned promotion for a specific pilot.
+     */
+    /**
+     * Gets the most recently assigned promotion for a specific pilot.
+     */
+    public function getPromoByPilote(string $pilotHexId): ?PromotionModel
+    {
+        $sql = "SELECT 
+                    HEX(p.id) as id, 
+                    p.label, 
+                    p.academic_year, 
+                    HEX(p.campus_id) as campus_id
+                FROM promotion p
+                INNER JOIN promotion_assignment pa ON p.id = pa.promotion_id
+                WHERE pa.pilot_id = UNHEX(?)
+                ORDER BY pa.assigned_at DESC
+                LIMIT 1";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$pilotHexId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? PromotionModel::fromArray($row) : null;
+    }
+
+    /**
+     * Gets all students belonging to the latest promotion assigned to a pilot.
+     * Returns an array of UserModel objects.
+     */
+    public function getStudentsByPilote(string $pilotHexId): array
+    {
+        $sql = "SELECT 
+                HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
+                'student' as role, s.status
+            FROM user u
+            INNER JOIN student s ON u.id = s.user_id
+            INNER JOIN student_enrollment se ON s.user_id = se.student_id
+            INNER JOIN promotion_assignment pa ON se.promotion_id = pa.promotion_id
+            WHERE pa.pilot_id = UNHEX(:pilot_id)
+            AND pa.assigned_at = (
+                SELECT MAX(assigned_at) 
+                FROM promotion_assignment 
+                WHERE pilot_id = UNHEX(:pilot_id_sub)
+            )";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([
+            'pilot_id' => $pilotHexId,
+            'pilot_id_sub' => $pilotHexId
+        ]);
+
+        $students = [];
+        while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
+            $students[] = UserModel::fromArray($row);
+        }
+
+        return $students;
+    }
+
+    /**
+     * Recherche les pilotes en fonction de critères de filtrage 
+     * (nom, statut) et de pagination.
+     */
+    public function searchPilots(array $filters): array
+    {
+        $limit = (int) ($filters['limit'] ?? 10);
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT HEX(u.id) as id, u.email, u.first_name, u.last_name, u.is_active, u.created_at
+                FROM user u
+                INNER JOIN pilot p ON u.id = p.user_id
+                WHERE 1=1";
+
+        $params = [];
+        if (!empty($filters['name'])) {
+            $sql .= " AND (u.first_name LIKE :name OR u.last_name LIKE :name OR u.email LIKE :name)";
+            $params['name'] = '%' . $filters['name'] . '%';
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND u.is_active = :is_active";
+            $params['is_active'] = ($filters['status'] === 'active') ? 1 : 0;
+        }
+
+        $sql .= " ORDER BY u.last_name ASC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+
+    /**
+     * Met à jour les infos de base d'un utilisateur
+     */
+    public function updateUser(string $hexId, array $data): bool
+    {
+        $sql = "UPDATE user 
+                SET first_name = :first_name, 
+                    last_name = :last_name, 
+                    is_active = :is_active 
+                WHERE id = UNHEX(:id)";
+                
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':first_name' => $data['first_name'],
+            ':last_name' => $data['last_name'],
+            ':is_active' => $data['is_active'],
+            ':id' => $hexId
+        ]);
+    }
+
+    /**
+     * Met à jour le mot de passe d'un utilisateur
+     */
+    public function updatePassword(string $hexId, string $hashedPassword): bool
+    {
+        $sql = "UPDATE user SET password = :password WHERE id = UNHEX(:id)";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':password' => $hashedPassword,
+            ':id' => $hexId
+        ]);
+    }
+
+    /**
+     * Assigne une promotion à un pilote
+     */
+    public function assignPromotionToPilot(string $pilotHexId, string $promoHexId): bool
+    {
+        $sql = "INSERT INTO promotion_assignment (promotion_id, pilot_id, assigned_at) 
+                VALUES (UNHEX(:promo), UNHEX(:pilot), NOW())";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':promo' => $promoHexId,
+            ':pilot' => $pilotHexId
+        ]);
+    }
+
+    /**
+     * Recherche les étudiants avec pagination et filtres (Statut de recherche)
+     */
+    public function searchStudents(array $filters): array
+    {
+        $limit = (int) ($filters['limit'] ?? 10);
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        // AJOUT DES JOINTURES POUR RÉCUPÉRER LA PROMOTION
+        $sql = "SELECT HEX(u.id) as id, u.email, u.first_name, u.last_name, u.is_active, u.created_at, 
+                       s.status, pr.label as promo_label
+                FROM user u
+                INNER JOIN student s ON u.id = s.user_id
+                LEFT JOIN student_enrollment se ON s.user_id = se.student_id
+                LEFT JOIN promotion pr ON se.promotion_id = pr.id
+                WHERE 1=1";
+
+        $params = [];
+        if (!empty($filters['name'])) {
+            $sql .= " AND (u.first_name LIKE :name OR u.last_name LIKE :name OR u.email LIKE :name)";
+            $params['name'] = '%' . $filters['name'] . '%';
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND s.status = :status";
+            $params['status'] = $filters['status'];
+        }
+
+        $sql .= " ORDER BY u.last_name ASC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+        $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
+
+        $stmt->execute();
+        return $stmt->fetchAll(\PDO::FETCH_ASSOC);
+    }
+
+    /**
+     * Met à jour le statut spécifique de l'étudiant
+     */
+    public function updateStudentStatus(string $hexId, string $status): bool
+    {
+        $sql = "UPDATE student SET status = :status WHERE user_id = UNHEX(:id)";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':status' => $status,
+            ':id' => $hexId
+        ]);
+    }
+
+    /**
+     * Récupère la promotion actuelle d'un étudiant
+     */
+    public function getPromoByStudent(string $studentHexId): ?array
+    {
+        $sql = "SELECT HEX(p.id) as id, p.label, p.academic_year 
+                FROM promotion p
+                INNER JOIN student_enrollment se ON p.id = se.promotion_id
+                WHERE se.student_id = UNHEX(?)
+                ORDER BY se.enrolled_at DESC LIMIT 1";
+                
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([$studentHexId]);
+        $res = $stmt->fetch(\PDO::FETCH_ASSOC);
+        
+        return $res ?: null;
+    }
+
+    /**
+     * Met à jour la promotion d'un étudiant (supprime l'ancienne et ajoute la nouvelle)
+     */
+    public function updateStudentEnrollment(string $studentHexId, string $promoHexId): bool
+    {
+        $stmtDelete = $this->pdo->prepare("DELETE FROM student_enrollment WHERE student_id = UNHEX(?)");
+        $stmtDelete->execute([$studentHexId]);
+
+        $sql = "INSERT INTO student_enrollment (promotion_id, student_id, enrolled_at) 
+                VALUES (UNHEX(?), UNHEX(?), NOW())";
+        $stmt = $this->pdo->prepare($sql);
+        
+        return $stmt->execute([$promoHexId, $studentHexId]);
     }
 }

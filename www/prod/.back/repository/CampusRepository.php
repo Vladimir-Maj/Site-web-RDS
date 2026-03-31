@@ -1,28 +1,47 @@
 <?php
-// .back/repository/CampusRepository.php
 declare(strict_types=1);
+
 namespace App\Repository;
 
-// 1. Import PDO from the global namespace
-use PDO; 
-// 2. Import your Model from the Models namespace
 use App\Models\CampusModel;
-use App\Models\PromotionModel;
+use PDO;
 
-class CampusRepository {
-    private PDO $pdo;
+class CampusRepository
+{
+    public function __construct(private PDO $db) {}
 
-    public function __construct(PDO $pdo) { $this->pdo = $pdo; }
-
-    public function getAllCampuses(): array {
-        $stmt = $this->pdo->query("SELECT HEX(id) as id, name, address FROM campus");
-        return array_map(fn($row) => CampusModel::fromArray($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
+    public function getById(string $id): ?CampusModel {
+        $sql = "SELECT HEX(id) as id, name, address FROM campus WHERE id = UNHEX(:id)";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ? CampusModel::fromArray($row) : null;
     }
 
-    public function getPromotionsByCampus(string $campusId): array {
-        $stmt = $this->pdo->prepare("SELECT HEX(id) as id, label, academic_year, HEX(campus_id) as campus_id 
-                                     FROM promotion WHERE campus_id = UNHEX(?)");
-        $stmt->execute([$campusId]);
-        return array_map(fn($row) => PromotionModel::fromArray($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
+    public function findAll(): array {
+        $sql = "SELECT HEX(id) as id, name, address FROM campus ORDER BY name ASC";
+        $stmt = $this->db->query($sql);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        return array_map(fn($row) => CampusModel::fromArray($row), $rows);
+    }
+
+    public function save(CampusModel $campus): bool {
+        if (empty($campus->id)) {
+            $sql = "INSERT INTO campus (name, address) VALUES (:name, :address)";
+            $params = ['name' => $campus->name, 'address' => $campus->address];
+        } else {
+            $sql = "UPDATE campus SET name = :name, address = :address WHERE id = UNHEX(:id)";
+            $params = [
+                'name'    => $campus->name,
+                'address' => $campus->address,
+                'id'      => $campus->id
+            ];
+        }
+        return $this->db->prepare($sql)->execute($params);
+    }
+
+    public function deleteById(string $id): void {
+        $sql = "DELETE FROM campus WHERE id = UNHEX(:id)";
+        $this->db->prepare($sql)->execute(['id' => $id]);
     }
 }

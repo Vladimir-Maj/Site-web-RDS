@@ -1,0 +1,48 @@
+{# views/sites/form.html.twig #}
+{% extends "base.html.twig" %}
+
+{% block title %}
+    {{ site.id ? 'Modifier le site' : 'Nouveau site' }} — StageFlow
+{% endblock %}
+
+{% block body %}
+    <div class="page-header">
+        <div>
+            <h1>{{ site.id ? 'Modifier le site' : 'Enregistrer un nouveau site' }}</h1>
+            <p>Rattachement à : <strong>{{ company.name }}</strong></p>
+        </div>
+        <a href="/app/companies/{{ company.id }}" class="btn btn-ghost">Annuler</a>
+    </div>
+
+    <div class="card" style="max-width: 600px; margin: 0 auto;">
+        <form action="/app/sites/save" method="POST" class="form-stack">
+            {# Hidden fields for logic #}
+            <input type="hidden" name="id" value="{{ site.id|default('new') }}">
+            <input type="hidden" name="company_id" value="{{ company.id }}">
+
+            <div class="form-group">
+                <label for="address">Adresse complète (Rue, bâtiment...)</label>
+                <textarea name="address" id="address" rows="3" required placeholder="12 rue de l'Exemple...">{{ site.address }}</textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="city">Ville</label>
+                <input type="text" name="city" id="city" value="{{ site.city }}" placeholder="Nancy" required>
+            </div>
+
+            <div class="form-group">
+                <label for="tax_id">SIRET du site (Optionnel)</label>
+                <input type="text" name="tax_id" id="tax_id" value="{{ site.tax_id }}" placeholder="12345678901234" maxlength="14">
+                <small class="text-muted">Laissez vide si identique au siège social.</small>
+            </div>
+
+            <hr style="margin: 2rem 0; opacity: 0.1;">
+
+            <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                <button type="submit" class="btn btn-primary">
+                    {{ site.id ? '💾 Mettre à jour' : '➕ Créer le site' }}
+                </button>
+            </div>
+        </form>
+    </div>
+{% endblock %}

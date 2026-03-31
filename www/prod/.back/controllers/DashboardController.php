@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -11,53 +12,35 @@ class DashboardController extends BaseController
 {
     public function __construct(Environment $twig)
     {
-        $this->twig = $twig;
-    }
-
-    private function RolePermission(): void
-    {
-        if (!Util::isLoggedIn()) {
-            header('Location: /login');
-            exit;
-        }
-
-        $role = Util::getRole();
-        $isAdmin = ($role === RoleEnum::Admin);
-        $isPilote = ($role === RoleEnum::Pilote);
-
-        if (!$isAdmin && !$isPilote) {
-            http_response_code(403);
-            die('Acces refuse.');
-        }
+        parent::__construct($twig);
     }
 
     public function index(): void
     {
-        $this->RolePermission();
+        $this->abortIfNotPriv();
 
         echo $this->twig->render('dashboard/index.html.twig', [
-            'currentPage' => 'dashboard',
-            'user' => Util::getUser(),
+            'sidebar_active' => 'dashboard'
         ]);
     }
 
     public function pilots(): void
     {
-        $this->RolePermission();
+        if (Util::getRole() !== RoleEnum::Admin) {
+            $this->abort(403, "Acces refuse.");
+        }
 
         echo $this->twig->render('dashboard/pilots.html.twig', [
-            'currentPage' => 'dashboard',
-            'user' => Util::getUser(),
+            'sidebar_active' => 'pilots'
         ]);
     }
 
     public function students(): void
     {
-        $this->RolePermission();
+        $this->abortIfNotPriv();
 
         echo $this->twig->render('dashboard/students.html.twig', [
-            'currentPage' => 'dashboard',
-            'user' => Util::getUser(),
+            'sidebar_active' => 'students'
         ]);
     }
 }
