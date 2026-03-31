@@ -9,6 +9,7 @@ class OfferModel
     public $description;
     public $location;
     public $company_name;
+    public $company_id;
     
     // --- ADD THESE TO FIX THE TWIG ERRORS ---
     public $hourly_rate;    // Matches your DB column and Twig variable

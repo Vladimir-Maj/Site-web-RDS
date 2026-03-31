@@ -1,4 +1,4 @@
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% set isNew = (id == 'new') %}
 {% set companyName = company.name|default('') %}
@@ -7,9 +7,7 @@
     {{ isNew ? 'Créer une Entreprise' : 'Modifier ' ~ companyName }} — SF Prosit
 {% endblock %}
 
-{% block body %}
-<div class="page-wrapper">
-    <main class="main">
+{% block dashboard_content %}
 
         <header class="page-header mt-3">
             <h1>{{ isNew ? 'Nouvelle Entreprise' : 'Modifier l\'entreprise' }}</h1>
@@ -120,7 +118,7 @@
                 </div>
 
                 <div class="form-actions mt-3">
-                    <a href="/app/companies" class="btn btn-ghost">Annuler</a>
+                    <a href="/dashboard/companies" class="btn btn-ghost">Annuler</a>
                     <button type="submit" class="btn btn-primary">
                         {{ isNew ? 'Créer l\'entreprise' : 'Mettre à jour' }}
                     </button>
@@ -128,6 +126,4 @@
             </div>
         </form>
 
-    </main>
-</div>
 {% endblock %}

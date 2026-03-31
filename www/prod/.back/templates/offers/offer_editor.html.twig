@@ -1,9 +1,9 @@
 {# .back/views/offers/offer_editor.html.twig #}
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% block title %}{{ mode == 'edit' ? 'Modifier' : 'Publier' }} une offre — StageFlow{% endblock %}
 
-{% block body %}
+{% block dashboard_content %}
 <div class="page-header">
     <div>
         <h1>{{ mode == 'edit' ? 'Édition de l\'offre' : 'Nouvelle Publication' }}</h1>
@@ -20,7 +20,7 @@
 {% endif %}
 
 <div class="company-form card">
-    <form action="{{ mode == 'edit' ? '/offers/update/' ~ offer.id : '/offers/store' }}" method="POST" class="card-body">
+    <form action="{{ mode == 'edit' ? '/app/offers/update/' ~ offer.id : '/app/offers/create' }}" method="POST" class="card-body">
         
         <div class="info-section">
             <span class="section-label">Poste & Entreprise</span>
@@ -83,7 +83,7 @@
         </div>
 
         <div class="form-actions">
-            <a href="/offers" class="btn btn-ghost">Annuler</a>
+            <a href="/dashboard/offers" class="btn btn-ghost">Annuler</a>
             <button type="submit" class="btn btn-primary">
                 {{ mode == 'edit' ? 'Mettre à jour' : 'Publier l\'offre' }}
             </button>

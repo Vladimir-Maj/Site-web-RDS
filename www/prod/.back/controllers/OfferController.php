@@ -42,7 +42,8 @@ class OfferController extends BaseController
         echo $this->twig->render('offers/offer_editor.html.twig', [
             'mode' => 'edit',
             'offer' => $offer,
-            'sites' => $sites
+            'sites' => $sites,
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -97,7 +98,8 @@ class OfferController extends BaseController
             'filters' => $filters,
             'page' => $page,
             'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged()
+            'isPrivileged' => $this->isPrivileged(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -136,7 +138,8 @@ class OfferController extends BaseController
             'count' => $totalCount,
             'page' => $page,
             'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged()
+            'isPrivileged' => $this->isPrivileged(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -175,7 +178,8 @@ class OfferController extends BaseController
             'companies' => $companies,
             'sites' => [],
             // Pass a new empty model instead of null
-            'offer' => new OfferModel() 
+            'offer' => new OfferModel(),
+            'sidebar_active' => 'offers'
         ]);
     }
 
@@ -197,7 +201,7 @@ class OfferController extends BaseController
         ];
 
         if ($this->offerRepository->create($data)) {
-            header('Location: /offers?success=1');
+            header('Location: /dashboard/offers?success=1');
             exit;
         }
 
@@ -213,7 +217,7 @@ class OfferController extends BaseController
         $this->abortIfNotPriv();
 
         if ($this->offerRepository->delete($id)) {
-            header('Location: /offers?deleted=1');
+            header('Location: /dashboard/offers?deleted=1');
             exit;
         }
 

@@ -45,6 +45,7 @@
                             <select id="role" name="role" style="width: 100%; padding: 0.5rem;">
                                 <option value="student" {{ old.role|default('') == 'student' ? 'selected' : '' }}>Étudiant</option>
                                 <option value="pilote" {{ old.role|default('') == 'pilote' ? 'selected' : '' }}>Pilote</option>
+                                <option value="admin" {{ old.role|default('') == 'admin' ? 'selected' : '' }}>Admin</option>
                             </select>
                         </div>
 

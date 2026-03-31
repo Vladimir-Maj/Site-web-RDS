@@ -1,10 +1,8 @@
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% block title %}Liste des Entreprises — SF Prosit{% endblock %}
 
-{% block body %}
-<div class="page-wrapper">
-    <main class="main">
+{% block dashboard_content %}
         <header class="page-header mt-3">
             <div class="header-flex">
                 <div>
@@ -123,6 +121,5 @@
             </div>
         </div>
 
-    </main>
-</div>
+    
 {% endblock %}

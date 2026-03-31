@@ -12,6 +12,7 @@ use App\Repository\UserRepository;
 use App\Repository\ApplicationRepository;
 use App\Controllers\AuthController;
 use App\Controllers\ApplicationController;
+use App\Controllers\DashboardController;
 use App\Controller\SiteController;
 use App\Util;
 
@@ -111,6 +112,42 @@ switch ($path) {
         exit;
 }
 
+// ROUTES PRIVEEES (DASHBOARD ADMIN/PILOTE)
+if ($path === '/admin/dashboard' || $path === '/pilote/dashboard') {
+    (new DashboardController($twig))->index();
+    exit;
+}
+
+if ($path === '/dashboard/companies') {
+    $ensureAuth();
+    if (!in_array((Util::getRole()?->value ?? 'guest'), ['admin', 'pilote'], true)) {
+        http_response_code(403);
+        exit('Permission refusee.');
+    }
+    header('Location: /app/companies');
+    exit;
+}
+
+if ($path === '/dashboard/offers') {
+    $ensureAuth();
+    if (!in_array((Util::getRole()?->value ?? 'guest'), ['admin', 'pilote'], true)) {
+        http_response_code(403);
+        exit('Permission refusee.');
+    }
+    header('Location: /app/offers');
+    exit;
+}
+
+if ($path === '/dashboard/pilotes') {
+    (new DashboardController($twig))->pilots();
+    exit;
+}
+
+if ($path === '/dashboard/etudiants') {
+    (new DashboardController($twig))->students();
+    exit;
+}
+
 // ROUTES PRIVÉES (Profil & Compte)
 if (str_starts_with($path, '/profile')) {
     $ensureAuth();
@@ -126,7 +163,11 @@ if (str_starts_with($path, '/profile')) {
 
 //// --- WEB ROUTES: COMPANY MANAGEMENT ---
 if (str_starts_with($path, '/app/companies')) {
-    //    if (Util::getRole() !== RoleEnum::Admin || Util::getRole() !== RoleEnum::Pilote) die ("ERR: INSUFFICIENT PERMS") ;
+    $ensureAuth();
+    if (!in_array((Util::getRole()?->value ?? 'guest'), ['admin', 'pilote'], true)) {
+        http_response_code(403);
+        exit('Permission refusee.');
+    }
 
     $companyCtrl = new CompanyController(new CompanyRepository($pdo), $twig);
     $method = $_SERVER['REQUEST_METHOD'];
@@ -184,6 +225,12 @@ if ($path === '/' || $path === '/index.php') {
 
 // --- WEB ROUTES: OFFER MANAGEMENT ---
 if (str_starts_with($path, '/app/offers')) {
+    $ensureAuth();
+    if (!in_array((Util::getRole()?->value ?? 'guest'), ['admin', 'pilote'], true)) {
+        http_response_code(403);
+        exit('Permission refusee.');
+    }
+
     $offerRepo = new \App\Repository\OfferRepository($pdo);
     $offerCtrl = new \App\Controllers\OfferController($twig, $offerRepo, $pdo);
     $method = $_SERVER['REQUEST_METHOD'];
@@ -206,8 +253,8 @@ if (str_starts_with($path, '/app/offers')) {
 
     // --- WEB ROUTES: OFFER MANAGEMENT ---
     if (preg_match('#^/app/offers/(show|edit|delete|update)/([a-fA-F0-9]{32})$#', $path, $matches)) {
-        $action = $matches; // Action string
-        $id = $matches;     // ID string (The 32-char Hex)
+        $action = $matches[1];
+        $id = $matches[2];
 
         switch ($action) {
             case 'show':
@@ -255,7 +302,7 @@ if (str_starts_with($path, '/app/sites')) {
 
     // Handle Delete: /app/sites/delete/{hex32}
     if (preg_match('#^/app/sites/delete/([a-fA-F0-9]{32})$#', $path, $m)) {
-        $siteCtrl->delete($m);
+        $siteCtrl->delete($m[1]);
         exit;
     }
 }
