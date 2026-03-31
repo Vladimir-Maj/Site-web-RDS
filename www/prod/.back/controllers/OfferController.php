@@ -114,7 +114,7 @@ class OfferController extends BaseController
 
     /**
      * GET /offers/search
-     * Handles complex filtering, sorting, and pagination
+     * Handles complex filtering, sorting, and pagination/offers/new
      */
     public function search(): void
     {
@@ -220,7 +220,7 @@ class OfferController extends BaseController
     public function destroy(string $id): void
     {
         if ($this->offerRepository->delete($id)) {
-            header('Location: /offers?deleted=1');
+            header('Location: /app/offers?deleted=1');
             exit;
         }
 

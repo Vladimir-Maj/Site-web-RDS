@@ -36,6 +36,7 @@ class Router
     private array $routes = [];
     private $pdo;
     private $twig;
+    private bool $debug = true; // Enable based on config
 
     public function __construct($pdo, $twig)
     {
@@ -43,10 +44,15 @@ class Router
         $this->twig = $twig;
     }
 
-    /**
-     * @param array|string|null $roles Rôles autorisés (ex: ['admin', 'pilote'])
-     * @param callable|null $predicate Verification supplémentaire (ex: ownership)
-     */
+    private function log(string $message, array $context = []): void
+    {
+        if ($this->debug) {
+            // DO NOT USE ECHO HERE. It breaks redirects.
+            // This sends the debug info to your PHP error log (e.g., /var/log/apache2/error.log)
+            error_log("ROUTER_DEBUG: $message | " . json_encode($context));
+        }
+    }
+
     public function add(string $method, string $path, callable $handler, $roles = null, $predicate = null): void
     {
         $this->routes[] = [
@@ -62,43 +68,67 @@ class Router
     {
         $path = parse_url($requestUri, PHP_URL_PATH);
         $requestMethod = strtoupper($requestMethod);
-        $userRole = Util::getRole()?->value ?? 'guest';
+
+        $roleObj = Util::getRole();
+        $userRoleValue = $roleObj?->value ?? 'guest';
+
+        $this->log("Incoming Request", ['path' => $path, 'method' => $requestMethod, 'user_role' => $userRoleValue]);
 
         foreach ($this->routes as $route) {
+            // Check if Path and Method match
             if ($requestMethod === $route['method'] && preg_match("#^" . $route['path'] . "$#", $path, $matches)) {
+                $this->log("Route Match Found", ['route' => $route['path']]);
+
                 array_shift($matches);
 
-                // 1. Protection CSRF pour les méthodes d'écriture
+                // 1. CSRF Check
                 if (in_array($requestMethod, ['POST', 'PUT', 'PATCH', 'DELETE'])) {
-                    // On récupère le token soit dans le POST, soit dans les Headers (pour l'AJAX)
                     $token = $_POST['csrf_token'] ?? $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
-
-                    if (!Util::validateCSRFToken($token)) {
-                        $this->forbidden("Jeton CSRF invalide ou manquant.");
+                    try {
+                        Util::validateCSRFToken($token);
+                    } catch (\Exception $e) {
+                        $this->log("CSRF Failure", ['error' => $e->getMessage()]);
+                        $this->forbidden("CSRF: " . $e->getMessage());
                     }
                 }
 
-                // 2. Vérification des Rôles
-                if ($route['roles'] !== null && !in_array($userRole, $route['roles'])) {
-                    $this->forbidden();
+                // 2. Role Check
+                if ($route['roles'] !== null) {
+                    if (!in_array($userRoleValue, $route['roles'])) {
+                        $this->log("Role Mismatch", [
+                            'required' => $route['roles'],
+                            'user_has' => $userRoleValue
+                        ]);
+                        $this->forbidden("Role mismatch. Required: " . implode(',', $route['roles']));
+                    }
                 }
 
-                // 3. Vérification du Prédicat (Ownership)
-                if ($route['predicate'] !== null && !$route['predicate']($matches, $this->pdo)) {
-                    $this->forbidden();
+                // 3. Predicate Check
+                if ($route['predicate'] !== null) {
+                    if (!$route['predicate']($matches, $this->pdo)) {
+                        $this->log("Predicate/Ownership Failure");
+                        $this->forbidden("Predicate check failed.");
+                    }
                 }
 
+                $this->log("Executing Handler");
                 $route['handler']($matches, $this->pdo, $this->twig);
                 return;
             }
         }
+
+        $this->log("No Route Found");
         http_response_code(404);
         die("Page non trouvée.");
     }
 
-    private function forbidden()
+    private function forbidden(string $reason = "")
     {
         http_response_code(403);
-        die("Accès refusé : Permissions insuffisantes.");
+        $msg = "Accès refusé : Permissions insuffisantes.";
+        if ($this->debug && $reason) {
+            $msg .= " (Debug: $reason)";
+        }
+        die($msg);
     }
 }
