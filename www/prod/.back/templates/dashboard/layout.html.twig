@@ -3,60 +3,27 @@
 {% block body %}
 <div class="dashboard-shell">
     <aside class="dashboard-sidebar">
-        
-        {% if sidebar_active|default('') == 'companies' %}
-            {# --- SOUS-MENU ENTREPRISES --- #}
-            <h2 class="dashboard-sidebar-title">Gérer Entreprise</h2>
-            <nav class="dashboard-menu">
-                <a href="/dashboard" class="dashboard-menu-link">
-                    ⬅️ Retour au Dashboard
-                </a>
-                
-                {# S'allume uniquement si on est sur la liste (id n'existe pas) #}
-                <a href="/dashboard/companies" class="dashboard-menu-link {{ id is not defined ? 'active' : '' }}">
-                    🏢 Liste des entreprises
-                </a>
-                
-                {# S'allume uniquement si on crée une nouvelle entreprise (id vaut 'new') #}
-                <a href="/dashboard/companies/new" class="dashboard-menu-link {{ id|default('') == 'new' ? 'active' : '' }}">
-                    ➕ Créer une entreprise
-                </a>
+        <h2 class="dashboard-sidebar-title">Dashboard</h2>
+        <p class="dashboard-role">Rôle: {{ user.role|default('guest')|upper }}</p>
 
-                {# Apparaît ET s'allume uniquement si on modifie une entreprise existante #}
-                {% if id is defined and id != 'new' %}
-                    <a href="/dashboard/companies/{{ id }}" class="dashboard-menu-link active">
-                        ✏️ Modifier l'entreprise
-                    </a>
-                    <a href="/dashboard/companies/{{ id }}/sites" class="dashboard-menu-link">
-                        📍 Gérer les sites
-                    </a>
-                {% endif %}
-            </nav>
-        {% else %}
-            {# --- MENU DASHBOARD PRINCIPAL --- #}
-            <h2 class="dashboard-sidebar-title">Dashboard</h2>
-            <p class="dashboard-role">Rôle: {{ user.role|default('guest')|upper }}</p>
-
-            <nav class="dashboard-menu">
-                <a href="/dashboard/companies" class="dashboard-menu-link">
-                    Gestion des entreprises
+        <nav class="dashboard-menu">
+            <a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
+                Gestion des entreprises
+            </a>
+            <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
+                Gestion des offres
+            </a>
+            {% if user and user.role == 'admin' %}
+                <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
+                    Gestion des pilotes
                 </a>
-                <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
-                    Gestion des offres
+            {% endif %}
+            {% if user and (user.role == 'admin' or user.role == 'pilote') %}
+                <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
+                    Gestion des etudiants
                 </a>
-                {% if user and user.role == 'admin' %}
-                    <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
-                        Gestion des pilotes
-                    </a>
-                {% endif %}
-                {% if user and (user.role == 'admin' or user.role == 'pilote') %}
-                    <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
-                        Gestion des etudiants
-                    </a>
-                {% endif %}
-            </nav>
-        {% endif %}
-        
+            {% endif %}
+        </nav>
     </aside>
 
     <section class="dashboard-main">
