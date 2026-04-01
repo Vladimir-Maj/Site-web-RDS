@@ -2,6 +2,7 @@
 // prod/index.php
 declare(strict_types=1);
 
+use App\Controllers\CVFast;
 use App\Models\ApplicationModel;
 use App\Models\RoleEnum;
 use App\Repository\CompanyRepository;
@@ -59,6 +60,7 @@ $student = [RoleEnum::Student->value];
 
 // ── AUTH & REGISTRATION ──────────────────────────────────────────────────────
 $authHandler = fn($pdo, $twig) => new AuthController(new UserRepository($pdo), $twig, $pdo);
+$cvHandler = fn($pdo, $twig) => new CVFast(new UserRepository($pdo), $twig, $pdo);
 
 $router->add('GET',  '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
 $router->add('POST', '/login',    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
@@ -68,17 +70,24 @@ $router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twi
 
 $router->add('GET',  '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
 $router->add('POST', '/profile',           fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+$router->add('POST', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+$router->add('GET', '/dashboard/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+
+
+$router->add('GET', '/api/profile/get-cvs',        fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()), roles: RoleEnum::Student);
 
 // ── DASHBOARDS (Integrated from dashboard branch) ───────────────────────────
 $dashHandler = fn($pdo, $twig) => new DashboardController($twig);
 $compHandler = fn($pdo, $twig) => new CompanyController(new CompanyRepository($pdo), $twig);
+$applicationHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), new UserRepository($pdo), $twig);
 
 $router->add('GET', '/admin/dashboard',  fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Admin->value]);
 $router->add('GET', '/pilote/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Pilote->value]);
 $router->add('GET', '/dashboard/pilotes',   fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->pilots(), roles: [RoleEnum::Admin->value]);
 $router->add('GET', '/dashboard/etudiants', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->students(), roles: $staff);
 $router->add('GET',  '/dashboard/companies',          fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);
+$router->add('GET', '/dashboard/applications', fn($p, $pdo, $twig) => $applicationHandler($pdo, $twig)->myApplications(), roles: $student);
+$router->add('GET', '/dashboard/applications/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $applicationHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: $staff);
 
 // ── COMPANIES ────────────────────────────────────────────────────────────────
 
@@ -104,8 +113,8 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
 
 $router->add('GET',  '/dashboard/offers',        fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
 $router->add('GET',  '/app/offers/search', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
-$router->add('GET',  '/app/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
-$router->add('POST', '/app/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
+$router->add('GET',  '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
+$router->add('POST', '/dashboard/offers/new',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
 $router->add('GET',  '/app/offers/show/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show($p[0]));
 $router->add('GET',  '/app/offers/edit/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
@@ -133,8 +142,8 @@ $router->add('DELETE', '/api/skills/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twi
 // ── APPLICATIONS ─────────────────────────────────────────────────────────────
 $appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), $twig);
 
-$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p), roles: $student);
-$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p), roles: $student);
+$router->add('GET',    '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]), roles: $student);
+$router->add('POST',   '/app/offers/([a-fA-F0-9]{32})/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]), roles: $student);
 $router->add('PATCH',  '/api/applications/([a-fA-F0-9]{32})/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), roles: $staff);
 // --- 6. DISPATCH ---
 $router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
