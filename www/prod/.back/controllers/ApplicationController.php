@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\ApplicationModel;
+use App\Models\RoleEnum;
 use App\Repository\ApplicationRepository;
 use App\Repository\OfferRepository;
+use App\Repository\UserRepository;
 use Twig\Environment;
 use App\Util;
 
@@ -13,15 +15,55 @@ class ApplicationController extends BaseController
 {
     private ApplicationRepository $repo;
     private OfferRepository $offerRepository;
+    private UserRepository $userRepository;
 
-    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, Environment $twig)
+    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, UserRepository $userRepository, Environment $twig)
     {
         parent::__construct($twig);
         $this->offerRepository = $offerRepository;
         $this->repo = $repo;
+        $this->userRepository = $userRepository;
+    }
+
+    public function viewStudentApplications(string $id) {
+        $student = $this->userRepository->findById($id);
+        $currentUser = Util::getUser();
+        assert ($student->role === RoleEnum::Student);
+        $applications = $this->repo->findByStudent($student->id);
+
+        echo $this->twig->render("dashboard/my_applications.html.twig", [
+            "user" => $currentUser,
+            "student" => $student,
+            "applications" => $applications,
+            "sidebar_active" => "applications",
+            "is_student" => false 
+        ]);
     }
 
     // --- SECTION : VUES WEB (Rendu Twig) ---
+    /**
+     * GET /dashboard/applications
+     * Affiche les candidatures envoyées par l'étudiant connecté.
+     */
+    public function myApplications(): void
+    {
+        $myId = Util::getUserId();
+        $myApplications = $this->repo->findByStudent($myId);
+
+        // On récupère les infos de l'utilisateur pour le layout (rôle, nom, etc.)
+        $currentUser = $this->userRepository->findById($myId);
+
+        foreach ($myApplications as $app) {
+            error_log("[DEBUG] Application ID: " . ($app->id ?? 'N/A') . " | Offer ID: " . ($app->offer_id ?? 'N/A') . " | Status: " . ($app->status ?? 'N/A'));
+        }
+
+        echo $this->twig->render("dashboard/my_applications.html.twig", [
+            "user" => $currentUser,
+            "applications" => $myApplications,
+            "sidebar_active" => "applications",
+            "is_student" => true 
+        ]);
+    }
 
     /**
      * GET /app/offers/{id}/apply
