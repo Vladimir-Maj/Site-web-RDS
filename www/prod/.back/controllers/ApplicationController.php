@@ -76,7 +76,6 @@ class ApplicationController extends BaseController
 
         // Diagnostic — remove once fixed
         if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
-            // Class name that failed to deserialize
             $className = (array) $off;
             error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
         }
@@ -99,11 +98,11 @@ class ApplicationController extends BaseController
     public function doApply(string $id): void
     {
         $application = ApplicationModel::fromArray([
-            'student_id' => Util::getUserId(),
-            'offer_id' => $id,
-            'cv_path' => $_POST['cv_path'] ?? null,
-            'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
-            'status' => 'pending'
+            'student_id_application' => Util::getUserId(),
+            'offer_id_application' => $id,
+            'cv_path_application' => $_POST['cv_path'] ?? null,
+            'cover_letter_path_application' => $_POST['cover_letter_path'] ?? null,
+            'status_application' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
@@ -125,11 +124,11 @@ class ApplicationController extends BaseController
         $input = json_decode(file_get_contents('php://input'), true);
 
         $application = ApplicationModel::fromArray([
-            'student_id' => Util::getUserId(),
-            'offer_id' => $id,
-            'cv_path' => $input['cv_path'] ?? null,
-            'cover_letter_path' => $input['cover_letter_path'] ?? null,
-            'status' => 'pending'
+            'student_id_application' => Util::getUserId(),
+            'offer_id_application' => $id,
+            'cv_path_application' => $input['cv_path'] ?? null,
+            'cover_letter_path_application' => $input['cover_letter_path'] ?? null,
+            'status_application' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
@@ -151,7 +150,7 @@ class ApplicationController extends BaseController
         }
 
         // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
-        if ($app->student_id !== Util::getUserId() && !$this->isPrivileged()) {
+        if ($app->student_id_application !== Util::getUserId() && !$this->isPrivileged()) {
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }
 
@@ -191,7 +190,7 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature inexistante'], 404);
         }
 
-        $app->status = $status;
+        $app->status_application = $status;
         $this->repo->push($app);
 
         $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
