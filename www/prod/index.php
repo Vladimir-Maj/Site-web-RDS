@@ -80,8 +80,7 @@ $router->add('GET', '/api/profile/get-cvs',        fn($p, $pdo, $twig) => $cvHan
 $dashHandler = fn($pdo, $twig) => new DashboardController($twig);
 $compHandler = fn($pdo, $twig) => new CompanyController(new CompanyRepository($pdo), $twig);
 
-$router->add('GET', '/admin/dashboard',  fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Admin->value]);
-$router->add('GET', '/pilote/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Pilote->value]);
+$router->add('GET', '/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: $staff);
 $router->add('GET', '/dashboard/pilotes',   fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->pilots(), roles: [RoleEnum::Admin->value]);
 $router->add('GET', '/dashboard/etudiants', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->students(), roles: $staff);
 $router->add('GET',  '/dashboard/companies',          fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);

@@ -11,12 +11,26 @@
                 <a href="/dashboard" class="dashboard-menu-link">
                     ⬅️ Retour au Dashboard
                 </a>
-                <a href="/dashboard/companies" class="dashboard-menu-link active">
+                
+                {# S'allume uniquement si on est sur la liste (id n'existe pas) #}
+                <a href="/dashboard/companies" class="dashboard-menu-link {{ id is not defined ? 'active' : '' }}">
                     🏢 Liste des entreprises
                 </a>
-                <a href="/dashboard/companies/new" class="dashboard-menu-link">
+                
+                {# S'allume uniquement si on crée une nouvelle entreprise (id vaut 'new') #}
+                <a href="/dashboard/companies/new" class="dashboard-menu-link {{ id|default('') == 'new' ? 'active' : '' }}">
                     ➕ Créer une entreprise
                 </a>
+
+                {# Apparaît ET s'allume uniquement si on modifie une entreprise existante #}
+                {% if id is defined and id != 'new' %}
+                    <a href="/dashboard/companies/{{ id }}" class="dashboard-menu-link active">
+                        ✏️ Modifier l'entreprise
+                    </a>
+                    <a href="/dashboard/companies/{{ id }}/sites" class="dashboard-menu-link">
+                        📍 Gérer les sites
+                    </a>
+                {% endif %}
             </nav>
         {% else %}
             {# --- MENU DASHBOARD PRINCIPAL --- #}
