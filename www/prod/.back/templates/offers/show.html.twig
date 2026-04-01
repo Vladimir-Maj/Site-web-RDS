@@ -17,7 +17,13 @@
 				<strong>{{ offer.company_name }}</strong>
 			</p>
 		</div>
-
+		{% if currentRole == 'student' %}
+			<form action="/app/wishlist/toggle/{{ offer.id }}" method="POST" style="display:inline;">
+				<button type="submit" class="btn {{ isWishlisted ? 'btn-danger' : 'btn-outline' }}">
+					{{ isWishlisted ? '💔 Retirer de la wishlist' : '❤️ Ajouter à la wishlist' }}
+				</button>
+			</form>
+		{% endif %}
 		{# Ensure isPrivileged matches your RoleEnum checks (Admin/Pilote) #}
 		{% if isPrivileged %}
 			<div
