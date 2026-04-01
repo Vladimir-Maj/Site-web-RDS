@@ -33,7 +33,7 @@ class CampusController extends BaseController
     /**
      * Retourne un campus par son identifiant.
      */
-    public function getById(string $id): CampusModel
+    public function getById(int $id): CampusModel
     {
         $this->abortIfNotPriv();
 
@@ -48,22 +48,22 @@ class CampusController extends BaseController
 
     /**
      * Crée ou met à jour un campus depuis un tableau d'attributs.
-     * $data['id'] est optionnel — absent ou vide déclenche un INSERT, sinon UPDATE.
+     * $data['id_campus'] est optionnel — absent ou vide déclenche un INSERT, sinon UPDATE.
      *
-     * Clés attendues : name, address, (optionnel) id
+     * Clés attendues : name_campus, address_campus, (optionnel) id_campus
      */
     public function store(array $data): void
     {
         $this->abortIfNotPriv();
 
-        if (empty($data['name']) || empty($data['address'])) {
-            $this->jsonError('Fields "name" and "address" are required', 422);
+        if (empty($data['name_campus']) || empty($data['address_campus'])) {
+            $this->jsonError('Fields "name_campus" and "address_campus" are required', 422);
         }
 
         $campus = CampusModel::fromArray([
-            'id'      => $data['id'] ?? '',
-            'name'    => $data['name'],
-            'address' => $data['address'],
+            'id_campus'      => $data['id_campus'] ?? null,
+            'name_campus'    => $data['name_campus'],
+            'address_campus' => $data['address_campus'],
         ]);
 
         $success = $this->campusRepository->save($campus);
@@ -77,7 +77,7 @@ class CampusController extends BaseController
      * Supprime un campus par son identifiant.
      * Réservé aux Admin uniquement.
      */
-    public function deleteById(string $id): void
+    public function deleteById(int $id): void
     {
         $this->checkRole([RoleEnum::Admin]);
 
