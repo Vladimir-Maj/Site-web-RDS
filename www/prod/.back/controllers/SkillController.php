@@ -22,10 +22,6 @@ class SkillController extends BaseController
      * GET /app/skills
      * Displays the management list of all skills
      */
-    /**
-     * GET /app/skills
-     * Displays the management list of all skills
-     */
     public function index(): void
     {
         $this->abortIfNotPriv();
@@ -34,7 +30,6 @@ class SkillController extends BaseController
 
         echo $this->twig->render('skills/index.html.twig', [
             'skills' => $skills,
-            // Explicitly pass GET parameters to the template
             'status' => $_GET['status'] ?? null,
             'error' => $_GET['error'] ?? null
         ]);
@@ -48,17 +43,16 @@ class SkillController extends BaseController
     {
         $this->abortIfNotPriv();
 
-        $id = $_POST['id'] ?? null;
-        $label = trim($_POST['label'] ?? '');
+        $id = $_POST['id_skill'] ?? ($_POST['id'] ?? null);
+        $label = trim($_POST['label_skill'] ?? ($_POST['label'] ?? ''));
 
         if (empty($label)) {
-            // Usually, you'd redirect back with an error flash message
             header('Location: /app/skills?error=label_required');
             exit;
         }
 
         $skill = new SkillModel();
-        $skill->id = $id ?: null; // Hex string or null
+        $skill->id = ($id !== null && $id !== '') ? (int) $id : null;
         $skill->label = $label;
 
         $success = $this->repo->pushSkill($skill);
@@ -72,19 +66,18 @@ class SkillController extends BaseController
     }
 
     /**
-     * POST /app/skills/delete/([a-fA-F0-9]{32})
+     * POST /app/skills/delete/{id}
      */
-    public function delete(string $hexId): void
+    public function delete(int $id): void
     {
         $this->abortIfNotPriv();
 
-        // Check if the skill exists before deleting
-        $skill = $this->repo->getById($hexId);
+        $skill = $this->repo->getById($id);
         if (!$skill) {
             $this->abort(404, "Skill not found.");
         }
 
-        $this->repo->deleteById($hexId);
+        $this->repo->deleteById($id);
 
         header('Location: /app/skills?status=deleted');
         exit;
@@ -102,6 +95,7 @@ class SkillController extends BaseController
         echo json_encode($skills);
         exit;
     }
+
     /**
      * POST /api/skills/create
      * Crée une nouvelle compétence via AJAX
@@ -110,9 +104,8 @@ class SkillController extends BaseController
     {
         header('Content-Type: application/json');
 
-        // On récupère les données JSON envoyées dans le corps de la requête
         $input = json_decode(file_get_contents('php://input'), true);
-        $label = trim($input['label'] ?? '');
+        $label = trim($input['label_skill'] ?? ($input['label'] ?? ''));
 
         if (empty($label)) {
             http_response_code(400);
@@ -123,11 +116,10 @@ class SkillController extends BaseController
         $skill = new SkillModel();
         $skill->label = $label;
 
-        // On suppose que pushSkill retourne le nouveau SkillModel ou l'ID en cas de succès
         $success = $this->repo->pushSkill($skill);
 
         if ($success) {
-            http_response_code(201); // Created
+            http_response_code(201);
             echo json_encode([
                 'status' => 'success',
                 'skill' => $skill
@@ -140,24 +132,24 @@ class SkillController extends BaseController
     }
 
     /**
-     * DELETE /api/skills/delete/{hexId}
+     * DELETE /api/skills/delete/{id}
      * Supprime une compétence via une requête DELETE
      */
-    public function deleteAjax(string $hexId): void
+    public function deleteAjax(int $id): void
     {
         header('Content-Type: application/json');
 
-        $skill = $this->repo->getById($hexId);
+        $skill = $this->repo->getById($id);
         if (!$skill) {
             http_response_code(404);
             echo json_encode(['error' => 'Compétence non trouvée']);
             exit;
         }
 
-        $deleted = $this->repo->deleteById($hexId);
+        $deleted = $this->repo->deleteById($id);
 
         if ($deleted) {
-            echo json_encode(['status' => 'deleted', 'id' => $hexId]);
+            echo json_encode(['status' => 'deleted', 'id' => $id]);
         } else {
             http_response_code(500);
             echo json_encode(['error' => 'Échec de la suppression']);
@@ -166,17 +158,17 @@ class SkillController extends BaseController
     }
 
     /**
-     * PATCH /api/skills/update/{hexId}
+     * PATCH /api/skills/update/{id}
      * Met à jour partiellement une compétence
      */
-    public function updateAjax(string $hexId): void
+    public function updateAjax(int $id): void
     {
         header('Content-Type: application/json');
 
         $input = json_decode(file_get_contents('php://input'), true);
-        $label = trim($input['label'] ?? '');
+        $label = trim($input['label_skill'] ?? ($input['label'] ?? ''));
 
-        $skill = $this->repo->getById($hexId);
+        $skill = $this->repo->getById($id);
         if (!$skill) {
             http_response_code(404);
             echo json_encode(['error' => 'Compétence non trouvée']);
