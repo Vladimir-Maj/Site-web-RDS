@@ -3,27 +3,46 @@
 {% block body %}
 <div class="dashboard-shell">
     <aside class="dashboard-sidebar">
-        <h2 class="dashboard-sidebar-title">Dashboard</h2>
-        <p class="dashboard-role">Role: {{ user.role|default('guest')|upper }}</p>
+        
+        {% if sidebar_active|default('') == 'companies' %}
+            {# --- SOUS-MENU ENTREPRISES --- #}
+            <h2 class="dashboard-sidebar-title">Gérer Entreprise</h2>
+            <nav class="dashboard-menu">
+                <a href="/dashboard" class="dashboard-menu-link">
+                    ⬅️ Retour au Dashboard
+                </a>
+                <a href="/dashboard/companies" class="dashboard-menu-link active">
+                    🏢 Liste des entreprises
+                </a>
+                <a href="/dashboard/companies/new" class="dashboard-menu-link">
+                    ➕ Créer une entreprise
+                </a>
+            </nav>
+        {% else %}
+            {# --- MENU DASHBOARD PRINCIPAL --- #}
+            <h2 class="dashboard-sidebar-title">Dashboard</h2>
+            <p class="dashboard-role">Rôle: {{ user.role|default('guest')|upper }}</p>
 
-        <nav class="dashboard-menu">
-            <a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
-                Gestion des entreprises
-            </a>
-            <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
-                Gestion des offres
-            </a>
-            {% if user and user.role == 'admin' %}
-                <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
-                    Gestion des pilotes
+            <nav class="dashboard-menu">
+                <a href="/dashboard/companies" class="dashboard-menu-link">
+                    Gestion des entreprises
                 </a>
-            {% endif %}
-            {% if user and (user.role == 'admin' or user.role == 'pilote') %}
-                <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
-                    Gestion des etudiants
+                <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
+                    Gestion des offres
                 </a>
-            {% endif %}
-        </nav>
+                {% if user and user.role == 'admin' %}
+                    <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
+                        Gestion des pilotes
+                    </a>
+                {% endif %}
+                {% if user and (user.role == 'admin' or user.role == 'pilote') %}
+                    <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
+                        Gestion des etudiants
+                    </a>
+                {% endif %}
+            </nav>
+        {% endif %}
+        
     </aside>
 
     <section class="dashboard-main">

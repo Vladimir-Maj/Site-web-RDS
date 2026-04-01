@@ -101,10 +101,17 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
     $limit = 5;
     $page = (int)(filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
     $offset = (max(1, $page) - 1) * $limit;
+    
+    // NOUVEAUTÉ : On stocke le résultat de countAll() dans une variable
+    $totalOffers = $offerRepo->countAll();
+
     echo $twig->render('index.html.twig', [
         'offers' => $offerRepo->findPaginated($limit, $offset),
-        'totalPages' => (int) ceil($offerRepo->countAll() / $limit),
+        'totalPages' => (int) ceil($totalOffers / $limit),
         'page' => $page,
+        'pageTitle' => 'Accueil - StageFlow',
+        // NOUVEAUTÉ : On envoie cette variable à Twig
+        'totalOffers' => $totalOffers
     ]);
 });
 
@@ -121,10 +128,10 @@ $router->add('POST', '/app/offers/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig)
 $siteHandler = fn($pdo, $twig) => new SiteController(new CompanySiteRepository($pdo), new CompanyRepository($pdo), $twig);
 
 $router->add('GET',  '/dashboard/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index($p[0]), roles: $staff);
-$router->add('GET',  '/app/sites/new',      fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
-$router->add('POST', '/app/sites/save',     fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
-$router->add('GET',  '/app/sites/([a-fA-F0-9]{32})',           fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p[0]), roles: $staff);
-$router->add('POST', '/app/sites/delete/([a-fA-F0-9]{32})',    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p[0]), roles: $staff);
+$router->add('GET',  '/dashboard/sites/new',      fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
+$router->add('POST', '/dashboard/sites/save',     fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
+$router->add('GET',  '/dashboard/sites/([a-fA-F0-9]{32})',           fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p[0]), roles: $staff);
+$router->add('POST', '/dashboard/sites/delete/([a-fA-F0-9]{32})',    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p[0]), roles: $staff);
 $router->add('GET', '/api/companies/([a-fA-F0-9]{32})/sites', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getSitesByCompany($p[0]), roles: $staff);
 
 // ── SKILLS ───────────────────────────────────────────────────────────────────

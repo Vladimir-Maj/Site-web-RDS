@@ -32,7 +32,7 @@ class CompanyRepository
                 HEX(id) as id, 
                 name, 
                 description, 
-                siren, 
+                tax_id as siren, 
                 email,   -- Added
                 phone,   -- Added
                 is_active, 
@@ -85,7 +85,7 @@ class CompanyRepository
      */
     public function getBySiren(string $siren): ?CompanyModel
     {
-        $stmt = $this->pdo->prepare($this->getBaseSelect() . " WHERE siren = ?");
+        $stmt = $this->pdo->prepare($this->getBaseSelect() . " WHERE tax_id = ?");
         $stmt->execute([$siren]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -128,12 +128,12 @@ class CompanyRepository
                 : str_repeat('0', 32);
 
             // 3. Requête SQL incluant les nouveaux champs contact (email, phone, siren)
-            $sql = "INSERT INTO company (id, name, description, siren, email, phone, is_active, sector_id) 
+            $sql = "INSERT INTO company (id, name, description, tax_id, email, phone, is_active, sector_id) 
                 VALUES (UNHEX(:id), :name, :description, :siren, :email, :phone, :is_active, UNHEX(:sector_id))
                 ON DUPLICATE KEY UPDATE 
                 name = VALUES(name), 
                 description = VALUES(description), 
-                siren = VALUES(siren),
+                tax_id = VALUES(tax_id),
                 email = VALUES(email),
                 phone = VALUES(phone),
                 is_active = VALUES(is_active), 
@@ -180,9 +180,9 @@ class CompanyRepository
         $offset = ($page - 1) * $limit;
 
         // 1. Updated 'business_sector' table name and JOIN alias
-        $sql = "SELECT HEX(c.id) as id, c.name, c.description, c.siren, c.email, c.phone, 
+        $sql = "SELECT HEX(c.id) as id, c.name, c.description, c.tax_id as siren, c.email, c.phone, 
                    c.is_active, HEX(c.sector_id) as sector_id, s.name as sector_name 
-            FROM company c 
+            FROM company c
             LEFT JOIN business_sector s ON c.sector_id = s.id 
             WHERE 1=1";
 
