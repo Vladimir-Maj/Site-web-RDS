@@ -5,7 +5,6 @@ namespace App\Controllers;
 
 use App\Controllers\BaseController;
 use App\Models\CompanyModel;
-use App\Models\CompanySiteModel;
 use App\Repository\CompanyRepository;
 use App\Util;
 use Exception;
@@ -13,13 +12,12 @@ use Twig\Environment;
 
 class CompanyController extends BaseController
 {
-    /**
-     * Modernized Constructor using Property Promotion
-     */
     public function __construct(
         private CompanyRepository $repo,
-        protected Environment $twig
-    ) {}
+        Environment $twig
+    ) {
+        parent::__construct($twig);
+    }
 
     // -------------------------------------------------------------------------
     // API / AJAX Methods
@@ -37,14 +35,12 @@ class CompanyController extends BaseController
         }
 
         try {
-            $sites = $this->repo->findSitesByCompany($companyId);
+            $sites = $this->repo->findSitesByCompany((int) $companyId);
             $this->jsonResponse($sites);
         } catch (Exception $e) {
             $this->jsonResponse(['error' => 'Database error'], 500);
         }
     }
-
-    
 
     // -------------------------------------------------------------------------
     // View Rendering Methods
@@ -55,14 +51,20 @@ class CompanyController extends BaseController
      */
     public function renderList(): void
     {
-        $sectors = $this->repo->findAllSectors(); 
+        $sectors = $this->repo->findAllSectors();
 
         $filters = [
+            // clés existantes conservées
             'name'      => $_GET['name'] ?? null,
             'sector_id' => $_GET['sector_id'] ?? null,
             'status'    => $_GET['status'] ?? null,
             'page'      => (int) ($_GET['page'] ?? 1),
-            'limit'     => 10
+            'limit'     => 10,
+
+            // alias nouvelle BDD
+            'name_company'       => $_GET['name'] ?? null,
+            'sector_id_company'  => $_GET['sector_id'] ?? null,
+            'is_active_company'  => $_GET['status'] ?? null,
         ];
 
         $companies = $this->repo->search($filters);
@@ -85,7 +87,7 @@ class CompanyController extends BaseController
     public function renderForm(string $id): void
     {
         $isNew = ($id === 'new');
-        $company = $isNew ? null : $this->repo->getById($id);
+        $company = $isNew ? null : $this->repo->getById((int) $id);
         $sectors = $this->repo->findAllSectors();
 
         echo $this->twig->render('companies/company_form.html.twig', [
@@ -97,7 +99,7 @@ class CompanyController extends BaseController
             'success'    => $_GET['success'] ?? null,
             'sidebar_active' => 'companies'
         ]);
-        
+
         unset($_SESSION['flash_error']);
     }
 
@@ -112,10 +114,25 @@ class CompanyController extends BaseController
     {
         try {
             $isNew = ($id === 'new');
-            $finalId = $isNew ? bin2hex(random_bytes(16)) : $id;
+            $finalId = $isNew ? null : (int) $id;
 
-            // Merge ID into POST data and hydrate
-            $data = array_merge($_POST, ['id' => $finalId]);
+            // Merge aliases for the new BDD structure
+            $data = array_merge($_POST, [
+                'id'                  => $finalId,
+                'id_company'          => $finalId,
+                'name_company'        => $_POST['name_company'] ?? ($_POST['name'] ?? null),
+                'description_company' => $_POST['description_company'] ?? ($_POST['description'] ?? null),
+                'email_company'       => $_POST['email_company'] ?? ($_POST['email'] ?? null),
+                'phone_company'       => $_POST['phone_company'] ?? ($_POST['phone'] ?? null),
+                'tax_id_company'      => $_POST['tax_id_company'] ?? ($_POST['siren'] ?? null),
+                'sector_id_company'   => isset($_POST['sector_id_company'])
+                    ? (int) $_POST['sector_id_company']
+                    : (isset($_POST['sector_id']) ? (int) $_POST['sector_id'] : null),
+                'is_active_company'   => isset($_POST['is_active_company'])
+                    ? 1
+                    : (isset($_POST['is_active']) ? 1 : 0),
+            ]);
+
             $company = CompanyModel::fromArray($data);
 
             $this->validateCompany($company);
@@ -124,8 +141,11 @@ class CompanyController extends BaseController
                 throw new Exception("Échec de l'enregistrement en base de données.");
             }
 
-            $redirectUrl = "/app/companies/{$finalId}?" . ($isNew ? "created=1" : "success=1");
-            header("Location: $redirectUrl");
+            if ($isNew) {
+                header("Location: /app/companies?created=1");
+            } else {
+                header("Location: /app/companies/{$id}?success=1");
+            }
             exit;
 
         } catch (Exception $e) {
@@ -141,8 +161,9 @@ class CompanyController extends BaseController
     public function deleteCompany(string $id): void
     {
         try {
-            $this->repo->deleteSitesByCompany($id);
-            if (!$this->repo->deleteById($id)) {
+            $companyId = (int) $id;
+            $this->repo->deleteSitesByCompany($companyId);
+            if (!$this->repo->deleteById($companyId)) {
                 throw new Exception("Deletion failed.");
             }
             header("Location: /app/companies?deleted=1");
@@ -159,8 +180,19 @@ class CompanyController extends BaseController
 
     private function validateCompany(CompanyModel $company): void
     {
-        if (empty($company->name)) throw new \InvalidArgumentException("Le nom est obligatoire.");
-        if (empty($company->siren)) throw new \InvalidArgumentException("Le SIREN est obligatoire.");
-        if (strlen($company->siren) !== 9) throw new \InvalidArgumentException("Le SIREN doit comporter 9 chiffres.");
+        $name = $company->name_company ?? $company->name ?? null;
+        $siren = $company->tax_id_company ?? $company->siren ?? null;
+
+        if (empty($name)) {
+            throw new \InvalidArgumentException("Le nom est obligatoire.");
+        }
+
+        if (empty($siren)) {
+            throw new \InvalidArgumentException("Le SIREN est obligatoire.");
+        }
+
+        if (strlen((string) $siren) !== 9) {
+            throw new \InvalidArgumentException("Le SIREN doit comporter 9 chiffres.");
+        }
     }
 }
