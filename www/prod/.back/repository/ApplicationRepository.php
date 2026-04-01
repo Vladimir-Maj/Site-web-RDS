@@ -1,198 +1,176 @@
 <?php
+// .back/repository/ApplicationRepository.php
 declare(strict_types=1);
 
-namespace App\Controllers;
+namespace App\Repository;
 
+use PDO;
 use App\Models\ApplicationModel;
-use App\Models\RoleEnum;
-use App\Repository\ApplicationRepository;
-use App\Repository\OfferRepository;
-use App\Repository\UserRepository;
-use Twig\Environment;
-use App\Util;
 
-class ApplicationController extends BaseController
+class ApplicationRepository
 {
-    private ApplicationRepository $repo;
-    private OfferRepository $offerRepository;
-    private UserRepository $userRepository;
+    private PDO $pdo;
 
-    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, UserRepository $userRepository, Environment $twig)
+    public function __construct(PDO $pdo)
     {
-        parent::__construct($twig);
-        $this->offerRepository = $offerRepository;
-        $this->repo = $repo;
-        $this->userRepository = $userRepository;
-    }
-
-    public function viewStudentApplications(string $id) {
-        $student = $this->userRepository->findById($id);
-        $currentUser = Util::getUser();
-        assert ($student->role === RoleEnum::Student);
-        $applications = $this->repo->findByStudent($student->id);
-
-        echo $this->twig->render("dashboard/my_applications.html.twig", [
-            "user" => $currentUser,
-            "student" => $student,
-            "applications" => $applications,
-            "sidebar_active" => "applications",
-            "is_student" => false 
-        ]);
-    }
-
-    // --- SECTION : VUES WEB (Rendu Twig) ---
-    /**
-     * GET /dashboard/applications
-     * Affiche les candidatures envoyées par l'étudiant connecté.
-     */
-    public function myApplications(): void
-    {
-        $myId = Util::getUserId();
-        $myApplications = $this->repo->findByStudent($myId);
-
-        // On récupère les infos de l'utilisateur pour le layout (rôle, nom, etc.)
-        $currentUser = $this->userRepository->findById($myId);
-
-        foreach ($myApplications as $app) {
-            error_log("[DEBUG] Application ID: " . ($app->id ?? 'N/A') . " | Offer ID: " . ($app->offer_id ?? 'N/A') . " | Status: " . ($app->status ?? 'N/A'));
-        }
-
-        echo $this->twig->render("dashboard/my_applications.html.twig", [
-            "user" => $currentUser,
-            "applications" => $myApplications,
-            "sidebar_active" => "applications",
-            "is_student" => true 
-        ]);
+        $this->pdo = $pdo;
     }
 
     /**
-     * GET /app/offers/{id}/apply
-     * Affiche le formulaire de candidature
+     * Centralisation de la sauvegarde (Create ou Update)
      */
-    public function viewApply(string $id): void
+    public function push(ApplicationModel $app): bool
     {
-        $off = $this->offerRepository->findById($id);
-        $usr = Util::getUser();
-
-        // Diagnostic — remove once fixed
-        if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
-            $className = (array) $off;
-            error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
-        }
-
-        echo $this->twig->render('offers/apply.html.twig', [
-            'offer_id' => $id,
-            'offer' => is_object($off) ? (array) $off : $off,
-            'user' => $usr,
-            'title' => 'Candidature à l\'offre',
-            'error' => 0,
-            'success' => 0,
-            'csrf_token' => Util::getCSRFToken()
-        ]);
-    }
-
-    /**
-     * POST /app/offers/{id}/apply
-     * Traitement classique de formulaire avec redirection
-     */
-    public function doApply(string $id): void
-    {
-        $application = ApplicationModel::fromArray([
-            'student_id_application' => Util::getUserId(),
-            'offer_id_application' => $id,
-            'cv_path_application' => $_POST['cv_path'] ?? null,
-            'cover_letter_path_application' => $_POST['cover_letter_path'] ?? null,
-            'status_application' => 'pending'
-        ]);
-
-        if ($this->repo->push($application)) {
-            header('Location: /app/offers/my-applications?status=success');
+        if (empty($app->id_application)) {
+            $sql = "INSERT INTO application (
+                        student_id_application,
+                        offer_id_application,
+                        cv_path_application,
+                        cover_letter_path_application,
+                        status_application,
+                        applied_at_application
+                    ) VALUES (
+                        :student_id_application,
+                        :offer_id_application,
+                        :cv_path_application,
+                        :cover_letter_path_application,
+                        :status_application,
+                        NOW()
+                    )";
         } else {
-            header("Location: /app/offers/{$id}/apply?error=save_failed");
+            $sql = "UPDATE application
+                    SET
+                        student_id_application = :student_id_application,
+                        offer_id_application = :offer_id_application,
+                        cv_path_application = :cv_path_application,
+                        cover_letter_path_application = :cover_letter_path_application,
+                        status_application = :status_application
+                    WHERE id_application = :id_application";
         }
-        exit;
+
+        $stmt = $this->pdo->prepare($sql);
+
+        $params = [
+            ':student_id_application'        => $app->student_id_application,
+            ':offer_id_application'          => $app->offer_id_application,
+            ':cv_path_application'           => $app->cv_path_application,
+            ':cover_letter_path_application' => $app->cover_letter_path_application,
+            ':status_application'            => $app->status_application,
+        ];
+
+        if (!empty($app->id_application)) {
+            $params[':id_application'] = $app->id_application;
+        }
+
+        $success = $stmt->execute($params);
+
+        if ($success && empty($app->id_application)) {
+            $app->id_application = (int) $this->pdo->lastInsertId();
+        }
+
+        return $success;
     }
 
-    // --- SECTION : API AJAX (JSON) ---
-
-    /**
-     * POST /api/offers/{id}/apply
-     * Création d'une candidature via AJAX
-     */
-    public function applyAjax(string $id): void
+    public function isOwner(int|string $appId, int|string $userId): bool
     {
-        $input = json_decode(file_get_contents('php://input'), true);
-
-        $application = ApplicationModel::fromArray([
-            'student_id_application' => Util::getUserId(),
-            'offer_id_application' => $id,
-            'cv_path_application' => $input['cv_path'] ?? null,
-            'cover_letter_path_application' => $input['cover_letter_path'] ?? null,
-            'status_application' => 'pending'
-        ]);
-
-        if ($this->repo->push($application)) {
-            $this->jsonResponse(['status' => 'success', 'data' => $application], 201);
-        }
-
-        $this->jsonResponse(['error' => 'Erreur lors de la sauvegarde'], 500);
+        $app = $this->findById((int) $appId);
+        return $app !== null && $app->student_id_application === (int) $userId;
     }
 
-    /**
-     * DELETE /api/applications/{id}
-     */
-    public function deleteAjax(string $id): void
+    public function findById(int|string $id): ?ApplicationModel
     {
-        $app = $this->repo->findById($id);
+        $sql = "SELECT
+                    id_application,
+                    student_id_application,
+                    offer_id_application,
+                    cv_path_application,
+                    cover_letter_path_application,
+                    status_application,
+                    applied_at_application
+                FROM application
+                WHERE id_application = ?";
 
-        if (!$app) {
-            $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([(int) $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
-        if ($app->student_id_application !== Util::getUserId() && !$this->isPrivileged()) {
-            $this->jsonResponse(['error' => 'Action non autorisée'], 403);
-        }
-
-        $this->repo->delete($id)
-            ? $this->jsonResponse(['status' => 'deleted'])
-            : $this->jsonResponse(['error' => 'Échec de la suppression'], 500);
+        return $row ? ApplicationModel::fromArray($row) : null;
     }
 
-    /**
-     * GET /api/applications/{id}
-     */
-    public function showJson(string $id): void
+    public function findByStudent(int|string $studentId): array
     {
-        $app = $this->repo->findById($id);
+        $sql = "SELECT
+                    id_application,
+                    student_id_application,
+                    offer_id_application,
+                    cv_path_application,
+                    cover_letter_path_application,
+                    status_application,
+                    applied_at_application
+                FROM application
+                WHERE student_id_application = ?
+                ORDER BY applied_at_application DESC";
 
-        if (!$app) {
-            $this->jsonResponse(['error' => 'Not found'], 404);
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([(int) $studentId]);
 
-        $this->jsonResponse($app);
+        return array_map(
+            fn(array $row) => ApplicationModel::fromArray($row),
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
     }
 
-    /**
-     * PATCH /api/applications/{id}/status
-     */
-    public function updateStatusAjax(string $id): void
+    public function getStudentProgress(int $studentId): array
     {
-        $input = json_decode(file_get_contents('php://input'), true);
-        $status = $input['status'] ?? null;
+        $sql = "SELECT
+                    SUM(CASE WHEN status_application = 'pending' THEN 1 ELSE 0 END) AS pending_count,
+                    SUM(CASE WHEN status_application = 'accepted' THEN 1 ELSE 0 END) AS accepted_count,
+                    SUM(CASE WHEN status_application = 'rejected' THEN 1 ELSE 0 END) AS rejected_count
+                FROM application
+                WHERE student_id_application = :student_id";
 
-        if (!$status) {
-            $this->jsonResponse(['error' => 'Statut manquant'], 400);
-        }
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['student_id' => $studentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
 
-        $app = $this->repo->findById($id);
-        if (!$app) {
-            $this->jsonResponse(['error' => 'Candidature inexistante'], 404);
-        }
+        return [
+            'pending' => (int) ($row['pending_count'] ?? 0),
+            'accepted' => (int) ($row['accepted_count'] ?? 0),
+            'rejected' => (int) ($row['rejected_count'] ?? 0),
+        ];
+    }
 
-        $app->status_application = $status;
-        $this->repo->push($app);
+    public function findStudentApplicationsOverview(int $studentId, int $limit = 5): array
+    {
+        $sql = "SELECT
+                    a.id_application,
+                    a.status_application,
+                    a.applied_at_application,
+                    o.id_internship_offer,
+                    o.title_internship_offer,
+                    c.name_company
+                FROM application a
+                INNER JOIN internship_offer o
+                    ON a.offer_id_application = o.id_internship_offer
+                INNER JOIN company_site s
+                    ON o.company_site_id_internship_offer = s.id_company_site
+                INNER JOIN company c
+                    ON s.company_id_company_site = c.id_company
+                WHERE a.student_id_application = :student_id
+                ORDER BY a.applied_at_application DESC
+                LIMIT :limit";
 
-        $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function delete(int|string $id): bool
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM application WHERE id_application = ?");
+        return $stmt->execute([(int) $id]);
     }
 }
