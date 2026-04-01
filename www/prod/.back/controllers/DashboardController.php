@@ -1,261 +1,46 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\RoleEnum;
 use App\Util;
-use App\Repository\OfferRepository;
-use App\Repository\CompanyRepository;
-use App\Repository\WishlistRepository;
-use App\Models\OfferModel;
-use PDO;
 use Twig\Environment;
 
-class OfferController extends BaseController
+class DashboardController extends BaseController
 {
-    public function __construct(
-        Environment $twig,
-        private readonly OfferRepository $offerRepository,
-        protected readonly PDO $pdo
-    ) {
+    public function __construct(Environment $twig)
+    {
         parent::__construct($twig);
-
-        if (Util::getCSRFToken() === null) {
-            Util::setCSRFToken(bin2hex(random_bytes(32)));
-        }
-    }
-
-    private function validateCSRF(): void
-    {
-        $token = $_POST['csrf_token'] ?? '';
-        if (empty($token) || $token !== Util::getCSRFToken()) {
-            $this->abort(403, "Requête invalide (CSRF Token mismatch).");
-        }
-    }
-
-    public function edit(string $id): void
-    {
-        $this->abortIfNotPriv();
-
-        $offer = $this->offerRepository->findById((int) $id);
-        if (!$offer) {
-            $this->abort(404, "Offre introuvable.");
-        }
-
-        $siteRepo = new CompanyRepository($this->pdo);
-        $companyId = $offer->company_id_company_site ?? $offer->company_id ?? null;
-        $sites = $companyId ? $siteRepo->findSitesByCompany((int) $companyId) : [];
-
-        echo $this->twig->render('offers/offer_editor.html.twig', [
-            'mode' => 'edit',
-            'offer' => $offer,
-            'sites' => $sites,
-            'csrf_token' => Util::getCSRFToken(),
-            'sidebar_active' => 'offers'
-        ]);
-    }
-
-    public function update(string $id): void
-    {
-        $this->abortIfNotPriv();
-        $this->validateCSRF();
-
-        $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
-
-        $data = [
-            'title' => $_POST['title'] ?? '',
-            'description' => $_POST['description'] ?? '',
-            'hourly_rate' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
-            'is_active' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
-            'start_date' => $_POST['start_date'] ?? null,
-            'duration_weeks' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
-            'site_id' => $siteId,
-
-            'title_internship_offer' => $_POST['title'] ?? '',
-            'description_internship_offer' => $_POST['description'] ?? '',
-            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
-            'is_active_internship_offer' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
-            'start_date_internship_offer' => $_POST['start_date'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
-            'company_site_id_internship_offer' => $siteId,
-        ];
-
-        if ($this->offerRepository->update((int) $id, $data)) {
-            header("Location: /app/offers/show/$id?updated=1");
-            exit;
-        }
-
-        $this->abort(500, "Erreur lors de la mise à jour.");
     }
 
     public function index(): void
     {
-        $limit = 10;
-        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-        $offset = ($page - 1) * $limit;
+        $this->abortIfNotPriv();
 
-        $filters = [
-            'keyword' => $_GET['q'] ?? null,
-            'city' => $_GET['city'] ?? null,
-            'title_internship_offer' => $_GET['q'] ?? null,
-            'city_company_site' => $_GET['city'] ?? null,
-        ];
-
-        $offers = $this->offerRepository->findPaginated($limit, $offset);
-        $totalOffers = $this->offerRepository->countAll();
-        $totalPages = (int) ceil($totalOffers / $limit);
-
-        echo $this->twig->render('offers/index.html.twig', [
-            'offers' => $offers,
-            'filters' => $filters,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged(),
-            'sidebar_active' => 'offers'
+        echo $this->twig->render('dashboard/index.html.twig', [
+            'sidebar_active' => 'dashboard'
         ]);
     }
 
-    public function search(): void
+    public function pilots(): void
     {
-        $filters = [
-            'keyword' => $_GET['keyword'] ?? null,
-            'city' => $_GET['city'] ?? null,
-            'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-            'sort' => $_GET['sort'] ?? 'recent',
-
-            'title_internship_offer' => $_GET['keyword'] ?? null,
-            'city_company_site' => $_GET['city'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-        ];
-
-        $limit = 10;
-        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-        $offset = ($page - 1) * $limit;
-
-        $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
-
-        $offers = $results['data'] ?? [];
-        $totalCount = $results['total'] ?? 0;
-        $totalPages = (int) ceil($totalCount / $limit);
-
-        echo $this->twig->render('offers/offer_search.html.twig', [
-            'offers' => $offers,
-            'filters' => $filters,
-            'count' => $totalCount,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged(),
-            'sidebar_active' => 'offers'
-        ]);
-    }
-
-    public function searchJson(): void
-    {
-        $filters = [
-            'keyword'  => $_GET['keyword'] ?? null,
-            'city'     => $_GET['city'] ?? null,
-            'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-            'sort'     => $_GET['sort'] ?? 'recent',
-
-            'title_internship_offer' => $_GET['keyword'] ?? null,
-            'city_company_site' => $_GET['city'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-        ];
-
-        $limit  = 10;
-        $page   = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-        $offset = ($page - 1) * $limit;
-
-        $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
-
-        $this->jsonResponse([
-            'data'        => $results['data'] ?? [],
-            'total'       => $results['total'] ?? 0,
-            'page'        => $page,
-            'total_pages' => (int) ceil(($results['total'] ?? 0) / $limit),
-        ]);
-    }
-
-    public function show(string $id): void
-    {
-        $offer = $this->offerRepository->findById((int) $id);
-
-        if (!$offer) {
-            $this->abort(404, "L'offre d'internat introuvable.");
+        if (Util::getRole() !== RoleEnum::Admin) {
+            $this->abort(403, "Acces refuse.");
         }
 
-        $isWishlisted = false;
-
-        if (Util::getRole()?->value === 'student') {
-            $wishlistRepo = new WishlistRepository($this->pdo);
-            $isWishlisted = $wishlistRepo->exists((int) Util::getUserId(), (int) $offer->id);
-        }
-
-        echo $this->twig->render('offers/show.html.twig', [
-            'offer' => $offer,
-            'isPrivileged' => $this->isPrivileged(),
-            'csrf_token' => Util::getCSRFToken(),
-            'isWishlisted' => $isWishlisted,
+        echo $this->twig->render('dashboard/pilots.html.twig', [
+            'sidebar_active' => 'pilots'
         ]);
     }
 
-    public function create(): void
+    public function students(): void
     {
         $this->abortIfNotPriv();
 
-        $rep = new CompanyRepository($this->pdo);
-        $companies = $rep->findAllActive();
-
-        echo $this->twig->render('offers/offer_editor.html.twig', [
-            'mode' => 'create',
-            'error' => null,
-            'companies' => $companies,
-            'sites' => [],
-            'isPrivileged' => $this->isPrivileged(),
-            'offer' => new OfferModel(),
-            'csrf_token' => Util::getCSRFToken(),
-            'sidebar_active' => 'offers'
+        echo $this->twig->render('dashboard/students.html.twig', [
+            'sidebar_active' => 'students'
         ]);
-    }
-
-    public function store(): void
-    {
-        $this->abortIfNotPriv();
-        $this->validateCSRF();
-
-        $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
-
-        $data = [
-            'title' => $_POST['title'] ?? '',
-            'description' => $_POST['description'] ?? null,
-            'hourly_rate' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : null,
-            'start_date' => $_POST['start_date'] ?? null,
-            'duration_weeks' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
-            'site_id' => $siteId,
-
-            'title_internship_offer' => $_POST['title'] ?? '',
-            'description_internship_offer' => $_POST['description'] ?? null,
-            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : null,
-            'start_date_internship_offer' => $_POST['start_date'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
-            'company_site_id_internship_offer' => $siteId,
-        ];
-
-        if ($this->offerRepository->create($data)) {
-            header('Location: /dashboard/offers?success=1');
-            exit;
-        }
-
-        $this->abort(500, "Erreur lors de la création de l'offre.");
-    }
-
-    public function destroy(string $id): void
-    {
-        if ($this->offerRepository->delete((int) $id)) {
-            header('Location: /app/offers?deleted=1');
-            exit;
-        }
-
-        $this->abort(400, "Impossible de supprimer cette offre.");
     }
 }
