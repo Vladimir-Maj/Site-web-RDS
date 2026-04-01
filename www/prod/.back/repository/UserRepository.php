@@ -22,11 +22,11 @@ class UserRepository
     /**
      * Finds a user and determines their role by checking specialized tables.
      */
-    public function findById(string $hexId): ?UserModel
+   public function findById(string $hexId): ?UserModel
     {
         $sql = "SELECT 
                 HEX(u.id) as id, u.email, u.password, u.first_name, u.last_name, u.is_active, u.created_at,
-                s.cv_path, s.status, -- Added these fields from the student table
+                s.status,
                 CASE 
                     WHEN a.user_id IS NOT NULL THEN 'admin'
                     WHEN p.user_id IS NOT NULL THEN 'pilote'
@@ -45,7 +45,6 @@ class UserRepository
 
         return $row ? UserModel::fromArray($row) : null;
     }
-
 
 
     public function findByEmail(string|Email $email): ?UserModel
@@ -239,5 +238,90 @@ public function makeStudent(string $userHexId, string $promoHexId, string $statu
         }
 
         return $students;
+    }
+
+    /**
+     * Recherche les pilotes en fonction de critères de filtrage 
+     * (nom, statut) et de pagination.
+     */
+    public function searchPilots(array $filters): array
+    {
+        $limit = (int) ($filters['limit'] ?? 10);
+        $page = max(1, (int) ($filters['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
+
+        $sql = "SELECT HEX(u.id) as id, u.email, u.first_name, u.last_name, u.is_active, u.created_at
+                FROM user u
+                INNER JOIN pilot p ON u.id = p.user_id
+                WHERE 1=1";
+
+        $params = [];
+        if (!empty($filters['name'])) {
+            $sql .= " AND (u.first_name LIKE :name OR u.last_name LIKE :name OR u.email LIKE :name)";
+            $params['name'] = '%' . $filters['name'] . '%';
+        }
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND u.is_active = :is_active";
+            $params['is_active'] = ($filters['status'] === 'active') ? 1 : 0;
+        }
+
+        $sql .= " ORDER BY u.last_name ASC LIMIT :limit OFFSET :offset";
+
+        $stmt = $this->pdo->prepare($sql);
+        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+        $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+    
+
+    /**
+     * Met à jour les infos de base d'un utilisateur
+     */
+    public function updateUser(string $hexId, array $data): bool
+    {
+        $sql = "UPDATE user 
+                SET first_name = :first_name, 
+                    last_name = :last_name, 
+                    is_active = :is_active 
+                WHERE id = UNHEX(:id)";
+                
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':first_name' => $data['first_name'],
+            ':last_name' => $data['last_name'],
+            ':is_active' => $data['is_active'],
+            ':id' => $hexId
+        ]);
+    }
+
+    /**
+     * Met à jour le mot de passe d'un utilisateur
+     */
+    public function updatePassword(string $hexId, string $hashedPassword): bool
+    {
+        $sql = "UPDATE user SET password = :password WHERE id = UNHEX(:id)";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':password' => $hashedPassword,
+            ':id' => $hexId
+        ]);
+    }
+
+    /**
+     * Assigne une promotion à un pilote
+     */
+    public function assignPromotionToPilot(string $pilotHexId, string $promoHexId): bool
+    {
+        $sql = "INSERT INTO promotion_assignment (promotion_id, pilot_id, assigned_at) 
+                VALUES (UNHEX(:promo), UNHEX(:pilot), NOW())";
+        $stmt = $this->pdo->prepare($sql);
+        return $stmt->execute([
+            ':promo' => $promoHexId,
+            ':pilot' => $pilotHexId
+        ]);
     }
 }

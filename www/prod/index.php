@@ -81,7 +81,6 @@ $dashHandler = fn($pdo, $twig) => new DashboardController($twig);
 $compHandler = fn($pdo, $twig) => new CompanyController(new CompanyRepository($pdo), $twig);
 
 $router->add('GET', '/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: $staff);
-$router->add('GET', '/dashboard/pilotes',   fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->pilots(), roles: [RoleEnum::Admin->value]);
 $router->add('GET', '/dashboard/etudiants', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->students(), roles: $staff);
 $router->add('GET',  '/dashboard/companies',          fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);
 
@@ -122,6 +121,14 @@ $router->add('GET',  '/app/offers/show/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig)
 $router->add('GET',  '/app/offers/edit/([a-fA-F0-9]{32})',   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/update/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
 $router->add('POST', '/app/offers/delete/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy($p[0]), roles: $staff);
+
+// ── PILOTS ───────────────────────────────────────────────────────────────────
+// ── PILOTS ───────────────────────────────────────────────────────────────────
+$pilotHandler = fn($pdo, $twig) => new \App\Controllers\PilotController(new UserRepository($pdo), $twig, $pdo);
+
+$router->add('GET',  '/dashboard/pilotes', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderList(), roles: [RoleEnum::Admin->value]);
+$router->add('GET',  '/dashboard/pilotes/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderEditForm($p[0]), roles: [RoleEnum::Admin->value]);
+$router->add('POST', '/dashboard/pilotes/([a-fA-F0-9]{32})', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->handleUpdate($p[0]), roles: [RoleEnum::Admin->value]);
 
 // ── SITES ────────────────────────────────────────────────────────────────────
 $siteHandler = fn($pdo, $twig) => new SiteController(new CompanySiteRepository($pdo), new CompanyRepository($pdo), $twig);

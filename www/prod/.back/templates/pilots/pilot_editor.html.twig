@@ -1,0 +1,88 @@
+{% extends "dashboard/layout.html.twig" %}
+
+{% block title %}Modifier un Pilote — StageFlow{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 1rem; border-bottom: 1px solid var(--border-color, #eee); margin-bottom: 2rem; margin-top: 1rem;">
+        <div>
+            <h1 style="margin: 0; font-size: 1.8rem; font-weight: 700;">Modifier le pilote</h1>
+            <p class="text-muted" style="margin: 0.25rem 0 0 0;">Mettez à jour les accès et assignez les promotions.</p>
+        </div>
+    </div>
+
+    {% if error %}<div class="notice notice-error mb-2"><p>{{ error }}</p></div>{% endif %}
+    {% if success %}<div class="notice notice-info mb-2"><p>Modifications enregistrées avec succès !</p></div>{% endif %}
+
+    <div class="card company-form">
+        <form action="/dashboard/pilotes/{{ id }}" method="POST" class="card-body">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+            <div class="info-section">
+                <span class="section-label">Identité</span>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="first_name">Prénom</label>
+                        <input type="text" name="first_name" id="first_name" value="{{ pilot.first_name|default('') }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="last_name">Nom</label>
+                        <input type="text" name="last_name" id="last_name" value="{{ pilot.last_name|default('') }}" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <span class="section-label">Promotion & Assignation</span>
+                <div class="form-grid">
+                    <div class="form-group span-full">
+                        <label for="promotion_id">Assigner à une promotion</label>
+                        <select name="promotion_id" id="promotion_id">
+                            <option value="">-- Ne rien changer --</option>
+                            {% for promo in all_promotions %}
+                                <option value="{{ promo.id }}">
+                                    {{ promo.label }} ({{ promo.academic_year }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                        {% if current_promo %}
+                            <small class="text-muted" style="display:block; margin-top:0.5rem; color: var(--primary-color);">
+                                📌 Actuellement en charge de : <strong>{{ current_promo.label }}</strong>
+                            </small>
+                        {% else %}
+                            <small class="text-muted" style="display:block; margin-top:0.5rem;">Aucune promotion assignée pour le moment.</small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <span class="section-label">Sécurité & Accès</span>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Adresse Email</label>
+                        <input type="email" value="{{ pilot.email.asString()|default('') }}" disabled style="background-color: var(--bg-hover); cursor: not-allowed;">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="is_active">Statut du compte</label>
+                        <select name="is_active" id="is_active">
+                            <option value="1" {{ pilot.is_active ? 'selected' : '' }}>🟢 Actif (Accès autorisé)</option>
+                            <option value="0" {{ not pilot.is_active ? 'selected' : '' }}>🔴 Inactif (Accès suspendu)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group span-full">
+                        <label for="password">Changer le mot de passe (Optionnel)</label>
+                        <input type="text" name="password" id="password" placeholder="Laissez vide pour conserver l'actuel">
+                        <small class="text-muted">Remplissez ce champ uniquement si vous souhaitez forcer un nouveau mot de passe.</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions" style="margin-top: 2rem; border-top: 1px solid var(--border-color, #eee); padding-top: 1.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <a href="/dashboard/pilotes" class="btn btn-ghost">Retour à la liste</a>
+                <button type="submit" class="btn btn-primary">Enregistrer les modifications</button>
+            </div>
+        </form>
+    </div>
+{% endblock %}
