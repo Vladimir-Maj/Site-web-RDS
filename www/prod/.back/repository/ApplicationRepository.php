@@ -5,48 +5,10 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use PDO;
-
 use App\Models\ApplicationModel;
 
 class ApplicationRepository
 {
-    /**
-     * TABLE
-     * mysql> describe application;
-     * +-------------------+---------------------------------------+------+-----+-------------------+-------------------+
-     * | Field             | Type                                  | Null | Key | Default           | Extra             |
-     * +-------------------+---------------------------------------+------+-----+-------------------+-------------------+
-     * | id                | binary(16)                            | NO   | PRI | NULL              |                   |
-     * | student_id        | binary(16)                            | NO   | MUL | NULL              |                   |
-     * | offer_id          | binary(16)                            | NO   | MUL | NULL              |                   |
-     * | cv_path           | varchar(255)                          | YES  |     | NULL              |                   |
-     * | cover_letter_path | varchar(255)                          | YES  |     | NULL              |                   |
-     * | status            | enum('pending','accepted','rejected') | YES  |     | pending           |                   |
-     * | applied_at        | datetime                              | YES  |     | CURRENT_TIMESTAMP | DEFAULT_GENERATED |
-     * +-------------------+---------------------------------------+------+-----+-------------------+-------------------+
-     * 
-     * MODEL
-     * 
-     *     public string $id;
-    public string $student_id;
-    public string $offer_id;
-    public ?string $cv_path;
-    public ?string $cover_letter_path;
-    public string $status; // pending, accepted, rejected
-    public string $applied_at;
-
-    public static function fromArray(array $data): self {
-        $inst = new self(null);
-        $inst->id = $data['id'] ?? '';
-        $inst->student_id = $data['student_id'] ?? '';
-        $inst->offer_id = $data['offer_id'] ?? '';
-        $inst->cv_path = $data['cv_path'] ?? null;
-        $inst->cover_letter_path = $data['cover_letter_path'] ?? null;
-        $inst->status = $data['status'] ?? 'pending';
-        $inst->applied_at = $data['applied_at'] ?? '';
-        return $inst;
-    }
-     */
     private PDO $pdo;
 
     public function __construct(PDO $pdo)
@@ -59,65 +21,156 @@ class ApplicationRepository
      */
     public function push(ApplicationModel $app): bool
     {
-        // Si l'ID est vide, on en génère un (ou on laisse MySQL le faire)
-        if (empty($app->id)) {
-            $sql = "INSERT INTO application (id, student_id, offer_id, cv_path, cover_letter_path, status, applied_at) 
-                    VALUES (UNHEX(REPLACE(UUID(), '-', '')), UNHEX(:sID), UNHEX(:oID), :cv, :cl, :status, NOW())";
+        if (empty($app->id_application)) {
+            $sql = "INSERT INTO application (
+                        student_id_application,
+                        offer_id_application,
+                        cv_path_application,
+                        cover_letter_path_application,
+                        status_application,
+                        applied_at_application
+                    ) VALUES (
+                        :student_id_application,
+                        :offer_id_application,
+                        :cv_path_application,
+                        :cover_letter_path_application,
+                        :status_application,
+                        NOW()
+                    )";
         } else {
-            $sql = "UPDATE application SET status = :status, cv_path = :cv, cover_letter_path = :cl 
-                    WHERE id = UNHEX(:id)";
+            $sql = "UPDATE application
+                    SET
+                        student_id_application = :student_id_application,
+                        offer_id_application = :offer_id_application,
+                        cv_path_application = :cv_path_application,
+                        cover_letter_path_application = :cover_letter_path_application,
+                        status_application = :status_application
+                    WHERE id_application = :id_application";
         }
 
         $stmt = $this->pdo->prepare($sql);
-        
+
         $params = [
-            ':sID'    => $app->student_id,
-            ':oID'    => $app->offer_id,
-            ':cv'     => $app->cv_path,
-            ':cl'     => $app->cover_letter_path,
-            ':status' => $app->status
+            ':student_id_application'        => $app->student_id_application,
+            ':offer_id_application'          => $app->offer_id_application,
+            ':cv_path_application'           => $app->cv_path_application,
+            ':cover_letter_path_application' => $app->cover_letter_path_application,
+            ':status_application'            => $app->status_application,
         ];
 
-        if (!empty($app->id)) {
-            $params[':id'] = $app->id;
+        if (!empty($app->id_application)) {
+            $params[':id_application'] = $app->id_application;
         }
 
-        return $stmt->execute($params);
+        $success = $stmt->execute($params);
+
+        if ($success && empty($app->id_application)) {
+            $app->id_application = (int) $this->pdo->lastInsertId();
+        }
+
+        return $success;
     }
 
-    public function isOwner(string $appId, string $uid) {
-        $app = $this->findById($appId);
-        return $app && $app->student_id === $uid;
-    }
-
-    public function findById(string $id): ?ApplicationModel
+    public function isOwner(int|string $appId, int|string $userId): bool
     {
-        $sql = "SELECT HEX(id) as id, HEX(student_id) as student_id, HEX(offer_id) as offer_id, 
-                cv_path, cover_letter_path, status, applied_at 
-                FROM application WHERE id = UNHEX(?)";
-        
+        $app = $this->findById((int) $appId);
+        return $app !== null && $app->student_id_application === (int) $userId;
+    }
+
+    public function findById(int|string $id): ?ApplicationModel
+    {
+        $sql = "SELECT
+                    id_application,
+                    student_id_application,
+                    offer_id_application,
+                    cv_path_application,
+                    cover_letter_path_application,
+                    status_application,
+                    applied_at_application
+                FROM application
+                WHERE id_application = ?";
+
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$id]);
+        $stmt->execute([(int) $id]);
         $row = $stmt->fetch(PDO::FETCH_ASSOC);
 
         return $row ? ApplicationModel::fromArray($row) : null;
     }
 
-    public function findByStudent(string $studentId): array
+    public function findByStudent(int|string $studentId): array
     {
-        $sql = "SELECT HEX(id) as id, HEX(student_id) as student_id, HEX(offer_id) as offer_id, 
-                cv_path, cover_letter_path, status, applied_at 
-                FROM application WHERE student_id = UNHEX(?) ORDER BY applied_at DESC";
-        
+        $sql = "SELECT
+                    id_application,
+                    student_id_application,
+                    offer_id_application,
+                    cv_path_application,
+                    cover_letter_path_application,
+                    status_application,
+                    applied_at_application
+                FROM application
+                WHERE student_id_application = ?
+                ORDER BY applied_at_application DESC";
+
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$studentId]);
-        
-        return array_map(fn($row) => ApplicationModel::fromArray($row), $stmt->fetchAll(PDO::FETCH_ASSOC));
+        $stmt->execute([(int) $studentId]);
+
+        return array_map(
+            fn(array $row) => ApplicationModel::fromArray($row),
+            $stmt->fetchAll(PDO::FETCH_ASSOC)
+        );
     }
 
-    public function delete(string $id): bool
+    public function getStudentProgress(int $studentId): array
     {
-        $stmt = $this->pdo->prepare("DELETE FROM application WHERE id = UNHEX(?)");
-        return $stmt->execute([$id]);
+        $sql = "SELECT
+                    SUM(CASE WHEN status_application = 'pending' THEN 1 ELSE 0 END) AS pending_count,
+                    SUM(CASE WHEN status_application = 'accepted' THEN 1 ELSE 0 END) AS accepted_count,
+                    SUM(CASE WHEN status_application = 'rejected' THEN 1 ELSE 0 END) AS rejected_count
+                FROM application
+                WHERE student_id_application = :student_id";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute(['student_id' => $studentId]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'pending' => (int) ($row['pending_count'] ?? 0),
+            'accepted' => (int) ($row['accepted_count'] ?? 0),
+            'rejected' => (int) ($row['rejected_count'] ?? 0),
+        ];
+    }
+
+    public function findStudentApplicationsOverview(int $studentId, int $limit = 5): array
+    {
+        $sql = "SELECT
+                    a.id_application,
+                    a.status_application,
+                    a.applied_at_application,
+                    o.id_internship_offer,
+                    o.title_internship_offer,
+                    c.name_company
+                FROM application a
+                INNER JOIN internship_offer o
+                    ON a.offer_id_application = o.id_internship_offer
+                INNER JOIN company_site s
+                    ON o.company_site_id_internship_offer = s.id_company_site
+                INNER JOIN company c
+                    ON s.company_id_company_site = c.id_company
+                WHERE a.student_id_application = :student_id
+                ORDER BY a.applied_at_application DESC
+                LIMIT :limit";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->bindValue(':student_id', $studentId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
+    public function delete(int|string $id): bool
+    {
+        $stmt = $this->pdo->prepare("DELETE FROM application WHERE id_application = ?");
+        return $stmt->execute([(int) $id]);
     }
 }
