@@ -1,29 +1,140 @@
 {% extends "base.html.twig" %}
 
-{% block title %}{{ pageTitle }}{% endblock %}
+{% block title %}{{ pageTitle|default('StageFlow') }}{% endblock %}
 
 {% block body %}
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; padding-top: 2rem;">
+    <section class="hero" style="padding-top: 2rem; margin-bottom: 2rem;">
+        <div class="card" style="padding: 1.75rem;">
+            {% if isLoggedIn and currentUser %}
+                <h1 style="margin: 0 0 0.75rem 0;">
+                    Bienvenue {{ currentUser.first_name|default('sur StageFlow') }} !
+                </h1>
+
+                {% if currentRole == 'student' %}
+                    <p style="margin: 0; color: #666;">
+                        Retrouvez ici l’avancement de vos candidatures, votre wishlist et les dernières offres disponibles.
+                    </p>
+                {% else %}
+                    <p style="margin: 0; color: #666;">
+                        Retrouvez ici un aperçu rapide des offres actuellement disponibles sur la plateforme.
+                    </p>
+                {% endif %}
+            {% else %}
+                <h1 style="margin: 0 0 0.75rem 0;">Bienvenue sur StageFlow !</h1>
+                <p style="margin: 0; color: #666;">
+                    Consultez les offres de stage et trouvez l’opportunité qui vous correspond.
+                </p>
+            {% endif %}
+        </div>
+    </section>
+
+    {% if currentRole == 'student' %}
+        <section style="margin-bottom: 2rem;">
+            <div class="page-header" style="margin-bottom: 1rem;">
+                <div>
+                    <h2 style="margin-bottom: 0.35rem;">Avancement de mes candidatures</h2>
+                    <p style="margin: 0; color: #666;">
+                        Suivez rapidement l'état des offres auxquelles vous avez postulé.
+                    </p>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="card" style="padding: 1.25rem;">
+                    <p style="margin: 0 0 0.35rem 0; color: #666;">En attente</p>
+                    <h3 style="margin: 0;">{{ studentProgress.pending|default(0) }}</h3>
+                </div>
+
+                <div class="card" style="padding: 1.25rem;">
+                    <p style="margin: 0 0 0.35rem 0; color: #666;">Acceptées</p>
+                    <h3 style="margin: 0;">{{ studentProgress.accepted|default(0) }}</h3>
+                </div>
+
+                <div class="card" style="padding: 1.25rem;">
+                    <p style="margin: 0 0 0.35rem 0; color: #666;">Refusées</p>
+                    <h3 style="margin: 0;">{{ studentProgress.rejected|default(0) }}</h3>
+                </div>
+            </div>
+
+            <div class="card" style="padding: 1.5rem;">
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem;">
+                    <h3 style="margin: 0;">Dernières candidatures</h3>
+                    <a href="/app/wishlist" class="btn btn-ghost">❤️ Ma wishlist</a>
+                </div>
+
+                {% if recentApplications is not empty %}
+                    <div style="display: grid; gap: 1rem;">
+                        {% for application in recentApplications %}
+                            <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem;">
+                                <div>
+                                    <a href="/app/offers/show/{{ application.id_internship_offer }}" style="text-decoration: none; color: inherit;">
+                                        <strong>{{ application.title_internship_offer }}</strong>
+                                    </a><br>
+                                    <span style="color: #666;">{{ application.name_company }}</span><br>
+                                    <small style="color: #888;">
+                                        Postulé le {{ application.applied_at_application|date('d/m/Y') }}
+                                    </small>
+                                </div>
+
+                                <span class="tag
+                                    {% if application.status_application == 'accepted' %}
+                                        tag-green
+                                    {% elseif application.status_application == 'rejected' %}
+                                        tag-red
+                                    {% else %}
+                                        tag-slate
+                                    {% endif %}
+                                ">
+                                    {% if application.status_application == 'pending' %}
+                                        En attente
+                                    {% elseif application.status_application == 'accepted' %}
+                                        Acceptée
+                                    {% else %}
+                                        Refusée
+                                    {% endif %}
+                                </span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p style="margin: 0; color: #666;">Vous n'avez encore postulé à aucune offre.</p>
+                {% endif %}
+            </div>
+        </section>
+    {% endif %}
+
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem;">
         <div>
-            <h1>Catalogue des Offres</h1>
-            <p>Gestion centrale des opportunités de stage et d'emploi.</p>
+            <h2 style="margin-bottom: 0.35rem;">Catalogue des offres</h2>
+            <p style="margin: 0; color: #666;">Gestion centrale des opportunités de stage et d'emploi.</p>
         </div>
-        <div style="display: flex; gap: 10px;">
-            <a href="offers/offer_search.php" class="btn btn-ghost">🔍 Rechercher</a>
-            <a href="offers/offer_editor.php" class="btn btn-primary">+ Publier</a>
+
+        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+            <a href="/app/offers" class="btn btn-ghost">🔍 Voir toutes les offres</a>
+
+            {% if currentRole == 'student' %}
+                <a href="/app/wishlist" class="btn btn-ghost">❤️ Ma wishlist</a>
+            {% endif %}
+
+            {% if isPrivileged %}
+                <a href="/app/offers/new" class="btn btn-primary">+ Publier</a>
+            {% endif %}
         </div>
     </div>
 
-    <div class="notice notice-info">
-        <p>Il y a actuellement <strong>{{ totalOffers }} offre{{ totalOffers > 1 ? 's' : '' }}</strong> enregistrée{{ totalOffers > 1 ? 's' : '' }}.</p>
+    <div class="notice notice-info" style="margin-bottom: 1.5rem;">
+        <p>
+            Il y a actuellement
+            <strong>{{ totalOffers }} offre{{ totalOffers > 1 ? 's' : '' }}</strong>
+            enregistrée{{ totalOffers > 1 ? 's' : '' }}.
+        </p>
     </div>
 
-    <div class="offer-list" style="display: grid; gap: 1.5rem; margin-top: 1rem;">
+    <div class="offer-list" style="display: grid; gap: 1.5rem;">
         {% for offer in offers %}
-            {# We use a component template for the cards to keep code DRY #}
-            {{ include('components/card_template.twig', {'offer': offer}) }}
+            {{ include('components/card_template.twig', { offer: offer }) }}
         {% else %}
-            <div class="empty-state">
+            <div class="empty-state card" style="padding: 2rem; text-align: center;">
                 <p>Aucune offre disponible pour le moment.</p>
             </div>
         {% endfor %}
@@ -35,7 +146,9 @@
                 <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
             {% endif %}
 
-            <span class="page-info">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+            <span class="page-info">
+                Page <strong>{{ page }}</strong> sur {{ totalPages }}
+            </span>
 
             {% if page < totalPages %}
                 <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
