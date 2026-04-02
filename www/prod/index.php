@@ -374,7 +374,7 @@ $router->add(
 // ════════════════════════════════════════════════════════════════════════════
 $router->add(
     'GET',
-    '/app/skills',
+    '/dashboard/skills',
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(),
     roles: $staff
 );
