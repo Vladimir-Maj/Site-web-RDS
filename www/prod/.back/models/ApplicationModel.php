@@ -1,18 +1,29 @@
 <?php
-declare(strict_types=1);
 
 namespace App\Models;
 
-// .back/models/ApplicationModel.php
+
+use App\Models\BaseModel;
+
 class ApplicationModel extends BaseModel
 {
+    // --- New Schema ---
     public ?int $id_application = null;
     public int $student_id_application;
     public int $offer_id_application;
     public ?string $cv_path_application = null;
     public ?string $cover_letter_path_application = null;
-    public string $status_application = 'pending'; // pending, accepted, rejected
+    public string $status_application = 'pending';
     public ?string $applied_at_application = null;
+
+    // --- Legacy Aliases ---
+    public ?string $id = null;
+    public ?string $student_id = null;
+    public ?string $offer_id = null;
+    public ?string $cv_path = null;
+    public ?string $cover_letter_path = null;
+    public string $status = 'pending';
+    public string $applied_at = '';
 
     public static function fromArray(array $data): self
     {
@@ -30,10 +41,19 @@ class ApplicationModel extends BaseModel
             ? (int) $data['offer_id_application']
             : (int) ($data['offer_id'] ?? 0);
 
-        $inst->cv_path_application = $data['cv_path_application'] ?? ($data['cv_path'] ?? null);
-        $inst->cover_letter_path_application = $data['cover_letter_path_application'] ?? ($data['cover_letter_path'] ?? null);
-        $inst->status_application = $data['status_application'] ?? ($data['status'] ?? 'pending');
-        $inst->applied_at_application = $data['applied_at_application'] ?? ($data['applied_at'] ?? null);
+        $inst->cv_path_application              = $data['cv_path_application'] ?? ($data['cv_path'] ?? null);
+        $inst->cover_letter_path_application    = $data['cover_letter_path_application'] ?? ($data['cover_letter_path'] ?? null);
+        $inst->status_application               = $data['status_application'] ?? ($data['status'] ?? 'pending');
+        $inst->applied_at_application           = $data['applied_at_application'] ?? ($data['applied_at'] ?? null);
+
+        // Legacy aliases
+        $inst->id               = (string) $inst->id_application;
+        $inst->student_id       = (string) $inst->student_id_application;
+        $inst->offer_id         = (string) $inst->offer_id_application;
+        $inst->cv_path          = $inst->cv_path_application;
+        $inst->cover_letter_path = $inst->cover_letter_path_application;
+        $inst->status           = $inst->status_application;
+        $inst->applied_at       = $inst->applied_at_application ?? '';
 
         return $inst;
     }

@@ -20,7 +20,7 @@
                 </div>
             {% endif %}
 
-            <form action="/profile/upload-cv" method="POST" enctype="multipart/form-data" id="uploadForm">
+            <form action="/dashboard/profile/upload-cv" method="POST" enctype="multipart/form-data" id="uploadForm">
                 {# TASK-28: CSRF Protection #}
                 <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                 

@@ -33,7 +33,11 @@ class CampusController extends BaseController
     /**
      * Retourne un campus par son identifiant.
      */
+<<<<<<< HEAD
+    public function getById(string $id): CampusModel
+=======
     public function getById(int $id): CampusModel
+>>>>>>> dca4ebe842d90d611aa55f91ed47c07c46360d79
     {
         $this->abortIfNotPriv();
 

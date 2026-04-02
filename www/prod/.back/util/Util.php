@@ -23,13 +23,9 @@ class Util
 
     public static function validateCSRFToken(string $token): bool
     {
-        if (session_status() === PHP_SESSION_NONE) {
-            session_start();
-        }
+        $storedToken = self::getCSRFToken();
 
-        $storedToken = Util::getCSRFToken();
-
-        if (!$storedToken || !hash_equals($storedToken, $token)) {
+        if (empty($token) || empty($storedToken) || !hash_equals($storedToken, $token)) {
             return false;
         }
 

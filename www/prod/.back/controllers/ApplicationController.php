@@ -25,10 +25,17 @@ class ApplicationController extends BaseController
         $this->userRepository = $userRepository;
     }
 
-    public function viewStudentApplications(string $id) {
+    /**
+     * Permet à un Admin/Pilote de voir les candidatures d'un étudiant spécifique
+     */
+    public function viewStudentApplications(string $id): void 
+    {
         $student = $this->userRepository->findById($id);
         $currentUser = Util::getUser();
-        assert ($student->role === RoleEnum::Student);
+        
+        // Sécurité : Vérifier que l'utilisateur est bien un étudiant
+        assert($student->role === RoleEnum::Student);
+        
         $applications = $this->repo->findByStudent($student->id);
 
         echo $this->twig->render("dashboard/my_applications.html.twig", [
@@ -40,7 +47,6 @@ class ApplicationController extends BaseController
         ]);
     }
 
-    // --- SECTION : VUES WEB (Rendu Twig) ---
     /**
      * GET /dashboard/applications
      * Affiche les candidatures envoyées par l'étudiant connecté.
@@ -49,13 +55,7 @@ class ApplicationController extends BaseController
     {
         $myId = Util::getUserId();
         $myApplications = $this->repo->findByStudent($myId);
-
-        // On récupère les infos de l'utilisateur pour le layout (rôle, nom, etc.)
         $currentUser = $this->userRepository->findById($myId);
-
-        foreach ($myApplications as $app) {
-            error_log("[DEBUG] Application ID: " . ($app->id ?? 'N/A') . " | Offer ID: " . ($app->offer_id ?? 'N/A') . " | Status: " . ($app->status ?? 'N/A'));
-        }
 
         echo $this->twig->render("dashboard/my_applications.html.twig", [
             "user" => $currentUser,
@@ -74,8 +74,8 @@ class ApplicationController extends BaseController
         $off = $this->offerRepository->findById($id);
         $usr = Util::getUser();
 
-        // Diagnostic — remove once fixed
-        if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
+        // Diagnostic deserialization check
+        if (is_object($off) && $off instanceof \__PHP_Incomplete_Class) {
             $className = (array) $off;
             error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
         }
@@ -93,7 +93,6 @@ class ApplicationController extends BaseController
 
     /**
      * POST /app/offers/{id}/apply
-     * Traitement classique de formulaire avec redirection
      */
     public function doApply(string $id): void
     {
@@ -113,11 +112,8 @@ class ApplicationController extends BaseController
         exit;
     }
 
-    // --- SECTION : API AJAX (JSON) ---
-
     /**
-     * POST /api/offers/{id}/apply
-     * Création d'une candidature via AJAX
+     * POST /api/offers/{id}/apply (AJAX)
      */
     public function applyAjax(string $id): void
     {
@@ -149,7 +145,7 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
         }
 
-        // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
+        // Sécurité : Propriétaire OU Admin/Pilote
         if ($app->student_id_application !== Util::getUserId() && !$this->isPrivileged()) {
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }

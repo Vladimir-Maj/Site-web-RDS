@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Controllers;
 
@@ -7,7 +8,6 @@ use App\Models\UserModel;
 use App\Models\RoleEnum;
 use PDO;
 use Twig\Environment;
-use PharIo\Manifest\Email;
 use App\Util;
 
 class AuthController extends BaseController
@@ -17,11 +17,15 @@ class AuthController extends BaseController
 
     public function __construct(UserRepository $userRepository, Environment $twig, PDO $pdo)
     {
+        parent::__construct($twig);
         $this->userRepository = $userRepository;
-        $this->twig = $twig;
         $this->pdo = $pdo;
     }
 
+    /**
+     * Handles CV Uploads. 
+     * Uses CVFast to support multiple CVs if applicable.
+     */
     public function uploadCv(): void
     {
         if (!Util::isLoggedIn()) {
@@ -29,57 +33,52 @@ class AuthController extends BaseController
             exit;
         }
 
+        $cvFast = new CVFast($this->userRepository, $this->pdo, $this->twig);
         $error = null;
         $success = null;
         $userId = Util::getUserId();
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+            if (!Util::validateCsrfToken($_POST['csrf_token'] ?? '')) {
                 $this->abort(403, "Jeton CSRF invalide.");
             }
 
             $file = $_FILES['cv_file'] ?? null;
+            $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] === '1';
 
             if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
                 $error = ($file && $file['error'] === UPLOAD_ERR_INI_SIZE)
-                    ? "Le fichier dépasse la limite autorisée par le serveur."
+                    ? "Le fichier dépasse la limite autorisée."
                     : "Erreur lors de l'envoi du fichier.";
+            } elseif (mime_content_type($file['tmp_name']) !== 'application/pdf') {
+                $error = "Seuls les fichiers PDF sont autorisés.";
+            } elseif ($file['size'] > 2 * 1024 * 1024) {
+                $error = "Le fichier est trop lourd (max 2 Mo).";
             } else {
-                $allowedTypes = ['application/pdf'];
-                $maxSize = 2 * 1024 * 1024;
+                // Path configuration
+                $baseDir = dirname(__DIR__, 2);
+                $uploadDir = $baseDir . '/cdn/uploads/cvs/';
+                
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
 
-                $realMimeType = mime_content_type($file['tmp_name']);
+                $originalName = basename($file['name']);
+                $fileName = 'cv_' . bin2hex(random_bytes(8)) . '.pdf';
+                $destPath = $uploadDir . $fileName;
 
-                if (!in_array($realMimeType, $allowedTypes)) {
-                    $error = "Seuls les fichiers PDF sont autorisés.";
-                } elseif ($file['size'] > $maxSize) {
-                    $error = "Le fichier est trop lourd (max 2 Mo).";
-                } else {
-                    $baseDir = dirname(__DIR__, 2);
-                    $uploadDir = $baseDir . '/../cdn/uploads/cvs/';
-                    error_log("BaseDir" . $uploadDir);
+                if (move_uploaded_file($file['tmp_name'], $destPath)) {
+                    $publicPath = '/cdn/uploads/cvs/' . $fileName;
 
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0775, true);
-                    }
-
-                    $fileName = 'cv_' . bin2hex(random_bytes(8)) . '.pdf';
-                    $destPath = $uploadDir . $fileName;
-
-                    if (move_uploaded_file($file['tmp_name'], $destPath)) {
-                        $publicPath = '/cdn/uploads/cvs/' . $fileName;
-
-                        try {
-                            $this->userRepository->updateCvPath($userId, $publicPath);
-                            $success = "Votre CV a été mis à jour avec succès.";
-                        } catch (\Exception $e) {
-                            error_log("DB Update Error: " . $e->getMessage());
-                            $error = "Erreur lors de l'enregistrement en base de données.";
-                        }
+                    // Delegate to repository/service for DB persistence
+                    if ($cvFast->store($userId, $originalName, $publicPath, $isPrimary)) {
+                        $success = "Votre CV a été ajouté avec succès.";
                     } else {
-                        $error = "Erreur système lors du déplacement du fichier.";
+                        unlink($destPath); 
+                        $error = "Erreur lors de l'enregistrement en base de données.";
                     }
+                } else {
+                    $error = "Erreur système lors du déplacement du fichier.";
                 }
             }
         }
@@ -87,7 +86,7 @@ class AuthController extends BaseController
         echo $this->twig->render('auth/upload_cv.html.twig', [
             'error' => $error,
             'success' => $success,
-            'csrf_token' => $_SESSION['csrf_token']
+            'csrf_token' => Util::getCSRFToken(),
         ]);
     }
 
@@ -98,8 +97,7 @@ class AuthController extends BaseController
         $old = $_POST;
 
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $token = $_POST['csrf_token'] ?? '';
-            if (!isset($_SESSION['csrf_token']) || !hash_equals($_SESSION['csrf_token'], $token)) {
+            if (!Util::validateCsrfToken($_POST['csrf_token'] ?? '')) {
                 $this->abort(403, "Invalid CSRF token.");
             }
 
@@ -120,17 +118,15 @@ class AuthController extends BaseController
             } else {
                 try {
                     $user = new UserModel();
-                    $user->email = new Email($emailRaw);
+                    $user->email = $emailRaw;
                     $user->password = password_hash($password, PASSWORD_ARGON2ID);
                     $user->role = RoleEnum::tryFrom($roleRaw) ?? RoleEnum::Student;
                     $user->first_name = $firstName;
-                    $user->last_name = null;
                     $user->is_active = true;
                     $user->created_at = date('Y-m-d H:i:s');
 
                     $this->userRepository->push($user);
-
-                    $success = "Votre compte a été créé ! Vous pouvez maintenant vous connecter.";
+                    $success = "Votre compte a été créé !";
                     $old = [];
                 } catch (\Exception $e) {
                     error_log("Registration Error: " . $e->getMessage());
@@ -143,42 +139,19 @@ class AuthController extends BaseController
             'error' => $error,
             'success' => $success,
             'old' => $old,
-            'csrf_token' => $_SESSION['csrf_token']
-        ]);
-    }
-
-    private function setSession(UserModel $user): void
-    {
-        session_regenerate_id(true);
-
-        Util::setCSRFToken(
-            bin2hex(random_bytes(32))
-        );
-
-        Util::setUserId($user->id);
-        Util::setRole($user->role);
-        Util::setUserData([
-            'id' => $user->id,
-            'first_name' => $user->first_name,
-            'last_name' => $user->last_name,
-            'email' => $user->email instanceof Email
-                ? $user->email->asString()
-                : (string) $user->email,
-            'role' => $user->role instanceof RoleEnum ? $user->role->value : $user->role,
+            'csrf_token' => Util::getCSRFToken()
         ]);
     }
 
     public function registerStudent(): void
     {
-        $repo = new UserRepository($this->pdo);
-
         if (!$this->isPrivileged()) {
             $this->abort(403, "Accès refusé. Seuls les pilotes peuvent inscrire des étudiants.");
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
             $pilotId = Util::getUserId();
-            $currentPromo = $repo->getPromoByPilote($pilotId);
+            $currentPromo = $this->userRepository->getPromoByPilote($pilotId);
 
             echo $this->twig->render('auth/register_student.html.twig', [
                 'current_promo' => $currentPromo,
@@ -202,7 +175,7 @@ class AuthController extends BaseController
             }
 
             $tempPassword = bin2hex(random_bytes(4));
-            $hashedPassword = password_hash($tempPassword, PASSWORD_BCRYPT);
+            $hashedPassword = password_hash($tempPassword, PASSWORD_ARGON2ID);
 
             $user = new UserModel();
             $user->email = $email;
@@ -212,21 +185,20 @@ class AuthController extends BaseController
             $user->role = RoleEnum::Student;
             $user->is_active = true;
 
-            $newUserId = $repo->push($user);
+            $newUserId = $this->userRepository->push($user);
 
             if ($newUserId) {
-                $success = $repo->makeStudent($newUserId, $promoId, 'searching');
+                // makeStudent handles student-specific tables and enrollment
+                $success = $this->userRepository->makeStudent($newUserId, $promoId, 'searching');
 
                 if ($success) {
                     $_SESSION['temp_password_display'] = $tempPassword;
-                    $_SESSION['flash_success'] = "L'étudiant $firstName $lastName a été créé avec succès.";
-
-                    header("Location: /pilot/students");
+                    $_SESSION['flash_success'] = "L'étudiant $firstName $lastName a été créé.";
+                    header("Location: /dashboard/etudiants");
                     exit;
                 }
             }
-
-            $this->abort(500, "Une erreur est survenue lors de la création de l'étudiant.");
+            $this->abort(500, "Une erreur est survenue lors de la création.");
         }
     }
 
@@ -241,29 +213,23 @@ class AuthController extends BaseController
             $user = $this->userRepository->findByEmail($lastEmail);
 
             if ($user && password_verify($password, $user->password)) {
-                $role = $user->role instanceof RoleEnum
-                    ? $user->role
-                    : RoleEnum::tryFrom($user->role);
+                session_regenerate_id(true);
+                
+                $role = $user->role instanceof RoleEnum ? $user->role : RoleEnum::tryFrom((string)$user->role);
+                
+                Util::setCSRFToken(bin2hex(random_bytes(32)));
+                Util::setUserId((string)$user->id);
+                Util::setRole($role);
+                Util::setUserData([
+                    'id' => $user->id,
+                    'first_name' => $user->first_name,
+                    'last_name' => $user->last_name,
+                    'email' => $user->email->asString(),
+                    'role' => $role->value,
+                ]);
 
-                if (!$role) {
-                    $error = "Rôle utilisateur invalide.";
-                } else {
-                    session_regenerate_id(true);
-                    Util::setCSRFToken(bin2hex(random_bytes(32)));
-                    Util::setUserId((string) $user->id);
-                    Util::setRole($role);
-                    Util::setUserData([
-                        'id' => $user->id,
-                        'first_name' => $user->first_name,
-                        'last_name' => $user->last_name,
-                        'email' => $user->email instanceof Email
-                            ? $user->email->asString()
-                            : (string) $user->email,
-                        'role' => $user->role instanceof RoleEnum ? $user->role->value : $user->role,
-                    ]);
-                    $this->handleRoleRedirection($role);
-                    return;
-                }
+                $this->handleRoleRedirection($role);
+                return;
             } else {
                 $error = "Identifiants invalides.";
             }
@@ -284,7 +250,6 @@ class AuthController extends BaseController
         }
 
         $user = $this->userRepository->findById(Util::getUserId());
-
         if (!$user) {
             $this->logout();
             return;
@@ -299,22 +264,14 @@ class AuthController extends BaseController
     public function logout(): void
     {
         $_SESSION = [];
-
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(
-                session_name(),
-                '',
-                time() - 42000,
-                $params["path"],
-                $params["domain"],
-                $params["secure"],
-                $params["httponly"]
+            setcookie(session_name(), '', time() - 42000,
+                $params["path"], $params["domain"],
+                $params["secure"], $params["httponly"]
             );
         }
-
         session_destroy();
-
         session_start();
         Util::setCSRFToken(bin2hex(random_bytes(32)));
 

@@ -11,7 +11,7 @@
         </div>
         {% if isPrivileged %}
             <div style="display: flex; gap: 10px;">
-                <a href="/app/offers/new" class="btn btn-primary">+ Publier</a>
+                <a href="/dashboard/offers/new" class="btn btn-primary">+ Publier</a>
             </div>
         {% endif %}
     </div>
@@ -20,11 +20,11 @@
     <form method="GET" action="/app/offers" class="search-bar">
         <div class="form-group">
             <label>Mots-clés</label>
-            <input type="text" name="q" placeholder="Titre, entreprise..." value="{{ filters.keyword }}">
+            <input type="text" name="q" placeholder="Titre, entreprise..." value="{{ filters.title_internship_offer }}">
         </div>
         <div class="form-group">
             <label>Localisation</label>
-            <input type="text" name="city" placeholder="Ville (ex: Nancy)" value="{{ filters.city }}">
+            <input type="text" name="city" placeholder="Ville (ex: Nancy)" value="{{ filters.city_company_site }}">
         </div>
         <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
         <a href="/app/offers" class="btn btn-ghost">Réinitialiser</a>
