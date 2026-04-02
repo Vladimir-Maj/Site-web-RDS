@@ -11,6 +11,21 @@ class CompanyModel extends BaseModel implements JsonSerializable
     /** @var CompanySiteModel[] */
     public array $sites = [];
 
+    // --- Legacy Aliases ---
+    public ?int $id = null;
+    public string $name = '';
+    public ?string $description = null;
+    public ?string $phone = null;
+    public ?string $email = null;   // flat string, not Email object
+    public ?string $siren = null;
+    public bool $is_active = true;
+    public ?int $sector_id = null;
+    public ?string $created_at = null;
+    // These have no canonical equivalent yet — add if your DB has them:
+    public ?string $location = null;
+    public ?string $website = null;
+    public ?string $logo_url = null;
+
     public function __construct(
         public ?int $id_company = null,
         public string $name_company = '',
@@ -30,21 +45,34 @@ class CompanyModel extends BaseModel implements JsonSerializable
     {
         $inst = new self(
             id_company: isset($data['id_company']) && $data['id_company'] !== ''
-                ? (int) $data['id_company']
-                : (isset($data['id']) && $data['id'] !== '' ? (int) $data['id'] : null),
+            ? (int) $data['id_company']
+            : (isset($data['id']) && $data['id'] !== '' ? (int) $data['id'] : null),
             name_company: $data['name_company'] ?? ($data['name'] ?? ''),
             description_company: $data['description_company'] ?? ($data['description'] ?? null),
             phone_company: $data['phone_company'] ?? ($data['phone'] ?? null),
             email_company: new Email($data['email_company'] ?? ($data['email'] ?? 'temp@temp.com')),
             tax_id_company: $data['tax_id_company'] ?? ($data['siren'] ?? null),
             is_active_company: isset($data['is_active_company'])
-                ? (bool) $data['is_active_company']
-                : (bool) ($data['is_active'] ?? (($data['status'] ?? null) === 'active' || ($data['status'] ?? null) === true)),
+            ? (bool) $data['is_active_company']
+            : (bool) ($data['is_active'] ?? (($data['status'] ?? null) === 'active' || ($data['status'] ?? null) === true)),
             sector_id_company: isset($data['sector_id_company']) && $data['sector_id_company'] !== ''
-                ? (int) $data['sector_id_company']
-                : (isset($data['sector_id']) && $data['sector_id'] !== '' ? (int) $data['sector_id'] : null),
+            ? (int) $data['sector_id_company']
+            : (isset($data['sector_id']) && $data['sector_id'] !== '' ? (int) $data['sector_id'] : null),
             created_at_company: $data['created_at_company'] ?? ($data['created_at'] ?? null)
         );
+
+        $inst->id = $inst->id_company;
+        $inst->name = $inst->name_company;
+        $inst->description = $inst->description_company;
+        $inst->phone = $inst->phone_company;
+        $inst->email = $inst->email_company?->asString();  // flat string for Twig
+        $inst->siren = $inst->tax_id_company;
+        $inst->is_active = $inst->is_active_company;
+        $inst->sector_id = $inst->sector_id_company;
+        $inst->created_at = $inst->created_at_company;
+        $inst->location = $data['location'] ?? $data['location_company'] ?? null;
+        $inst->website = $data['website'] ?? $data['website_company'] ?? null;
+        $inst->logo_url = $data['logo_url'] ?? $data['logo_url_company'] ?? null;
 
         if (!empty($data['sites']) && is_array($data['sites'])) {
             $inst->sites = array_map(fn($s) => CompanySiteModel::fromArray($s), $data['sites']);
