@@ -31,7 +31,8 @@ class SkillController extends BaseController
         echo $this->twig->render('skills/index.html.twig', [
             'skills' => $skills,
             'status' => $_GET['status'] ?? null,
-            'error' => $_GET['error'] ?? null
+            'error' => $_GET['error'] ?? null,
+            'sidebar_active' => 'skills'
         ]);
     }
 
