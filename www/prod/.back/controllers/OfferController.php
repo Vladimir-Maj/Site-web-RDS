@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Repository\ApplicationRepository;
 use App\Util;
 use App\Repository\OfferRepository;
 use App\Repository\CompanyRepository;
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use App\Models\OfferModel;
 use PDO;
 use Twig\Environment;
@@ -89,38 +90,38 @@ class OfferController extends BaseController
     }
 
     public function search(): void
-{
-    // Collect filters from query parameters
-    $filters = [
-        'keyword'  => $_GET['keyword'] ?? null,
-        'city'     => $_GET['city'] ?? null,
-        'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-        'sort'     => $_GET['sort'] ?? 'recent',
-    ];
+    {
+        // Collect filters from query parameters
+        $filters = [
+            'keyword' => $_GET['keyword'] ?? null,
+            'city' => $_GET['city'] ?? null,
+            'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
+            'sort' => $_GET['sort'] ?? 'recent',
+        ];
 
-    // Pagination
-    $limit = 10;
-    $page = max(1, (int) ($_GET['page'] ?? 1));
-    $offset = ($page - 1) * $limit;
+        // Pagination
+        $limit = 10;
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $offset = ($page - 1) * $limit;
 
-    // Fetch results
-    $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
+        // Fetch results
+        $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
 
-    $offers     = $results['data'] ?? [];
-    $totalCount = $results['total'] ?? 0;
-    $totalPages = (int) ceil($totalCount / $limit);
+        $offers = $results['data'] ?? [];
+        $totalCount = $results['total'] ?? 0;
+        $totalPages = (int) ceil($totalCount / $limit);
 
-    // Render template
-    echo $this->twig->render('offers/offer_search.html.twig', [
-        'offers'         => $offers,
-        'filters'        => $filters,
-        'count'          => $totalCount,
-        'page'           => $page,
-        'totalPages'     => $totalPages,
-        'isPrivileged'   => $this->isPrivileged(),
-        'sidebar_active' => 'offers',
-    ]);
-}
+        // Render template
+        echo $this->twig->render('offers/offer_search.html.twig', [
+            'offers' => $offers,
+            'filters' => $filters,
+            'count' => $totalCount,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'isPrivileged' => $this->isPrivileged(),
+            'sidebar_active' => 'offers',
+        ]);
+    }
 
     public function searchJson(): void
     {
@@ -153,14 +154,26 @@ class OfferController extends BaseController
             $this->abort(404, "L'offre d'internat introuvable.");
         }
 
+        if (!$this->isPrivileged()) {
+            $this->offerRepository->incrementViews((int) $offer->id);
+            $offer->views++;
+            $offer->views_internship_offer++;
+        }
+
+
         $isWishlisted = false;
         if (Util::getRole()?->value === 'student') {
-            $wishlistRepo = new WishlistRepository($this->pdo);
+            $wishlistRepo = new WishListRepository($this->pdo);
             $isWishlisted = $wishlistRepo->exists((int) Util::getUserId(), (int) $offer->id);
         }
 
         $skillsString = $this->offerRepository->getSkillsAsString((int) $offer->id);
         $skills = array_filter(array_map('trim', explode(',', $skillsString)));
+
+        $applicationRepo = new ApplicationRepository($this->pdo);
+
+        error_log("views" . $this->offerRepository->countViews((int) $id));
+        error_log("applications" . $applicationRepo->countByOffer((int) $id));
 
 
         echo $this->twig->render('offers/show.html.twig', [
@@ -168,7 +181,9 @@ class OfferController extends BaseController
             'isPrivileged' => $this->isPrivileged(),
             'csrf_token' => Util::getCSRFToken(),
             'isWishlisted' => $isWishlisted,
-            'skills' => $skills
+            'skills' => $skills,
+            'views' => (string) $this->offerRepository->countViews((int) $offer->id),
+            'applications' => (string) $applicationRepo->countByOffer((int) $id)
         ]);
     }
 
