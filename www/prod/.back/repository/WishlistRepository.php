@@ -108,7 +108,7 @@ class WishlistRepository
                     ON w.offer_id_wishlist = o.id_internship_offer
                 INNER JOIN company_site s
                     ON o.company_site_id_internship_offer = s.id_company_site
-                INNER JOIN company c
+               INNER JOIN company c
                     ON s.company_id_company_site = c.id_company
                 WHERE w.student_id_wishlist = :student_id
                 ORDER BY w.saved_at_wishlist DESC";
@@ -122,3 +122,4 @@ class WishlistRepository
         );
     }
 }
+
