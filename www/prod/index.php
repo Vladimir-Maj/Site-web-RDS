@@ -27,7 +27,7 @@ use App\Repository\OfferRepository;
 use App\Repository\PromotionRepository;
 use App\Repository\SkillRepository;
 use App\Repository\UserRepository;
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use App\Util;
 use App\Util\ComplianceLogger;
 use App\Util\DataDeletionManager;
@@ -357,7 +357,7 @@ $router->add('GET', '/mentions-legales', fn($p, $pdo, $twig) => $legalsHandler($
 $router->add('GET', '/privacy', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
 
 // GET — GDPR data rights dashboard (protected)
-$router->add('GET', '/dashboard/account/data-rights', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->showDataRights(), roles: $everyone);
+/*$router->add('GET', '/dashboard/account/data-rights', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->showDataRights(), roles: $everyone);
 
 // POST — Request GDPR data export (protected)
 $router->add('POST', '/dashboard/account/export-data', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->requestExport(), roles: $everyone);
@@ -376,7 +376,7 @@ $router->add('GET', '/dashboard/account/confirm-deletion', fn($p, $pdo, $twig) =
 
 // POST — Cancel pending account deletion (protected)
 $router->add('POST', '/dashboard/account/cancel-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->cancelDeletion(), roles: $everyone);
-
+*/
 
 // --- 7. DISPATCH ---
 $router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
