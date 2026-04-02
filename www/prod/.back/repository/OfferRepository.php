@@ -40,7 +40,7 @@ class OfferRepository
 
         $stmt = $this->pdo->prepare($sql);
 
-        return $stmt->execute([
+        $return = $stmt->execute([
             ':title' => $data['title_internship_offer'] ?? $data['title'] ?? '',
             ':description' => $data['description_internship_offer'] ?? $data['description'] ?? null,
             ':hourly_rate' => $data['hourly_rate_internship_offer'] ?? $data['hourly_rate'] ?? null,
@@ -49,6 +49,14 @@ class OfferRepository
             ':site_id' => $siteId,
             ':is_active' => (int) ($data['is_active_internship_offer'] ?? $data['is_active'] ?? 1),
         ]);
+
+        if ($return) {
+            $offerId = (int) $this->pdo->lastInsertId();
+            $this->syncSkills($offerId, $data['required_skills'] ?? null);
+        } else {
+            error_log("Failed to create offer: " . implode(", ", $stmt->errorInfo()));
+        }
+        return $return;
     }
 
     /**
@@ -117,7 +125,7 @@ class OfferRepository
                     company_site_id_internship_offer = :site_id
                 WHERE id_internship_offer = :id";
 
-        return $this->pdo->prepare($sql)->execute([
+        $return = $this->pdo->prepare($sql)->execute([
             ':id' => (int) $id,
             ':title' => $data['title_internship_offer'] ?? $data['title'] ?? '',
             ':description' => $data['description_internship_offer'] ?? $data['description'] ?? null,
@@ -127,6 +135,14 @@ class OfferRepository
             ':is_active' => (int) ($data['is_active_internship_offer'] ?? $data['is_active'] ?? 1),
             ':site_id' => $siteId,
         ]);
+
+        if ($return) {
+            $this->syncSkills((int) $id, $data['required_skills'] ?? null);
+        } else {
+            error_log("Failed to update offer: " . implode(", ", $this->pdo->errorInfo()));
+        }
+
+        return $return;
     }
 
     /**
@@ -146,81 +162,76 @@ class OfferRepository
      */
     public function advancedSearch(array $filters, int $limit, int $offset): array
     {
-        $sql = "SELECT SQL_CALC_FOUND_ROWS
-                    o.id_internship_offer,
-                    o.id_internship_offer AS id,
-                    o.title_internship_offer,
-                    o.title_internship_offer AS title,
-                    o.description_internship_offer,
-                    o.description_internship_offer AS description,
-                    o.hourly_rate_internship_offer,
-                    o.hourly_rate_internship_offer AS hourly_rate,
-                    o.start_date_internship_offer,
-                    o.start_date_internship_offer AS start_date,
-                    o.duration_weeks_internship_offer,
-                    o.duration_weeks_internship_offer AS duration_weeks,
-                    o.published_at_internship_offer,
-                    o.published_at_internship_offer AS published_at,
-                    o.is_active_internship_offer,
-                    o.is_active_internship_offer AS is_active,
-                    o.company_site_id_internship_offer,
-                    o.company_site_id_internship_offer AS site_id,
-                    s.city_company_site,
-                    s.city_company_site AS location,
-                    s.address_company_site,
-                    s.address_company_site AS address,
-                    c.id_company,
-                    c.id_company AS company_id,
-                    c.name_company,
-                    c.name_company AS company_name
-                FROM internship_offer o
-                JOIN company_site s
-                    ON o.company_site_id_internship_offer = s.id_company_site
-                JOIN company c
-                    ON s.company_id_company_site = c.id_company
-                WHERE o.is_active_internship_offer = 1";
+        $sql = "
+        SELECT SQL_CALC_FOUND_ROWS
+            o.id_internship_offer AS id,
+            o.title_internship_offer AS title,
+            o.description_internship_offer AS description,
+            o.hourly_rate_internship_offer AS hourly_rate,
+            o.start_date_internship_offer AS start_date,
+            o.duration_weeks_internship_offer AS duration_weeks,
+            o.published_at_internship_offer AS published_at,
+            o.is_active_internship_offer AS is_active,
+            s.city_company_site AS location,
+            c.name_company AS company_name,
+            GROUP_CONCAT(sk.label_skill SEPARATOR ', ') AS required_skills
+        FROM internship_offer o
+        JOIN company_site s ON o.company_site_id_internship_offer = s.id_company_site
+        JOIN company c ON s.company_id_company_site = c.id_company
+        LEFT JOIN offer_requirement orq ON orq.offer_requirement_id = o.id_internship_offer
+        LEFT JOIN skill sk ON sk.id_skill = orq.skill_requirement_id
+        WHERE o.is_active_internship_offer = 1
+    ";
 
         $params = [];
 
-        $keyword = $filters['keyword'] ?? $filters['title_internship_offer'] ?? null;
-        if (!empty($keyword)) {
+
+
+        // Keyword filter
+        if (!empty($filters['keyword'])) {
             $sql .= " AND (
         o.title_internship_offer LIKE :keyword_title
         OR o.description_internship_offer LIKE :keyword_desc
         OR c.name_company LIKE :keyword_company
-        )";
-            $params['keyword_title'] = '%' . $keyword . '%';
-            $params['keyword_desc'] = '%' . $keyword . '%';
-            $params['keyword_company'] = '%' . $keyword . '%';
+        OR sk.label_skill LIKE :keyword_skill
+    )";
+            $keywordParam = '%' . $filters['keyword'] . '%';
+            $params['keyword_title'] = $keywordParam;
+            $params['keyword_desc'] = $keywordParam;
+            $params['keyword_company'] = $keywordParam;
+            $params['keyword_skill'] = $keywordParam;
         }
 
-        $city = $filters['city'] ?? $filters['city_company_site'] ?? null;
-        if (!empty($city)) {
+        // City filter
+        if (!empty($filters['city'])) {
             $sql .= " AND s.city_company_site LIKE :city";
-            $params['city'] = '%' . $city . '%';
+            $params['city'] = '%' . $filters['city'] . '%';
         }
 
-        $duration = $filters['duration'] ?? $filters['duration_weeks_internship_offer'] ?? null;
-        if (!empty($duration)) {
+        // Duration filter
+        if (!empty($filters['duration'])) {
             $sql .= " AND o.duration_weeks_internship_offer <= :duration";
-            $params['duration'] = (int) $duration;
+            $params['duration'] = (int) $filters['duration'];
         }
 
+        // Sorting
         $sortMap = [
             'recent' => 'o.published_at_internship_offer DESC',
             'rate' => 'o.hourly_rate_internship_offer DESC',
             'duration' => 'o.duration_weeks_internship_offer ASC',
         ];
         $orderBy = $sortMap[$filters['sort'] ?? 'recent'] ?? 'o.published_at_internship_offer DESC';
-        $sql .= " ORDER BY {$orderBy} LIMIT :limit OFFSET :offset";
+
+        $sql .= " GROUP BY o.id_internship_offer ORDER BY {$orderBy} LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
 
+        // Bind dynamic filter parameters only if they exist
         foreach ($params as $key => $val) {
-            $type = is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR;
-            $stmt->bindValue(':' . $key, $val, $type);
+            $stmt->bindValue(':' . $key, $val, is_int($val) ? PDO::PARAM_INT : PDO::PARAM_STR);
         }
 
+        // Always bind limit/offset
         $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
 
@@ -303,10 +314,57 @@ class OfferRepository
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
-    public function getAllJobTypes(): array
+    private function syncSkills(int $offerId, ?string $skillsString): void
     {
-        // La nouvelle BDD ne contient pas de colonne job_type.
-        // On conserve la méthode pour compatibilité avec l'ancien code.
-        return [];
+        // Clear existing relations
+        $this->pdo->prepare(
+            "DELETE FROM offer_requirement WHERE offer_requirement_id = :id"
+        )->execute([':id' => $offerId]);
+
+        if (!$skillsString) {
+            return;
+        }
+
+        $skills = array_filter(array_map('trim', explode(',', $skillsString)));
+
+        if (empty($skills)) {
+            return;
+        }
+
+        // Fetch matching skill IDs
+        $placeholders = implode(',', array_fill(0, count($skills), '?'));
+        $stmt = $this->pdo->prepare(
+            "SELECT id_skill, label_skill FROM skill WHERE label_skill IN ($placeholders)"
+        ); //343 here!
+        $stmt->execute($skills);
+
+        $existingSkills = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        foreach ($existingSkills as $skill) {
+            $this->pdo->prepare(
+                "INSERT INTO offer_requirement (offer_requirement_id, skill_requirement_id)
+             VALUES (:offer_id, :skill_id)"
+            )->execute([
+                        ':offer_id' => $offerId,
+                        ':skill_id' => $skill['id_skill']
+                    ]);
+        }
     }
+
+    public function getSkillsAsString(int $offerId): string
+    {
+        $stmt = $this->pdo->prepare("
+        SELECT s.label_skill
+        FROM skill s
+        JOIN offer_requirement o 
+            ON s.id_skill = o.skill_requirement_id -- Check if this is skill_id or skill_requirement_id in your DB
+        WHERE o.offer_requirement_id = :id -- Check if this is offer_id or offer_requirement_id
+    ");
+
+        $stmt->execute([':id' => $offerId]);
+        $skills = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        return implode(', ', $skills);
+    }
+
 }
