@@ -1,0 +1,217 @@
+{% extends "dashboard/layout.html.twig" %}
+
+{% block title %}Promotions — StageFlow{% endblock %}
+
+{% block dashboard_content %}
+<div class="page-header">
+    <h1>Promotions</h1>
+    <p class="text-muted">Gérez les promotions par campus</p>
+</div>
+
+<div class="card company-form">
+    <div class="form-grid">
+        <div class="form-group span-half">
+            <label>Campus</label>
+            <select id="campus-select">
+                {% for campus in all_campuses %}
+                    <option value="{{ campus.id_campus }}" {% if loop.first %}selected{% endif %}>
+                        {{ campus.name_campus }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group span-half" style="display:flex; align-items:flex-end; gap:1rem;">
+            <button class="btn btn-primary" id="add-promo-btn">➕ Ajouter Promotion</button>
+        </div>
+    </div>
+</div>
+
+<div class="card mt-2">
+    <table class="table" id="promotion-table">
+        <thead>
+            <tr>
+                <th>Label</th>
+                <th>Année académique</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Filled dynamically -->
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal for editing/adding a promotion -->
+<div id="promo-modal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2 id="modal-title">Ajouter une promotion</h2>
+        <form id="promo-form">
+            <input type="hidden" name="id_promotion" id="promo-id">
+            <div class="form-group">
+                <label>Label</label>
+                <input type="text" name="label_promotion" id="promo-label" required>
+            </div>
+            <div class="form-group">
+                <label>Année académique</label>
+                <input type="text" name="academic_year_promotion" id="promo-year" required>
+            </div>
+            <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+        </form>
+    </div>
+</div>
+
+<script>
+const campusSelect  = document.getElementById('campus-select');
+const tableBody     = document.querySelector('#promotion-table tbody');
+const promoModal    = document.getElementById('promo-modal');
+const promoForm     = document.getElementById('promo-form');
+
+// ── Modal helpers ────────────────────────────────────────────────────────────
+
+function openModal({ id = '', label = '', year = '', title = 'Ajouter une promotion' } = {}) {
+    document.getElementById('modal-title').textContent  = title;
+    document.getElementById('promo-id').value           = id;
+    document.getElementById('promo-label').value        = label;
+    document.getElementById('promo-year').value         = year;
+    promoModal.style.display = 'flex';
+}
+
+function closeModal() {
+    promoModal.style.display = 'none';
+    promoForm.reset();
+}
+
+document.querySelector('#promo-modal .close').addEventListener('click', closeModal);
+promoModal.addEventListener('click', e => { if (e.target === promoModal) closeModal(); });
+
+// ── "Add" button ─────────────────────────────────────────────────────────────
+
+document.getElementById('add-promo-btn').addEventListener('click', () => openModal());
+
+// ── Load campuses then bootstrap the table ───────────────────────────────────
+
+async function loadCampuses() {
+    try {
+        const res = await fetch('/api/campus');
+        if (!res.ok) throw new Error('Erreur lors du chargement des campus');
+        const campuses = await res.json();
+
+        campusSelect.innerHTML = '';
+        campuses.forEach(campus => {
+            const option = document.createElement('option');
+            option.value       = campus.id_campus;
+            option.textContent = campus.name_campus;
+            campusSelect.appendChild(option);
+        });
+
+        if (campuses.length > 0) {
+            loadPromotions(campuses[0].id_campus);
+        } else {
+            tableBody.innerHTML = '<tr><td colspan="3">Aucun campus disponible</td></tr>';
+        }
+
+    } catch (err) {
+        console.error(err);
+        tableBody.innerHTML = '<tr><td colspan="3">Impossible de charger les campus</td></tr>';
+    }
+}
+
+campusSelect.addEventListener('change', () => loadPromotions(campusSelect.value));
+
+// ── Load promotions ──────────────────────────────────────────────────────────
+
+async function loadPromotions(campusId) {
+    if (!campusId) return;
+    try {
+        const res = await fetch(`/api/campus/${campusId}/promotions`);
+        if (!res.ok) throw new Error('Erreur lors du chargement des promotions');
+        const promotions = await res.json();
+
+        tableBody.innerHTML = '';
+
+        if (promotions.length === 0) {
+            tableBody.innerHTML = '<tr><td colspan="3">Aucune promotion trouvée</td></tr>';
+            return;
+        }
+
+        promotions.forEach(p => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${p.label_promotion}</td>
+                <td>${p.academic_year_promotion}</td>
+                <td>
+                    <button class="btn btn-sm btn-primary edit-btn"
+                        data-id="${p.id_promotion}"
+                        data-label="${p.label_promotion}"
+                        data-year="${p.academic_year_promotion}">✏️</button>
+                    <button class="btn btn-sm btn-danger delete-btn"
+                        data-id="${p.id_promotion}">🗑️</button>
+                </td>`;
+            tableBody.appendChild(tr);
+        });
+    } catch (err) {
+        console.error(err);
+        tableBody.innerHTML = '<tr><td colspan="3">Impossible de charger les promotions</td></tr>';
+    }
+}
+
+// ── Event delegation for edit / delete ───────────────────────────────────────
+
+tableBody.addEventListener('click', async e => {
+    if (e.target.closest('.edit-btn')) {
+        const btn = e.target.closest('.edit-btn');
+        openModal({
+            id:    btn.dataset.id,
+            label: btn.dataset.label,
+            year:  btn.dataset.year,
+            title: 'Modifier la promotion',
+        });
+        return;
+    }
+
+    if (e.target.closest('.delete-btn')) {
+        const id = e.target.closest('.delete-btn').dataset.id;
+        if (!confirm('Supprimer cette promotion ?')) return;
+        try {
+            const res = await fetch(`/api/promotions/${id}`, { method: 'DELETE' });
+            if (!res.ok) throw new Error('Erreur lors de la suppression');
+            loadPromotions(campusSelect.value);
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+});
+
+// ── Form submit (create / update) ────────────────────────────────────────────
+
+promoForm.addEventListener('submit', async e => {
+    e.preventDefault();
+
+    const formData = new FormData(promoForm);
+    const payload  = Object.fromEntries(formData.entries());
+
+    payload.campus_id_promotion = parseInt(campusSelect.value, 10);
+    payload.id_promotion        = payload.id_promotion || null;
+
+    try {
+        const res = await fetch(`/api/campus/${campusSelect.value}/promotions`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify(payload),
+        });
+
+        if (!res.ok) throw new Error('Erreur lors de l\'enregistrement');
+
+        closeModal();
+        loadPromotions(campusSelect.value);
+    } catch (err) {
+        alert(err.message);
+    }
+});
+
+// ── Init ─────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', loadCampuses);
+</script>
+{% endblock %}
