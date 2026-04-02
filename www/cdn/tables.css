@@ -1,0 +1,100 @@
+/* ===================================================
+   STAGEFLOW — RESPONSIVE TABLES.CSS
+   Data Grids and Tabular Information
+   =================================================== */
+
+.table-wrap {
+    width: 100%;
+    overflow-x: auto;
+    /* Smooth scrolling for touch devices */
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--clr-border);
+    margin-bottom: 2rem;
+    border-radius: var(--border-radius);
+    background: var(--clr-surface);
+}
+
+table {
+    width: 100%;
+    min-width: 600px; /* Ensures the table doesn't squish too much on tiny screens */
+    border-collapse: collapse;
+    font-size: 0.9rem; /* Increased for better readability */
+    text-align: left;
+}
+
+thead {
+    background: var(--clr-accent);
+    color: var(--clr-accent-inv);
+}
+
+thead th {
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    /* Use a semi-transparent border so it works in both light/dark header themes */
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+thead th:last-child {
+    border-right: none;
+}
+
+tbody tr {
+    border-bottom: 1px solid var(--clr-border-light);
+    transition: background 0.2s ease;
+}
+
+tbody tr:last-child {
+    border-bottom: none;
+}
+
+/* Zebra striping using a subtle alpha channel to work with any background */
+tbody tr:nth-child(even) {
+    background: rgba(0, 0, 0, 0.02);
+}
+
+[data-theme="dark"] tbody tr:nth-child(even) {
+    background: rgba(255, 255, 255, 0.02);
+}
+
+tbody tr:hover {
+    background: rgba(var(--clr-accent), 0.05); /* Slight tint of accent color on hover */
+}
+
+tbody td {
+    padding: 0.8rem 1rem;
+    vertical-align: middle; /* Middle alignment usually looks cleaner for mixed content */
+    border-right: 1px solid var(--clr-border-light);
+    color: var(--clr-text);
+    white-space: nowrap; /* Prevents awkward text wrapping in small cells */
+}
+
+/* Allow specific cells (like descriptions) to wrap if needed */
+tbody td.wrap-text {
+    white-space: normal;
+    min-width: 200px;
+}
+
+tbody td:last-child {
+    border-right: none;
+}
+
+/* ---------- TABLE COMPONENT UTILITIES ---------- */
+
+/* Status indicator dots inside tables */
+.td-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+}
+
+.td-status::before {
+    content: "";
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--status-color, var(--clr-text-muted));
+}

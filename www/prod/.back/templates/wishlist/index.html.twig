@@ -1,0 +1,20 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Ma wishlist{% endblock %}
+
+{% block body %}
+    <div class="page-header" style="margin-bottom: 2rem; padding-top: 2rem;">
+        <h1>Ma wishlist</h1>
+        <p>Retrouvez ici les offres que vous avez sauvegardées.</p>
+    </div>
+
+    <div class="offer-list" style="display: grid; gap: 1.5rem; margin-top: 1rem;">
+        {% for offer in offers %}
+            {{ include('components/card_template.twig', {'offer': offer}) }}
+        {% else %}
+            <div class="empty-state">
+                <p>Aucune offre dans votre wishlist.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

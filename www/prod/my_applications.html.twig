@@ -1,0 +1,56 @@
+{% extends "dashboard/layout.html.twig" %}
+{% block title %}
+	{% if is_student %}Mes Candidatures{% else %}Candidatures de
+		{{ student.first_name }}
+		{{ student.last_name }}
+	{% endif %}
+	— StageFlow
+{% endblock %}
+
+{% block dashboard_content %}
+	<header class="page-header">
+		<div>
+			{% if is_student %}
+				<h1>Mes Candidatures</h1>
+				<p>Retrouvez ici toutes vos candidatures de stage</p>
+			{% else %}
+				<h1>Candidatures de
+					{{ student.first_name }}
+					{{ student.last_name }}</h1>
+				<p>Vue administrateur — Étudiant ID :
+					{{ student.id }}</p>
+			{% endif %}
+		</div>
+	</header>
+
+	<div class="card">
+		<div class="card-body" style="display:block;">
+			{% if applications is empty %}
+				<p>Aucune candidature trouvée.</p>
+			{% else %}
+				<table style="width:100%; border-collapse:collapse;">
+					<thead>
+						<tr>
+							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">ID Candidature</th>
+							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">ID Offre</th>
+							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Statut</th>
+						</tr>
+					</thead>
+					<tbody>
+						{% for app in applications %}
+							<tr>
+								<td style="padding:8px; border-bottom:1px solid #eee;">{{ app.id }}</td>
+								<td style="padding:8px; border-bottom:1px solid #eee;">{{ app.offer_id }}</td>
+								<td style="padding:8px; border-bottom:1px solid #eee;">
+									<span class="badge badge-{{ app.status == 'pending' ? 'warning' : (app.status == 'accepted' ? 'success' : 'danger') }}">
+										{{ app.status }}
+									</span>
+								</td>
+							</tr>
+						{% endfor %}
+					</tbody>
+				</table>
+			{% endif %}
+		</div>
+	</div>
+{% endblock %}

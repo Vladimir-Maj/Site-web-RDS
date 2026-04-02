@@ -1,0 +1,199 @@
+{# .back/views/offers/apply.html.twig #}
+{% extends "base.html.twig" %}
+
+{% block title %}Postuler — {{ offer.title }} — StageFlow{% endblock %}
+
+{% block body %}
+
+<div class="page-header">
+    <div>
+        <a href="/app/offers/show/{{ offer.id }}" class="btn btn-ghost" style="border: none; padding-left: 0;">← Retour à l'offre</a>
+        <h1 class="mt-1">Postuler à cette offre</h1>
+        <p>{{ offer.title }} — <strong>{{ offer.company_name }}</strong> · {{ offer.location }}</p>
+    </div>
+</div>
+
+{# --- Notifications --- #}
+{% if error %}
+    <div class="notice notice-error mb-2">
+        <div class="notice-icon">⚠️</div>
+        <p><strong>Erreur :</strong> {{ error }}</p>
+    </div>
+{% endif %}
+
+{% if success %}
+    <div class="notice notice-info mb-2">
+        <div class="notice-icon">✅</div>
+        <p>Votre candidature a bien été envoyée ! Vous serez contacté(e) prochainement.</p>
+    </div>
+{% endif %}
+
+<div class="profile-layout">
+
+    {# ===== LEFT SIDEBAR — Offer Summary ===== #}
+    <aside>
+        <div class="card user-card">
+            <div class="avatar-circle">🏢</div>
+            <h3>{{ offer.company_name }}</h3>
+            <p class="text-sm text-muted">{{ offer.location }}</p>
+
+            <div class="data-grid mt-3" style="text-align: left;">
+                <div class="data-item">
+                    <span class="data-label">Poste</span>
+                    <span class="data-value">{{ offer.title }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Gratification</span>
+                    <span class="data-value">{{ offer.hourly_rate|default('N/C') }} €/h</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Durée</span>
+                    <span class="data-value">{{ offer.duration_weeks|default('?') }} semaines</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Début</span>
+                    <span class="data-value">{{ offer.start_date ? offer.start_date|date("d/m/Y") : 'À définir' }}</span>
+                </div>
+            </div>
+        </div>
+
+        {# Candidate identity recap — read-only #}
+        <div class="card mt-2" style="padding: 1.25rem;">
+            <p class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color); margin-bottom: 0.75rem;">Candidat</p>
+            <div class="data-grid">
+                <div class="data-item">
+                    <span class="data-label">Prénom</span>
+                    <span class="data-value">{{ user.first_name }}</span>
+                </div>
+                <div class="data-item">
+                    <span class="data-label">Email</span>
+                    <span class="data-value" style="word-break: break-all;">{{ user.email }}</span>
+                </div>
+            </div>
+            <a href="/app/profile" class="text-sm text-muted" style="display: inline-block; margin-top: 0.75rem;">✏️ Modifier mon profil</a>
+        </div>
+
+        <div class="notice notice-warn mt-2">
+            <p class="text-sm">⚠️ Ne partagez <strong>jamais</strong> vos coordonnées bancaires lors d'une candidature.</p>
+        </div>
+    </aside>
+
+    {# ===== MAIN CONTENT — Application Form ===== #}
+    <section>
+        <form
+            id="applyForm"
+            action="/app/offers/show/{{ offer.id }}/apply"
+            method="POST"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <input type="hidden" name="offer_id" value="{{ offer.id }}">
+
+            {# ── Section 1 : CV ──────────────────────────────────────── #}
+            <div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                <h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">01. Curriculum Vitæ</h3>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="cv_id">Choisir un CV <span style="color: var(--danger-color);">*</span></label>
+                <select name="cv_id" id="cv_id" required>
+                    <option value="" disabled selected>— Chargement de vos CVs… —</option>
+                </select>
+                <p class="text-sm text-muted" style="margin-top: 0.4rem;">
+                    Pas le bon CV ?
+                    <a href="/app/profile#cvs">Gérer mes CVs</a>
+                </p>
+            </div>
+
+            {# ── Section 2 : Lettre de motivation ────────────────────── #}
+            <div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
+                <h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">02. Lettre de motivation</h3>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="cover_letter">Votre message <span style="color: var(--danger-color);">*</span></label>
+                <textarea
+                    name="cover_letter"
+                    id="cover_letter"
+                    rows="10"
+                    maxlength="3000"
+                    placeholder="Présentez-vous et expliquez pourquoi vous êtes le bon candidat pour ce poste…"
+                    required
+                >{{ application.cover_letter|default('') }}</textarea>
+                <div style="display: flex; justify-content: flex-end; margin-top: 0.3rem;">
+                    <span id="charCount" class="text-sm text-muted">0 / 3000</span>
+                </div>
+            </div>
+
+            {# ── Actions ─────────────────────────────────────────────── #}
+            <div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                <a href="/app/offers/show/{{ offer.id }}" class="text-sm text-muted">✕ Annuler</a>
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    🚀 Envoyer ma candidature
+                </button>
+            </div>
+
+        </form>
+    </section>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    // ── CV loader ────────────────────────────────────────────────────────
+    const cvSelect  = document.getElementById('cv_id');
+    const submitBtn = document.getElementById('submitBtn');
+
+    fetch('/api/profile/get-cvs')
+        .then(res => res.json())
+        .then(cvs => {
+            cvSelect.innerHTML = '';
+
+            if (!cvs || cvs.length === 0) {
+                const empty = document.createElement('option');
+                empty.value    = '';
+                empty.disabled = true;
+                empty.selected = true;
+                empty.textContent = '— Aucun CV trouvé. Ajoutez-en un sur votre profil. —';
+                cvSelect.appendChild(empty);
+                submitBtn.disabled = true;
+                return;
+            }
+
+            const placeholder = document.createElement('option');
+            placeholder.value    = '';
+            placeholder.disabled = true;
+            placeholder.selected = true;
+            placeholder.textContent = '— Sélectionner un CV —';
+            cvSelect.appendChild(placeholder);
+
+            cvs.forEach(cv => {
+                const opt      = document.createElement('option');
+                opt.value      = cv.id;
+                opt.textContent = cv.name + (cv.updated_at ? '  (mis à jour le ' + cv.updated_at + ')' : '');
+                if (cv.is_default) opt.selected = true;
+                cvSelect.appendChild(opt);
+            });
+        })
+        .catch(() => {
+            cvSelect.innerHTML = '<option value="" disabled selected>— Erreur de chargement. Réessayez. —</option>';
+        });
+
+    // ── Character counter ────────────────────────────────────────────────
+    const textarea = document.getElementById('cover_letter');
+    const counter  = document.getElementById('charCount');
+    const max      = parseInt(textarea.getAttribute('maxlength'), 10);
+
+    const updateCounter = () => {
+        const len = textarea.value.length;
+        counter.textContent = len + ' / ' + max;
+        counter.style.color = len > max * 0.9
+            ? 'var(--danger-color)'
+            : 'var(--text-muted)';
+    };
+
+    textarea.addEventListener('input', updateCounter);
+    updateCounter();
+});
+</script>
+
+{% endblock %}

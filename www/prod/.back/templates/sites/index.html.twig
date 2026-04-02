@@ -1,0 +1,49 @@
+{# views/sites/index.html.twig #}
+{% extends "base.html.twig" %}
+
+{% block title %}Sites de {{ company.name }} — StageFlow{% endblock %}
+
+{% block body %}
+    <div class="page-header">
+        <div>
+            <h1>Sites de l'entreprise</h1>
+            <p>Gestion des adresses et SIRET pour <strong>{{ company.name }}</strong></p>
+        </div>
+        <div style="display: flex; gap: 10px;">
+            <a href="/app/companies/{{ company.id }}" class="btn btn-ghost">← Retour Société</a>
+            <a href="/app/sites/new?company_id={{ company.id }}" class="btn btn-primary">+ Ajouter un site</a>
+        </div>
+    </div>
+
+    {% if sites is empty %}
+        <div class="notice notice-info">
+            <div class="notice-icon">📍</div>
+            <p>Aucun site n'est encore enregistré pour cette entreprise. Les sites permettent de localiser précisément les offres de stage.</p>
+        </div>
+    {% else %}
+        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+            {% for site in sites %}
+                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+                    <div>
+                        <h3 style="margin-bottom: 0.5rem;">{{ site.city|default('Ville non précisée') }}</h3>
+                        <p class="text-sm" style="color: var(--text-muted);">{{ site.address|nl2br }}</p>
+                        {% if site.tax_id %}
+                            <code class="text-xs" style="background: var(--bg-alt); padding: 2px 5px; border-radius: 4px;">
+                                SIRET: {{ site.tax_id }}
+                            </code>
+                        {% endif %}
+                    </div>
+                    
+                    <div style="margin-top: 1.5rem; display: flex; gap: 10px; border-top: 1px solid var(--border-color); pt: 10px;">
+                        <a href="/app/sites/{{ site.id }}?company_id={{ company.id }}" class="btn btn-ghost btn-sm">Modifier</a>
+                        
+                        <form action="/app/sites/delete/{{ site.id }}" method="POST" onsubmit="return confirm('Supprimer ce site ?');" style="margin:0;">
+                            <input type="hidden" name="company_id" value="{{ company.id }}">
+                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                        </form>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+{% endblock %}

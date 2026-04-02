@@ -1,0 +1,166 @@
+/* ===================================================
+   STAGEFLOW — LAYOUT.CSS
+   Header, Footer, Navigation, and Core Structure
+   =================================================== */
+
+/* ---------- MAIN WRAPPERS ---------- */
+.page-wrapper {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    flex: 1;
+}
+
+main {
+    flex: 1;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 1.6rem 1.2rem;
+}
+
+/* ---------- HEADER & BRANDING ---------- */
+header {
+    background: var(--clr-accent);
+    color: var(--clr-accent-inv);
+    border-bottom: 2px solid var(--clr-border);
+}
+
+header {
+    position: sticky;
+    top: 0;
+    /* Increase this to ensure it stays above cards (usually z-index: 1) */
+    z-index: 1000; 
+    
+    /* Optional: Add a backdrop-filter for a modern "glass" feel 
+       that hides content passing underneath */
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    background: rgba(var(--clr-accent-rgb), 0.9); /* Requires RGB variable */
+}
+
+.header-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: .55rem 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.4rem;
+}
+
+.logo {
+    display: flex;
+    align-items: center;
+    font-size: .95rem;
+    color: var(--clr-accent-inv);
+    text-decoration: none;
+    letter-spacing: .02em;
+}
+
+.logo span {
+    display: inline-block;
+    padding: .1em .3em;
+    margin-right: .35em;
+    background-image: url('https://moodle.cesi.fr/pluginfile.php/1/theme_edutor/logo/1769693681/Logo%20One%20CESI.jpg');
+    filter: invert();
+    background-size: cover;
+    background-position: center;
+    width: 24px;
+    height: 24px;
+    color: transparent; /* hides fallback text */
+}
+
+/* ---------- NAVIGATION ---------- */
+nav {
+    display: flex;
+    gap: .15rem;
+}
+
+nav a {
+    font-size: .82rem;
+    color: var(--clr-accent-inv);
+    text-decoration: none;
+    padding: .3rem .65rem;
+    border: 1px solid transparent;
+    opacity: .6;
+}
+
+nav a:hover {
+    opacity: 1;
+    border-color: var(--clr-accent-inv);
+}
+
+nav a.active {
+    opacity: 1;
+    background: var(--clr-accent-inv);
+    color: var(--clr-accent);
+    border-color: var(--clr-accent-inv);
+}
+
+/* ---------- PAGE HEADERS ---------- */
+.page-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.4rem;
+    padding-bottom: .7rem;
+    border-bottom: 1px solid var(--clr-border);
+}
+
+.page-header h1 {
+    margin: 0;
+}
+
+.page-header p {
+    font-size: .82rem;
+    margin-top: .2rem;
+}
+
+/* ---------- SPECIFIC PAGE LAYOUTS ---------- */
+/* Profile Page Grid */
+.profile-layout {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    margin-top: 2rem;
+}
+
+@media (max-width: 768px) {
+    .profile-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* ---------- FOOTER ---------- */
+footer {
+    border-top: 2px solid var(--clr-border);
+    background: var(--clr-accent);
+    color: var(--clr-accent-inv);
+    margin-top: auto;
+}
+
+.footer-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: .5rem 1.2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: .75rem;
+}
+
+.footer-inner a {
+    color: var(--clr-accent-inv);
+    opacity: .7;
+    text-decoration: underline;
+}
+
+.footer-inner a:hover {
+    opacity: 1;
+}
+
+#page-header {
+    z-index: 5000; /* Ensure it stays above all content */
+}
