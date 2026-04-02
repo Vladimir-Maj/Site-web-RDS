@@ -28,14 +28,14 @@ class ApplicationController extends BaseController
     /**
      * Permet à un Admin/Pilote de voir les candidatures d'un étudiant spécifique
      */
-    public function viewStudentApplications(string $id): void 
+    public function viewStudentApplications(string $id): void
     {
         $student = $this->userRepository->findById($id);
         $currentUser = Util::getUser();
-        
+
         // Sécurité : Vérifier que l'utilisateur est bien un étudiant
         assert($student->role === RoleEnum::Student);
-        
+
         $applications = $this->repo->findByStudent($student->id);
 
         echo $this->twig->render("dashboard/my_applications.html.twig", [
@@ -43,7 +43,7 @@ class ApplicationController extends BaseController
             "student" => $student,
             "applications" => $applications,
             "sidebar_active" => "applications",
-            "is_student" => false 
+            "is_student" => false
         ]);
     }
 
@@ -58,10 +58,15 @@ class ApplicationController extends BaseController
         $currentUser = $this->userRepository->findById($myId);
 
         echo $this->twig->render("dashboard/my_applications.html.twig", [
-            "user" => $currentUser,
+            "user" => [
+                "role" => $currentUser->role->value,
+                "first_name" => $currentUser->first_name,
+                "last_name" => $currentUser->last_name,
+                "email" => $currentUser->email,
+            ],
             "applications" => $myApplications,
             "sidebar_active" => "applications",
-            "is_student" => true 
+            "is_student" => true,
         ]);
     }
 
@@ -91,18 +96,80 @@ class ApplicationController extends BaseController
         ]);
     }
 
+    private function handleFileUpload(array $file, string $type): ?string
+    {
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            return null;
+        }
+
+        // Only allow PDF
+        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+        if ($ext !== 'pdf') {
+            return null;
+        }
+
+        // Max 2MB
+        if ($file['size'] > 2 * 1024 * 1024) {
+            return null;
+        }
+
+        // Determine subfolder
+        $subFolder = match ($type) {
+            'cv' => 'cv',
+            'motivation' => 'lm',
+            default => null
+        };
+
+        if (!$subFolder) {
+            return null;
+        }
+
+        // Absolute storage path
+        $basePath = '/var/www/html/cdn/uploads/';
+        $uploadDir = $basePath . $subFolder . '/';
+
+        if (!is_dir($uploadDir)) {
+            mkdir($uploadDir, 0755, true);
+        }
+
+        // Generate unique filename
+        $filename = uniqid('doc_', true) . '.pdf';
+        $destination = $uploadDir . $filename;
+
+        if (!move_uploaded_file($file['tmp_name'], $destination)) {
+            return null;
+        }
+
+        // Return PUBLIC path (not filesystem path)
+        return '/cdn/uploads/' . $subFolder . '/' . $filename;
+    }
+
     /**
      * POST /app/offers/{id}/apply
      */
     public function doApply(string $id): void
     {
+        // Handle CV upload if present
+        $cvPath = $_POST['cv_path'] ?? null;
+        if (!empty($_FILES['cv_file']['name'])) {
+            $cvPath = $this->handleFileUpload($_FILES['cv_file'], 'cv');
+        }
+
+        // Handle motivation letter upload if present
+        $coverLetterPath = $_POST['cover_letter_path'] ?? null;
+        if (!empty($_FILES['cover_letter_file']['name'])) {
+            $coverLetterPath = $this->handleFileUpload($_FILES['cover_letter_file'], 'motivation');
+        }
+
         $application = ApplicationModel::fromArray([
             'student_id_application' => Util::getUserId(),
             'offer_id_application' => $id,
-            'cv_path_application' => $_POST['cv_path'] ?? null,
-            'cover_letter_path_application' => $_POST['cover_letter_path'] ?? null,
+            'cv_path_application' => $cvPath,
+            'cover_letter_path_application' => $coverLetterPath,
             'status_application' => 'pending'
         ]);
+
+        error_log('Application data: ' . print_r($application, true));
 
         if ($this->repo->push($application)) {
             header('Location: /app/offers/my-applications?status=success');

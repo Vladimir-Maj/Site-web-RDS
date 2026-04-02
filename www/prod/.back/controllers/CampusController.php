@@ -23,11 +23,18 @@ class CampusController extends BaseController
      *
      * @return CampusModel[]
      */
-    public function index(): array
+    public function index(): void
     {
+
+        $campuses = $this->campusRepository->findAll();
         $this->abortIfNotPriv();
 
-        return $this->campusRepository->findAll();
+        echo $this->twig->render('campuses/index.html.twig', [
+            'campuses' => $campuses,   // array of CampusModel instances
+            'filters' => ['keyword' => $_GET['keyword'] ?? ''],
+            'isPrivileged' => $this->isPrivileged(), // or however you check privileges
+            'sidebar_active' => 'campuses'
+        ]);
     }
 
     /**
@@ -88,5 +95,53 @@ class CampusController extends BaseController
         }
 
         $this->campusRepository->deleteById($id);
+    }
+
+    public function edit(int|string $id): void
+    {
+        $this->abortIfNotPriv();
+
+        // Fetch campus or abort if not found
+        $campus = $this->campusRepository->getById($id);
+        if (!$campus) {
+            $this->abort(404, "Campus introuvable.");
+        }
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $name = trim($_POST['name_campus'] ?? '');
+            $address = trim($_POST['address_campus'] ?? null);
+
+            if ($name === '') {
+                $error = "Le nom du campus est requis.";
+            } else {
+                $campus->name_campus = $name;
+                $campus->address_campus = $address;
+                $this->campusRepository->save($campus);
+
+                $this->redirect('/dashboard/campus');
+            }
+        }
+
+        echo $this->twig->render('campuses/edit.html.twig', [
+            'sidebar_active' => 'campus',
+            'campus' => $campus,
+            'error' => $error ?? null,
+        ]);
+    }
+
+    // Delete a campus
+    public function delete(int|string $id): void
+    {
+        $this->abortIfNotPriv();
+
+        $campus = $this->campusRepository->getById($id);
+        if (!$campus) {
+            $this->abort(404, "Campus introuvable.");
+        }
+
+        // Optionally, you could check for linked offers before deletion
+        $this->campusRepository->deleteById($id);
+
+        $this->redirect('/dashboard/campus');
     }
 }

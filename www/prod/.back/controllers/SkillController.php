@@ -52,8 +52,8 @@ class SkillController extends BaseController
         }
 
         $skill = new SkillModel();
-        $skill->id = ($id !== null && $id !== '') ? (int) $id : null;
-        $skill->label = $label;
+        $skill->id_skill = ($id !== null && $id !== '') ? (int) $id : null;
+        $skill->label_skill = $label;
 
         $success = $this->repo->pushSkill($skill);
 
@@ -114,7 +114,7 @@ class SkillController extends BaseController
         }
 
         $skill = new SkillModel();
-        $skill->label = $label;
+        $skill->label_skill = $label;
 
         $success = $this->repo->pushSkill($skill);
 
@@ -181,7 +181,7 @@ class SkillController extends BaseController
             exit;
         }
 
-        $skill->label = $label;
+        $skill->label_skill = $label;
         $success = $this->repo->pushSkill($skill);
 
         if ($success) {

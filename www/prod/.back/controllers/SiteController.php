@@ -26,7 +26,7 @@ class SiteController extends BaseController
      * GET /app/companies/{companyId}/sites
      * Displays the list of all sites for a specific company
      */
-    public function index(int $companyId): void
+    public function index(int|string $companyId): void
     {
         $company = $this->companyRepository->getById($companyId);
         $sites = $this->repo->getSitesByCompany($companyId);
@@ -41,24 +41,24 @@ class SiteController extends BaseController
      * GET /api/companies/{companyId}/sites
      * Returns JSON for AJAX requests
      */
-    public function getSitesJson(int $companyId): void
-    {
-        error_log("[AJAX] Request received for Company ID: " . $companyId);
+    public function getSitesJson(int|string $companyId): void
+{
+    // Clean any previous output (warnings, spaces)
+    if (ob_get_length()) ob_clean();
 
-        try {
-            $sites = $this->repo->getSitesByCompany($companyId);
-            error_log("[AJAX] Found " . count($sites) . " sites");
-
-            header('Content-Type: application/json');
-            echo json_encode($sites);
-            exit;
-        } catch (Exception $e) {
-            error_log("[AJAX] ERROR: " . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['error' => $e->getMessage()]);
-            exit;
-        }
+    try {
+        $sites = $this->repo->getSitesByCompany($companyId);
+        
+        header('Content-Type: application/json');
+        // It's safer to use exit after echo to prevent further output
+        echo json_encode($sites);
+        exit; 
+    } catch (Exception $e) {
+        http_response_code(500);
+        echo json_encode(['error' => $e->getMessage()]);
+        exit;
     }
+}
 
     /**
      * GET /app/sites/new?company_id={companyId}
@@ -86,7 +86,7 @@ class SiteController extends BaseController
     /**
      * GET /app/sites/{id}
      */
-    public function show(int $id): void
+    public function show(int|string $id): void
     {
         $site = $this->repo->getById($id);
 
