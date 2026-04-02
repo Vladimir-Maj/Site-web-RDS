@@ -84,7 +84,7 @@ class CompanyController extends BaseController
     /**
      * Renders the Creation/Edition form
      */
-    public function renderForm(string $id): void
+    public function renderForm(int|string $id): void
     {
         $isNew = ($id === 'new');
         $company = $isNew ? null : $this->repo->getById((int) $id);
@@ -110,7 +110,7 @@ class CompanyController extends BaseController
     /**
      * Unified handler for POST /app/companies/{id}
      */
-    public function handleFormSave(string $id): void
+    public function handleFormSave(int|string $id): void
     {
         try {
             $isNew = ($id === 'new');
@@ -158,7 +158,7 @@ class CompanyController extends BaseController
     /**
      * Deletes a company and its associated sites
      */
-    public function deleteCompany(string $id): void
+    public function deleteCompany(int $id): void
     {
         try {
             $companyId = (int) $id;
