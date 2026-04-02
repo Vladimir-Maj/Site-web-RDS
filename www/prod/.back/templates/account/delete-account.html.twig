@@ -1,0 +1,195 @@
+{% extends 'legals.html.twig' %}
+
+{% block title %}Supprimer Mon Compte — StageFlow{% endblock %}
+
+{% block body %}
+<div class="delete-account-container">
+    <header class="page-header">
+        <h1>⚠️ Supprimer Mon Compte</h1>
+        <p class="subtitle">Demander la suppression définitive et irréversible de votre compte</p>
+    </header>
+
+    <div class="delete-account-content">
+        <section class="warning-section">
+            <div class="warning-box large">
+                <h2>🚨 ATTENTION</h2>
+                <p>
+                    <strong>Cette action est IRRÉVERSIBLE.</strong>
+                </p>
+                <p>
+                    Une fois confirmée, votre compte et toutes vos données personnelles
+                    seront <strong>définitivement supprimées</strong>.
+                </p>
+                <p>
+                    Vous passerez par une procédure de confirmation par email (7 jours)
+                    pour éviter les suppressions accidentelles.
+                </p>
+            </div>
+        </section>
+
+        <section class="info-section">
+            <h2>📋 Voici ce qui sera supprimé :</h2>
+            <ul class="delete-list">
+                <li>✅ Votre compte utilisateur</li>
+                <li>✅ Votre profil (prénom, nom, email, téléphone)</li>
+                <li>✅ Vos CVs et lettres de motivation</li>
+                <li>✅ Votre historique candidatures</li>
+                <li>✅ Votre wish-list (offres sauvegardées)</li>
+                <li>✅ Toute trace identifiant de votre utilisation</li>
+            </ul>
+
+            <h2>📊 Voici ce qui sera conservé (anonymisé) :</h2>
+            <ul class="retain-list">
+                <li>📦 <strong>Sauvegardes DB :</strong> Maximum 30 jours (raisons techniques)</li>
+                <li>📋 <strong>Logs audit RGPD :</strong> 3 ans (conformité légale), sans identification</li>
+                <li>📝 <strong>Données anonymisées :</strong> Statistiques agrégées (ex: "20 candidatures")  </li>
+            </ul>
+        </section>
+
+        {% if pendingRequest %}
+            <section class="pending-section">
+                <div class="pending-box">
+                    <h2>⏳ Suppression En Attente</h2>
+                    <p>
+                        <strong>Vous avez une demande de suppression en attente.</strong>
+                    </p>
+                    <dl>
+                        <dt>Demandé le :</dt>
+                        <dd>{{ pendingRequest.requested_at|date('d/m/Y à H:i') }}</dd>
+                        <dt>Expire le :</dt>
+                        <dd>{{ pendingRequest.confirmation_token_expires_at|date('d/m/Y à H:i') }}</dd>
+                        <dt>Statut :</dt>
+                        <dd>
+                            {% if pendingRequest.status == 'PENDING_CONFIRMATION' %}
+                                <span class="badge-warning">⏳ En attente de CONFIRMATION par email</span>
+                            {% elseif pendingRequest.status == 'CONFIRMED_BY_USER' %}
+                                <span class="badge-success">✅ CONFIRMÉE - Suppression en cours</span>
+                            {% endif %}
+                        </dd>
+                    </dl>
+
+                    {% if pendingRequest.status == 'PENDING_CONFIRMATION' %}
+                        <p class="info-box">
+                            📧 Un email de confirmation a été envoyé à votre adresse.<br>
+                            Veuillez cliquer le lien dans l'email pour confirmer la suppression.
+                        </p>
+                        <div class="actions">
+                            <form method="POST" action="/dashboard/account/cancel-deletion">
+                                <button type="submit" class="btn btn-secondary">
+                                    Annuler la suppression
+                                </button>
+                            </form>
+                        </div>
+                    {% elseif pendingRequest.status == 'CONFIRMED_BY_USER' %}
+                        <p class="success-box">
+                            ✅ Votre suppression a été confirmée.<br>
+                            Votre compte sera supprimé dans les 24 heures.
+                        </p>
+                    {% endif %}
+                </div>
+            </section>
+        {% else %}
+            <section class="request-section">
+                <h2>🗑️ Demander la Suppression</h2>
+                <p>
+                    Si vous souhaitez continuer, cliquez le bouton ci-dessous.
+                    Un email de confirmation sera envoyé à <strong>{{ currentUser.email }}</strong>.
+                </p>
+
+                <div class="confirmation-box">
+                    <p>
+                        <input type="checkbox" id="confirm-checkbox" required>
+                        <label for="confirm-checkbox">
+                            Je compren que cette action est <strong>IRRÉVERSIBLE</strong> et
+                            je veux continuer
+                        </label>
+                    </p>
+                </div>
+
+                <div class="actions">
+                    <button 
+                        type="button" 
+                        class="btn btn-danger"
+                        onclick="requestDeletion()"
+                        id="delete-btn"
+                        disabled
+                    >
+                        🗑️ Oui, supprimer mon compte
+                    </button>
+                    <a href="/dashboard/account/data-rights" class="btn btn-secondary">
+                        ← Retour aux droits RGPD
+                    </a>
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="process-section">
+            <h2>🔄 Processus de Confirmation</h2>
+            <ol class="process-steps">
+                <li>
+                    <strong>Vous cliquez "Demander la suppression"</strong><br>
+                    Votre demande est enregistrée.
+                </li>
+                <li>
+                    <strong>Un email de confirmation est envoyé</strong><br>
+                    À votre adresse {{ currentUser.email }}
+                </li>
+                <li>
+                    <strong>Vous cliquez le lien dans l'email</strong><br>
+                    Le lien est valide 7 jours
+                </li>
+                <li>
+                    <strong>Vous confirmez la suppression</strong><br>
+                    Une dernière confirmation avant exécution
+                </li>
+                <li>
+                    <strong>Votre compte est supprimé</strong><br>
+                    Immédiatement après confirmation
+                </li>
+            </ol>
+        </section>
+
+        <section class="contact-section">
+            <h2>❓ Questions ?</h2>
+            <p>
+                Si vous avez des questions sur ce processus, contactez notre équipe :
+            </p>
+            <address>
+                📧 <a href="mailto:legal@example.fr">legal@example.fr</a><br>
+                📞 [À REMPLIR]<br>
+                ℹ️ <a href="/legals">Lire notre Politique de Confidentialité</a>
+            </address>
+        </section>
+    </div>
+
+</div>
+
+<script>
+document.getElementById('confirm-checkbox').addEventListener('change', function() {
+    document.getElementById('delete-btn').disabled = !this.checked;
+});
+
+function requestDeletion() {
+    const confirmed = confirm('Êtes-vous CERTAIN ? Cette action est IRRÉVERSIBLE.');
+    if (confirmed) {
+        fetch('/dashboard/account/request-deletion?ajax=1', {
+            method: 'POST'
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                location.reload();
+            } else {
+                alert('Erreur : ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Erreur lors de la demande.');
+        });
+    }
+}
+</script>
+
+{% endblock %}

@@ -1,6 +1,12 @@
 <footer>
     <div class="footer-inner">
         <span>Gestion d'Offres de Stage</span>
-        <span><a href="{{ site_url }}/legals.php">Conditions &amp; Mentions légales</a></span>
+        <nav class="footer-links">
+            <a href="{{ site_url }}/legals">Mentions Légales</a>
+            {% if isLoggedIn %}
+                <a href="{{ site_url }}/dashboard/account/data-rights">Mes Données RGPD</a>
+            {% endif %}
+            <a href="https://www.cnil.fr/fr/plaintes" target="_blank" rel="noopener noreferrer">Plainte CNIL</a>
+        </nav>
     </div>
 </footer>

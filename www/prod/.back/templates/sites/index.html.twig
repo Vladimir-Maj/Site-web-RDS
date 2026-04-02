@@ -15,35 +15,64 @@
         </div>
     </div>
 
-    {% if sites is empty %}
-        <div class="notice notice-info">
-            <div class="notice-icon">📍</div>
-            <p>Aucun site n'est encore enregistré pour cette entreprise. Les sites permettent de localiser précisément les offres de stage.</p>
-        </div>
-    {% else %}
-        <div class="grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
-            {% for site in sites %}
-                <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <h3 style="margin-bottom: 0.5rem;">{{ site.city|default('Ville non précisée') }}</h3>
-                        <p class="text-sm" style="color: var(--text-muted);">{{ site.address|nl2br }}</p>
-                        {% if site.tax_id %}
-                            <code class="text-xs" style="background: var(--bg-alt); padding: 2px 5px; border-radius: 4px;">
-                                SIRET: {{ site.tax_id }}
-                            </code>
-                        {% endif %}
-                    </div>
-                    
-                    <div style="margin-top: 1.5rem; display: flex; gap: 10px; border-top: 1px solid var(--border-color); pt: 10px;">
-                        <a href="/app/sites/{{ site.id }}?company_id={{ company.id }}" class="btn btn-ghost btn-sm">Modifier</a>
-                        
-                        <form action="/app/sites/delete/{{ site.id }}" method="POST" onsubmit="return confirm('Supprimer ce site ?');" style="margin:0;">
-                            <input type="hidden" name="company_id" value="{{ company.id }}">
-                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
-                        </form>
-                    </div>
-                </div>
-            {% endfor %}
+    {# --- Notice : Style Catalogue --- #}
+    <div class="notice notice-info">
+        <div class="notice-icon">📍</div>
+        <p>
+            {% if sites is empty %}
+                Aucun site n'est encore enregistré pour cette entreprise. Les sites permettent de localiser précisément les offres de stage.
+            {% else %}
+                Il y a actuellement <strong>{{ sites|length }} site{{ sites|length > 1 ? 's' : '' }}</strong> enregistré{{ sites|length > 1 ? 's' : '' }} pour cette organisation.
+            {% endif %}
+        </p>
+    </div>
+
+    {# --- Liste des sites (Tableau) --- #}
+    {% if sites is not empty %}
+        <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Ville</th>
+                            <th>Adresse</th>
+                            <th>SIRET</th>
+                            <th class="text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for site in sites %}
+                            <tr>
+                                <td>
+                                    <strong>{{ site.city|default('N/A') }}</strong>
+                                </td>
+                                <td class="text-sm">
+                                    {{ site.address|default('-')|nl2br }}
+                                </td>
+                                <td>
+                                    {% if site.tax_id %}
+                                        <code class="text-xs" style="background: var(--bg-alt); padding: 2px 5px; border-radius: 4px;">
+                                            {{ site.tax_id }}
+                                        </code>
+                                    {% else %}
+                                        <span class="text-muted text-xs">Non renseigné</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-right">
+                                    <div style="display: flex; justify-content: flex-end; gap: 8px;">
+                                        <a href="/app/sites/{{ site.id }}?company_id={{ company.id }}" class="btn btn-ghost btn-sm">Modifier</a>
+                                        
+                                        <form action="/app/sites/delete/{{ site.id }}" method="POST" onsubmit="return confirm('Supprimer ce site ?');" style="margin:0;">
+                                            <input type="hidden" name="company_id" value="{{ company.id }}">
+                                            <button type="submit" class="btn btn-danger btn-sm">Supprimer</button>
+                                        </form>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     {% endif %}
 {% endblock %}

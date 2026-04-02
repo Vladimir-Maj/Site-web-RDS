@@ -13,6 +13,7 @@
         </div>
     </div>
 
+    {# --- BARRE DE RECHERCHE (Consistent with Pilots/Campus) --- #}
     <form method="GET" action="/dashboard/etudiants" class="search-bar">
         <div class="form-group">
             <label>Recherche</label>
@@ -27,7 +28,14 @@
             </select>
         </div>
         <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+        <a href="/dashboard/etudiants" class="btn btn-ghost">Réinitialiser</a>
     </form>
+
+    {# --- Notice : Dynamique avec le nombre d'étudiants --- #}
+    <div class="notice notice-info">
+        <div class="notice-icon">ℹ️</div>
+        <p>Il y a actuellement <strong>{{ students|length }} étudiant{{ students|length > 1 ? 's' : '' }}</strong> correspondant à vos critères.</p>
+    </div>
 
     <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
         <table class="table">
@@ -39,21 +47,19 @@
                     <th class="text-right">Actions</th>
                 </tr>
             </thead>
-<tbody>
+            <tbody>
                 {% for s in students %}
                     <tr>
                         <td>
                             <strong>{{ s.first_name }} {{ s.last_name|upper }}</strong><br>
-                            {# Correction ici : on utilise .asString() comme pour les pilotes #}
                             <span class="text-xs text-muted">{{ s.email }}</span>
                         </td>
                         <td>
-                            {# Correction ici : on utilise la propriété injectée #}
                             <span class="text-sm">{{ s.promo_label|default('N/A') }}</span>
                         </td>
                         <td>
                             <span class="badge {{ s.status == 'Searching' ? 'badge-warning' : 'badge-success' }}">
-                                {{ s.status == 'Searching' ? '🔍 En recherche' : '✅ En poste' }}
+                                {{ s.status == 'Searching' ? 'En recherche' : 'En poste' }}
                             </span>
                         </td>
                         <td class="text-right">
