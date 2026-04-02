@@ -4,14 +4,14 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Repository\WishlistRepository;
-use Twig\Environment;
 use App\Util;
+use Twig\Environment;
 
 class WishlistController extends BaseController
 {
     public function __construct(
-        private WishlistRepository $wishlistRepository,
-        protected Environment $twig
+        private readonly WishlistRepository $wishlistRepository,
+        Environment $twig
     ) {
         parent::__construct($twig);
     }
@@ -28,7 +28,7 @@ class WishlistController extends BaseController
             'pageTitle' => 'Ma wishlist',
             'sidebar_active' => 'wishlist',
             'isPrivileged' => false,
-            'user' => Util::getUser()
+            'user' => Util::getUser(),
         ]);
     }
 
