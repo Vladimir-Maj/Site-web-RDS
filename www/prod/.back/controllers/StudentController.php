@@ -14,7 +14,7 @@ class StudentController extends BaseController
     public function __construct(
         private UserRepository $repo,
         protected Environment $twig,
-        private \PDO $pdo 
+        private \PDO $pdo
     ) {
         parent::__construct($twig);
         if (Util::getCSRFToken() === null) {
@@ -27,17 +27,17 @@ class StudentController extends BaseController
         $this->abortIfNotPriv();
 
         $filters = [
-            'name'   => $_GET['name'] ?? null,
+            'name' => $_GET['name'] ?? null,
             'status' => $_GET['status'] ?? null,
-            'page'   => (int) ($_GET['page'] ?? 1),
-            'limit'  => 10
+            'page' => (int) ($_GET['page'] ?? 1),
+            'limit' => 10
         ];
 
         $students = $this->repo->searchStudents($filters);
 
         echo $this->twig->render('students/student_list.html.twig', [
             'students' => $students,
-            'filters'  => $filters,
+            'filters' => $filters,
             'sidebar_active' => 'students'
         ]);
     }
@@ -46,27 +46,47 @@ class StudentController extends BaseController
     {
         $this->abortIfNotPriv();
         $student = $this->repo->findById($id);
-        if (!$student) $this->abort(404, "Étudiant introuvable.");
+        if (!$student)
+            $this->abort(404, "Étudiant introuvable.");
 
         $currentPromo = $this->repo->getPromoByStudent($id);
-        
-        $stmt = $this->pdo->query("SELECT HEX(id) as id, label, academic_year FROM promotion ORDER BY academic_year DESC");
+
+        if ($currentPromo) {
+            $currentPromo['campus_id'] = $currentPromo['campus_id_promotion'] ?? null;
+        }
+        $stmt = $this->pdo->query("
+            SELECT HEX(id_campus) AS id, name_campus AS label 
+            FROM campus 
+            ORDER BY name_campus
+        ");
+        $allCampuses = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+        $currentCampusId = $currentPromo['campus_id_promotion'] ?? null;
+
+        $stmt = $this->pdo->prepare("
+            SELECT HEX(id_promotion) AS id, label_promotion AS label, academic_year_promotion AS academic_year 
+            FROM promotion 
+            WHERE campus_id_promotion = :campusId
+            ORDER BY academic_year_promotion DESC
+        ");
+        $stmt->execute(['campusId' => $currentCampusId]);
         $allPromotions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         echo $this->twig->render('students/student_editor.html.twig', [
-            'id'             => $id,
-            'student'        => $student,
-            'current_promo'  => $currentPromo,
+            'id' => $id,
+            'student' => $student,
+            'current_promo' => $currentPromo,
             'all_promotions' => $allPromotions,
-            'csrf_token'     => Util::getCSRFToken(),
-            'error'          => $_SESSION['flash_error'] ?? null,
-            'success'        => $_GET['success'] ?? null,
+            'all_campuses' => $allCampuses,
+            'csrf_token' => Util::getCSRFToken(),
+            'error' => $_SESSION['flash_error'] ?? null,
+            'success' => $_GET['success'] ?? null,
             'sidebar_active' => 'students'
         ]);
         unset($_SESSION['flash_error']);
     }
 
-   public function handleUpdate(string $id): void
+    public function handleUpdate(string $id): void
     {
         $this->abortIfNotPriv();
         try {
@@ -80,7 +100,8 @@ class StudentController extends BaseController
             }
 
             // 3. Promotion
-            if (!empty($_POST['promotion_id'])) {
+            // 3. Promotion & Campus
+            if (!empty($_POST['promotion_id']) || !empty($_POST['campus_id'])) {
                 $this->repo->updateStudentEnrollment($id, $_POST['promotion_id']);
             }
 
@@ -97,5 +118,5 @@ class StudentController extends BaseController
             exit;
         }
     }
-    
+
 }
