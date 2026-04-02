@@ -21,4 +21,6 @@ class CampusModel extends BaseModel
 
         return $inst;
     }
+
+    
 }
