@@ -16,6 +16,20 @@ class WishListController extends BaseController
         parent::__construct($twig);
     }
 
+    public function dashboard(): void
+    {
+        $studentId = (int) Util::getUserId();
+        $offers = $this->wishlistRepository->findOffersByStudent($studentId);
+
+        echo $this->twig->render('wishlist/dashboard.html.twig', [
+            'offers' => $offers,
+            'pageTitle' => 'Ma wishlist',
+            'sidebar_active' => 'wishlist',
+            'isPrivileged' => false,
+            'user' => Util::getUser(),
+        ]);
+    }
+
     public function index(): void
     {
         $this->checkRole(['student']);

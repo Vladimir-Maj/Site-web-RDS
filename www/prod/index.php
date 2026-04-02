@@ -94,8 +94,9 @@ $router = new Router($pdo, $twig);
 
 $staff = [RoleEnum::Admin->value, RoleEnum::Pilote->value];
 $everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student->value];
+$admin= [RoleEnum::Admin->value];
+$pilote = [RoleEnum::Pilote->value];
 $student = [RoleEnum::Student->value];
-
 $idPattern = '([a-fA-F0-9]{32}|[0-9]+)';
 
 // --- 5. CONTROLLER FACTORIES ---
@@ -139,40 +140,17 @@ $router->add('GET', '/login', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->
 $router->add('POST', '/login', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
 $router->add('GET', '/logout', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->logout());
 
-$router->add('GET', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
-$router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
-
-// Profile
+// Use the $everyone array to ensure Anonyme (Public) is excluded
 $router->add('GET', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
 $router->add('POST', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
-//$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
 
-$router->add(
-    'POST',
-    '/profile',
-    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(),
-    roles: $everyone
-);
-
-$router->add(
-    'POST',
-    '/profile/upload-cv',
-    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(),
-    roles: $everyone
-);
-
-$router->add(
-    'GET',
-    '/api/profile/get-cvs',
-    fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()),
-    roles: $student
-);
-
+// Ensure the predicate actually validates ownership
 $router->add(
     'GET',
     '/api/profile/get-lms',
     fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAllLms(Util::getUserId()),
-    roles: $student
+    roles: $student,
+    predicate: fn($p) => Util::getUserId() !== null // Or compare against a route param if applicable
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -220,14 +198,14 @@ $router->add(
     'GET',
     '/admin/dashboard',
     fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(),
-    roles: [RoleEnum::Admin->value]
+    roles: $admin
 );
 
 $router->add(
     'GET',
     '/pilote/dashboard',
     fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(),
-    roles: [RoleEnum::Pilote->value]
+    roles: $pilote
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -376,7 +354,7 @@ $router->add(
     'GET',
     '/dashboard/skills',
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(),
-    roles: $staff
+    roles: $everyone
 );
 
 $router->add('GET', '/api/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
@@ -385,29 +363,21 @@ $router->add(
     'POST',
     '/api/skills/create',
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),
-    roles: $staff
+    roles: $admin
 );
-
-$router->add(
-    'POST',
-    '/api/skills/save' . $idPattern,
-    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(),
-    roles: $staff
-);
-
 
 $router->add(
     'PATCH',
     '/api/skills/update/' . $idPattern,
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p),
-    roles: $staff
+    roles: $admin
 );
 
 $router->add(
     'DELETE',
     '/api/skills/delete/' . $idPattern,
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p),
-    roles: $staff
+    roles: $admin
 );
 
 $router->add(
@@ -451,15 +421,29 @@ $router->add(
     roles: $student
 );
 
+// GET — Student applications (staff view) - Now includes Admin
 $router->add(
-    'GET',
-    '/dashboard/applications',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(),
+    'GET', 
+    '/dashboard/applications/' . $idPattern, 
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p), 
+    roles: $staff
+);
+
+$router->add(
+    'GET', 
+    '/dashboard/applications', 
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(), 
     roles: $student
 );
 
-// GET — Student applications (staff view)
-$router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: [RoleEnum::Pilote->value]);
+// API — Update application status - Now includes Admin
+$router->add(
+    'PATCH', 
+    '/api/applications/' . $idPattern . '/status', 
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), 
+    roles: $staff
+);
+
 // API — Update application status
 $router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: [RoleEnum::Pilote->value]);
 
@@ -470,6 +454,13 @@ $router->add(
     'GET',
     '/app/wishlist',
     fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->index(),
+    roles: $student
+);
+
+$router->add(
+    'GET',
+    '/dashboard/wishlist',
+    fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->dashboard(),
     roles: $student
 );
 

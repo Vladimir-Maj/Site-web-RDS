@@ -188,3 +188,7 @@ CREATE TABLE wishlist (
     FOREIGN KEY (student_id_wishlist) REFERENCES student(id_student) ON DELETE CASCADE,
     FOREIGN KEY (offer_id_wishlist) REFERENCES internship_offer(id_internship_offer) ON DELETE CASCADE
 ) ENGINE=InnoDB;
+
+
+ALTER TABLE internship_offer ADD COLUMN views_internship_offer INT UNSIGNED NOT NULL DEFAULT 0;
+-- nécessaire pour le compteur de vue, sinon c'était une nouvelle table.
