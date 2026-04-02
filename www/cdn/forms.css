@@ -1,14 +1,14 @@
 /* ===================================================
    STAGEFLOW — RESPONSIVE FORMS.CSS
    Input Fields, Grid Layouts, and Search Bars
+   === FULLY RESPONSIVE DESIGN ===
    =================================================== */
 
-/* ---------- FORM LAYOUTS ---------- */
 /* ---------- FORM LAYOUTS ---------- */
 .form-grid {
     display: grid;
     grid-template-columns: 1fr;
-    gap: 1.5rem; /* Un peu plus d'espace pour la lisibilité */
+    gap: clamp(1rem, 2vw, 1.5rem);
     align-items: start;
 }
 
@@ -17,7 +17,6 @@
         grid-template-columns: repeat(2, 1fr);
     }
     
-    /* Force ces éléments à prendre toute la largeur */
     .span-full, 
     .section-label, 
     .info-section,
@@ -26,29 +25,50 @@
     }
 }
 
+@media (min-width: 1024px) {
+    .form-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: clamp(1.5rem, 3vw, 2rem);
+    }
+}
+
 /* ---------- INPUT ELEMENTS ---------- */
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(0.3rem, 0.5vw, 0.5rem);
+}
+
 .form-group label {
-    font-size: 0.85rem;
+    font-size: clamp(0.8rem, 1.2vw, 0.85rem);
     font-weight: 600;
     color: var(--clr-text);
+    display: block;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
     font-family: inherit;
-    font-size: 1rem; 
+    font-size: clamp(0.9rem, 1.2vw, 1rem);
     color: var(--clr-text);
     background: var(--clr-surface);
     border: 1px solid var(--clr-border);
-    padding: 0.6rem 0.75rem;
+    padding: clamp(0.5rem, 1.5vw, 0.6rem) clamp(0.6rem, 1.5vw, 0.75rem);
     width: 100%;
     border-radius: var(--border-radius-btn);
     transition: border-color 0.2s, box-shadow 0.2s;
     appearance: none;
+    min-height: 44px;
+    touch-action: manipulation;
 }
 
-/* Base Focus State (Purple Glow) */
+.form-group textarea {
+    resize: vertical;
+    min-height: clamp(100px, 20vh, 200px);
+    line-height: 1.5;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
@@ -57,31 +77,25 @@
     box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.2);
 }
 
-/* ---------- VALIDATION UI (PRIORITY) ---------- */
-
-/* 1. Invalid State: Red border/glow (Only when user has interacted) */
 .form-group input:not(:placeholder-shown):invalid:focus,
 .form-group select:not(:placeholder-shown):invalid:focus {
     border-color: #e74c3c !important;
     box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.2) !important;
 }
 
-/* 2. Valid State: Green border when valid and not empty */
 .form-group input:not(:placeholder-shown):valid,
 .form-group select:not(:placeholder-shown):valid {
     border-color: #2ecc71 !important;
 }
 
-/* 3. Password Mismatch (Triggered by JS) */
 .password-mismatch {
     border-color: #e74c3c !important;
     background-color: #fff6f6 !important;
 }
 
-/* 4. Error Hint (Visible when previous input is invalid) */
 .error-hint {
     color: #e74c3c;
-    font-size: 0.8rem;
+    font-size: clamp(0.7rem, 1vw, 0.8rem);
     margin-top: 0.3rem;
     display: none;
 }
@@ -94,11 +108,11 @@ input:invalid + .error-hint {
 .search-bar {
     display: flex;
     flex-direction: column;
-    gap: 1rem;
+    gap: clamp(0.75rem, 1.5vw, 1rem);
     background: var(--clr-surface);
     border: 1px solid var(--clr-border);
-    padding: 1.25rem;
-    margin-bottom: 2rem;
+    padding: clamp(1rem, 2vw, 1.25rem);
+    margin-bottom: clamp(1.5rem, 4vw, 2rem);
     border-radius: var(--border-radius);
 }
 
@@ -106,48 +120,121 @@ input:invalid + .error-hint {
     .search-bar {
         flex-direction: row;
         align-items: flex-end;
+        gap: 1rem;
     }
 }
 
-/* ===================================================
-   FILE DROPZONE (CV & MOTIVATION LETTER)
-   =================================================== */
+.search-bar > * {
+    flex: 1 1 auto;
+    min-width: 150px;
+}
 
+/* ---------- FILE DROPZONE ---------- */
 .file-dropzone {
     display: block;
     border: 2px dashed var(--clr-border);
     border-radius: var(--border-radius);
-    padding: 2rem;
+    padding: clamp(1.5rem, 4vw, 2rem);
     text-align: center;
     cursor: pointer;
     transition: all 0.2s ease;
     background: var(--clr-surface);
+    min-height: clamp(150px, 30vh, 250px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 }
 
-.file-dropzone:hover {
+.file-dropzone:hover,
+.file-dropzone.drag-over {
     border-color: var(--clr-accent);
     background: rgba(187, 134, 252, 0.05);
+    transform: scale(1.02);
 }
 
 .file-dropzone-icon {
-    font-size: 2.5rem;
+    font-size: clamp(2rem, 6vw, 2.5rem);
     display: block;
-    margin-bottom: 1rem;
+    margin-bottom: clamp(0.5rem, 2vw, 1rem);
 }
 
 .file-dropzone-title {
-    margin-bottom: 0.5rem;
+    margin-bottom: clamp(0.3rem, 1vw, 0.5rem);
     font-weight: 600;
     color: var(--clr-text);
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
 }
 
 .file-dropzone-subtitle {
-    font-size: 0.85rem;
+    font-size: clamp(0.75rem, 1.2vw, 0.85rem);
     color: var(--clr-text-muted);
 }
 
 .file-input-hidden {
     display: none;
+}
+
+/* ---------- FORM GROUPS WITH LABELS ---------- */
+.form-section {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(1rem, 2vw, 1.5rem);
+    padding: clamp(1rem, 2vw, 1.5rem);
+    background: var(--clr-surface);
+    border: 1px solid var(--clr-border);
+    border-radius: var(--border-radius);
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
+}
+
+.form-section-title {
+    font-size: clamp(1rem, 1.8vw, 1.2rem);
+    font-weight: 700;
+    color: var(--clr-text);
+    border-bottom: 2px solid var(--clr-border);
+    padding-bottom: clamp(0.5rem, 1vw, 0.75rem);
+}
+
+/* Checkbox and radio improvements */
+.form-group input[type="checkbox"],
+.form-group input[type="radio"] {
+    width: auto;
+    min-width: 20px;
+    min-height: 20px;
+    margin-right: 0.5rem;
+    cursor: pointer;
+    accent-color: var(--clr-accent);
+}
+
+.form-group input[type="checkbox"] + label,
+.form-group input[type="radio"] + label {
+    display: inline-flex;
+    align-items: center;
+    cursor: pointer;
+    font-weight: normal;
+    margin: 0;
+}
+
+/* ---------- RESPONSIVE FORM ACTIONS ---------- */
+.form-actions {
+    display: flex;
+    gap: clamp(0.5rem, 1.5vw, 1rem);
+    flex-wrap: wrap;
+    margin-top: clamp(1.5rem, 3vw, 2rem);
+    padding-top: clamp(1rem, 2vw, 1.5rem);
+    border-top: 1px solid var(--clr-border-light);
+}
+
+@media (max-width: 640px) {
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions button,
+    .form-actions a {
+        width: 100%;
+    }
+}
 }
 
 /* Active state (when file selected via JS) */
