@@ -47,7 +47,7 @@ class SkillController extends BaseController
         $label = trim($_POST['label_skill'] ?? ($_POST['label'] ?? ''));
 
         if (empty($label)) {
-            header('Location: /app/skills?error=label_required');
+            header('Location: /dashboard/skills?error=label_required');
             exit;
         }
 
@@ -58,9 +58,9 @@ class SkillController extends BaseController
         $success = $this->repo->pushSkill($skill);
 
         if ($success) {
-            header('Location: /app/skills?status=success');
+            header('Location: /dashboard/skills?status=success');
         } else {
-            header('Location: /app/skills?error=save_failed');
+            header('Location: /dashboard/skills?error=save_failed');
         }
         exit;
     }
@@ -79,7 +79,7 @@ class SkillController extends BaseController
 
         $this->repo->deleteById($id);
 
-        header('Location: /app/skills?status=deleted');
+        header('Location: /dashboard/skills?status=deleted');
         exit;
     }
 

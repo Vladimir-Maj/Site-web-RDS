@@ -17,7 +17,7 @@
 
 				{% if user and (user.role == 'admin' or user.role == 'pilote') %}
 					<a href="/dashboard/offers/new" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
-					<a href="/app/skills" class="{{ currentPage|default('') == 'skills' ? 'active' : '' }}">Compétences</a>
+					<a href="/dashboard/skills" class="{{ currentPage|default('') == 'skills' ? 'active' : '' }}">Compétences</a>
 					<a href="/app/companies" class="{{ currentPage|default('') == 'companies' ? 'active' : '' }}">Entreprises</a>
 				{% endif %}
 
