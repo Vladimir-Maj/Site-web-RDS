@@ -80,6 +80,22 @@ class CampusController extends BaseController
         }
     }
 
+    public function findAllAsAjax(): string
+    {
+        $this->abortIfNotPriv();
+
+        $campuses = $this->campusRepository->findAll();
+
+//        header('Content-Type: application/json');
+        return json_encode($campuses);
+    }
+
+    public function getAllAjax(): void
+    {
+        header('Content-Type: application/json');
+        echo $this->findAllAsAjax();
+    }
+
     /**
      * Supprime un campus par son identifiant.
      * Réservé aux Admin uniquement.
