@@ -15,6 +15,9 @@ use App\Controllers\SiteController;
 use App\Controllers\SkillController;
 use App\Controllers\StudentController;
 use App\Controllers\WishlistController;
+use App\Controllers\LegalsController;
+use App\Controllers\DataExportController;
+use App\Controllers\AccountDeletionController;
 use App\Models\RoleEnum;
 use App\Repository\ApplicationRepository;
 use App\Repository\CampusRepository;
@@ -26,6 +29,8 @@ use App\Repository\SkillRepository;
 use App\Repository\UserRepository;
 use App\Repository\WishlistRepository;
 use App\Util;
+use App\Util\ComplianceLogger;
+use App\Util\DataDeletionManager;
 
 // --- 1. SESSION & SECURITY ---
 session_set_cookie_params([
@@ -104,6 +109,11 @@ $pilotHandler = fn($pdo, $twig) => new PilotController(new UserRepository($pdo),
 $studentHandler = fn($pdo, $twig) => new StudentController(new UserRepository($pdo), $twig, $pdo);
 $campusHandler = fn($pdo, $twig) => new CampusController($twig, new CampusRepository($pdo));
 $promotionHandler = fn($pdo, $twig) => new PromotionController($twig, new PromotionRepository($pdo), new CampusRepository($pdo));
+$legalsHandler = fn($pdo, $twig) => new LegalsController($twig);
+$complianceLogger = new ComplianceLogger($pdo);
+$dataExportHandler = fn($pdo, $twig) => new DataExportController($pdo, $twig, $complianceLogger);
+$dataDeletionManager = new DataDeletionManager($pdo, $complianceLogger, 'https://example.fr', 'legal@example.fr');
+$accountDeletionHandler = fn($pdo, $twig) => new AccountDeletionController($pdo, $twig, $complianceLogger, $dataDeletionManager);
 
 
 // --- 6. ROUTES ---
@@ -126,7 +136,7 @@ $router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twi
 // Profile
 $router->add('GET', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
 $router->add('POST', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
-$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
+//$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
 
 // API — Profile Resources
 $router->add('GET', '/api/profile/get-cvs', fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()), roles: $student);
@@ -235,7 +245,7 @@ $router->add('POST', '/app/offers/update/' . $idPattern, fn($p, $pdo, $twig) => 
 $router->add('POST', '/app/offers/delete/' . $idPattern, fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy((int) $p[0]), roles: $staff);
 
 // GET — Dashboard offer list
-$router->add('GET', '/dashboard/offers', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index(), roles: $staff);
+$router->add('GET', '/dashboard/offers', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
 
 // ════════════════════════════════════════════════════════════════════════════
 // SKILLS (Management & API)
@@ -280,11 +290,10 @@ $router->add('POST', '/app/offers/' . $idPattern . '/apply', fn($p, $pdo, $twig)
 $router->add('GET', '/dashboard/applications', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(), roles: $student);
 
 // GET — Student applications (staff view)
-$router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: $staff);
-
+$router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: [RoleEnum::Pilote->value]);
 // API — Update application status
-$router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: $staff);
-
+$router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: [RoleEnum::Pilote->value]);
+    
 // ════════════════════════════════════════════════════════════════════════════
 // WISHLIST (Student Management)
 // ════════════════════════════════════════════════════════════════════════════
@@ -337,6 +346,36 @@ $router->add('POST', '/dashboard/campus/edit/' . $idPattern, fn($p, $pdo, $twig)
 
 // POST — Delete campus
 $router->add('POST', '/dashboard/campus/delete/' . $idPattern, fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->delete((int) $p[0]), roles: $staff);
+
+// ════════════════════════════════════════════════════════════════════════════
+// LEGALS & GDPR (Public & Protected)
+// ════════════════════════════════════════════════════════════════════════════
+
+// GET — Legal pages (public)
+$router->add('GET', '/legals', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
+$router->add('GET', '/mentions-legales', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
+$router->add('GET', '/privacy', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
+
+// GET — GDPR data rights dashboard (protected)
+$router->add('GET', '/dashboard/account/data-rights', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->showDataRights(), roles: $everyone);
+
+// POST — Request GDPR data export (protected)
+$router->add('POST', '/dashboard/account/export-data', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->requestExport(), roles: $everyone);
+
+// GET — Download GDPR data export (protected with file ID)
+$router->add('GET', '/dashboard/account/download-export/' . $idPattern, fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->downloadExport($p[0]), roles: $everyone);
+
+// GET — Account deletion page (protected)
+$router->add('GET', '/dashboard/account/delete-account', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->showDeletePage(), roles: $everyone);
+
+// POST — Request account deletion (protected)
+$router->add('POST', '/dashboard/account/request-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->requestDeletion(), roles: $everyone);
+
+// GET — Confirm account deletion via email token (public with token)
+$router->add('GET', '/dashboard/account/confirm-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->confirmDeletion());
+
+// POST — Cancel pending account deletion (protected)
+$router->add('POST', '/dashboard/account/cancel-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->cancelDeletion(), roles: $everyone);
 
 
 // --- 7. DISPATCH ---
