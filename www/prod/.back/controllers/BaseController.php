@@ -23,8 +23,16 @@ abstract class BaseController
 
     protected function jsonResponse(mixed $data, int $status = 200): void
     {
-        header('Content-Type: application/json', true, $status);
+        // 1. Clear any whitespace or accidental output buffer
+        if (ob_get_level() > 0) {
+            ob_clean();
+        }
+
+        // 2. Set headers
+        header('Content-Type: application/json; charset=utf-8', true, $status);
         http_response_code($status);
+
+        // 3. Output and stop everything else
         echo json_encode($data);
         exit;
     }

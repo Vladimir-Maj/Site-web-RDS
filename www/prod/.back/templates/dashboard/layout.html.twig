@@ -2,14 +2,12 @@
 {% extends "base.html.twig" %}
 
 {% block body %}
+	{% set role = user.role.value|default(user.role|default('guest')) %}
 	<div class="dashboard-shell">
 		<aside class="dashboard-sidebar">
 			<h2 class="dashboard-sidebar-title">Dashboard</h2>
-			<p class="dashboard-role">Role:
-				{{ user.role.value|default('guest')|upper }}</p>
-			<nav
-				class="dashboard-menu">
-				{# Liens communs ou selon rôles #}
+			<p class="dashboard-role">Role: {{ role|upper }}</p>
+			<nav class="dashboard-menu">
 				<a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
 					Gestion des entreprises
 				</a>
@@ -17,14 +15,13 @@
 					Gestion des offres
 				</a>
 
-				{# Nouveau lien pour les étudiants #}
-				{% if user and user.role == 'student' %}
+				{% if user and role == 'student' %}
 					<a href="/dashboard/applications" class="dashboard-menu-link {{ sidebar_active|default('') == 'applications' ? 'active' : '' }}">
 						Mes candidatures
 					</a>
 				{% endif %}
 
-				{% if user and user.role == 'admin' %}
+				{% if user and role == 'admin' %}
 					<a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
 						Gestion des pilotes
 					</a>
@@ -33,7 +30,7 @@
 					</a>
 				{% endif %}
 
-				{% if user and (user.role == 'admin' or user.role == 'pilote') %}
+				{% if user and (role == 'admin' or role == 'pilote') %}
 					<a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
 						Gestion des étudiants
 					</a>

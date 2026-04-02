@@ -1,0 +1,63 @@
+{% extends "dashboard/layout.html.twig" %}
+
+{% block title %}Gestion des Pilotes — StageFlow{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-header">
+        <div>
+            <h1>Annuaire des Pilotes</h1>
+            <p>Gérez les comptes des tuteurs pédagogiques.</p>
+        </div>
+        <div>
+            <a href="/register" class="btn btn-primary">+ Nouveau pilote</a>
+        </div>
+    </div>
+
+    {# --- BARRE DE RECHERCHE (Identique aux entreprises) --- #}
+    <form method="GET" action="/dashboard/pilotes" class="search-bar">
+        <div class="form-group">
+            <label>Recherche</label>
+            <input type="text" name="name" placeholder="Nom, email..." value="{{ filters.name|default('') }}">
+        </div>
+        <div class="form-group">
+            <label>Statut</label>
+            <select name="status">
+                <option value="">Tous les statuts</option>
+                <option value="active" {{ filters.status == 'active' ? 'selected' : '' }}>🟢 Actifs</option>
+                <option value="inactive" {{ filters.status == 'inactive' ? 'selected' : '' }}>🔴 Inactifs</option>
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+        <a href="/dashboard/pilotes" class="btn btn-ghost">Réinitialiser</a>
+    </form>
+
+    {# --- Le reste du tableau (inchangé) --- #}
+    <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom & Prénom</th>
+                    <th>Email</th>
+                    <th>Statut</th>
+                    <th class="text-right">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pilot in pilots %}
+                    <tr>
+                        <td><strong>{{ pilot.first_name }} {{ pilot.last_name|upper }}</strong></td>
+                        <td>{{ pilot.email }}</td>
+                        <td>
+                            <span class="badge {{ pilot.is_active ? 'badge-success' : 'badge-danger' }}">
+                                {{ pilot.is_active ? 'Actif' : 'Inactif' }}
+                            </span>
+                        </td>
+                        <td class="text-right">
+                            <a href="/dashboard/pilotes/{{ pilot.id }}" class="btn btn-ghost btn-sm">Gérer</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

@@ -233,7 +233,7 @@ class OfferController extends BaseController
 
     public function destroy(int $id): void
     {
-        $this->abortIfNotPriv(); // Added security check from common logic
+        $this->abortIfNotPriv();
         if ($this->offerRepository->delete((int) $id)) {
             header('Location: /app/offers?deleted=1');
             exit;

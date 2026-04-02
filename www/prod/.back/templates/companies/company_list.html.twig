@@ -1,141 +1,105 @@
 {% extends "dashboard/layout.html.twig" %}
 
-{% block title %}Entreprises — StageFlow{% endblock %}
+{% block title %}Annuaire des entreprises — StageFlow{% endblock %}
 
 {% block dashboard_content %}
-    <header class="page-header mt-3">
-        <div class="header-flex" style="display: flex; justify-content: space-between; align-items: flex-end; width: 100%;">
-            <div>
-                <h1>Annuaire des entreprises</h1>
-                <p>Consultez et gérez les organisations partenaires de la plateforme.</p>
-            </div>
-            <a href="/dashboard/companies/new" class="btn btn-primary">
-                + Nouvelle entreprise
-            </a>
+    {# --- Header : Copie conforme du catalogue des offres --- #}
+    <div class="page-header">
+        <div>
+            <h1>Annuaire des entreprises</h1>
+            <p>Consultez et gérez les organisations partenaires de la plateforme.</p>
         </div>
-    </header>
-
-    {# --- Filter Section --- #}
-    <section class="card search-bar" style="display: block; width: 100%; padding: 1.5rem; margin-bottom: 2rem; margin-top: 1.5rem;">
-        <form method="GET" action="/dashboard/companies">
-            <div class="form-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
-                <div class="form-group">
-                    <label for="f-name">Recherche libre</label>
-                    <input type="text" name="name" id="f-name" placeholder="Nom, SIREN..." value="{{ filters.name|default('') }}">
-                </div>
-
-                <div class="form-group">
-                    <label for="f-sector">Secteur d'activité</label>
-                    <select name="sector_id" id="f-sector">
-                        <option value="">Tous les secteurs</option>
-                        {% for sector in sectors %}
-                            <option value="{{ sector.id }}" {{ filters.sector_id|default('') == sector.id ? 'selected' : '' }}>
-                                {{ sector.name }}
-                            </option>
-                        {% endfor %}
-                    </select>
-                </div>
-
-                <div class="form-group">
-                    <label for="f-status">Statut de visibilité</label>
-                    <select name="status" id="f-status">
-                        <option value="">Tous les statuts</option>
-                        <option value="active" {{ filters.status|default('') == 'active' ? 'selected' : '' }}>Actif</option>
-                        <option value="pending" {{ filters.status|default('') == 'pending' ? 'selected' : '' }}>En attente</option>
-                    </select>
-                </div>
-
-                <div class="form-group" style="display: flex; align-items: flex-end;">
-                    <button type="submit" class="btn btn-primary" style="width: 100%;">
-                        🔍 Filtrer la liste
-                    </button>
-                </div>
-            </div>
-
-            <div style="margin-top: 1.2rem; display: flex; justify-content: flex-start;">
-                <a href="/dashboard/companies" class="text-sm text-muted">✕ Réinitialiser les filtres</a>
-            </div>
-        </form>
-    </section>
-
-    {# --- Results Counter --- #}
-    <div class="notice notice-info mb-3">
-        <div class="notice-icon">📊</div>
-        <p>
-            <strong>{{ companies|length }}</strong> 
-            organisation{{ companies|length > 1 ? 's' : '' }} affichée{{ companies|length > 1 ? 's' : '' }} selon vos critères.
-        </p>
+        <div style="display: flex; gap: 10px;">
+            <a href="/dashboard/companies/new" class="btn btn-primary">+ Nouvelle entreprise</a>
+        </div>
     </div>
 
-    {# --- Results List --- #}
-    <div class="company-list">
-        <div class="card" style="padding: 0; overflow: hidden;">
-            <div class="table-responsive">
-                <table class="table" style="width: 100%; border-collapse: collapse;">
-                    <thead style="background: var(--bg-alt); border-bottom: 1px solid var(--border-color);">
+    {# --- Barre de recherche : Style Catalogue --- #}
+    <form method="GET" action="/dashboard/companies" class="search-bar">
+        <div class="form-group">
+            <label>Mots-clés</label>
+            <input type="text" name="name" placeholder="Nom, SIREN..." value="{{ filters.name|default('') }}">
+        </div>
+        <div class="form-group">
+            <label>Secteur d'activité</label>
+            <select name="sector_id">
+                <option value="">Tous les secteurs</option>
+                {% for sector in sectors %}
+                    <option value="{{ sector.id }}" {{ filters.sector_id|default('') == sector.id ? 'selected' : '' }}>
+                        {{ sector.name }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+        <a href="/dashboard/companies" class="btn btn-ghost">Réinitialiser</a>
+    </form>
+
+    {# --- Notice : Style Catalogue --- #}
+    <div class="notice notice-info">
+        <div class="notice-icon">ℹ️</div>
+        <p>Il y a actuellement <strong>{{ companies|length }} entreprise{{ companies|length > 1 ? 's' : '' }}</strong> correspondant à vos critères.</p>
+    </div>
+
+    {# --- Liste des entreprises (Tableau propre) --- #}
+    <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Organisation</th>
+                        <th>Secteur</th>
+                        <th>Localisation</th>
+                        <th>Statut</th>
+                        <th class="text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for company in companies %}
                         <tr>
-                            <th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Organisation</th>
-                            <th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Secteur</th>
-                            <th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Localisation</th>
-                            <th style="padding: 1rem; text-align: left;" class="text-sm text-muted">Statut</th>
-                            <th style="padding: 1rem; text-align: right;" class="text-sm text-muted">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for company in companies %}
-                            <tr style="border-bottom: 1px solid var(--border-color);">
-                                <td style="padding: 1rem;">
-                                    <div style="display: flex; align-items: center; gap: 12px;">
-                                        {% if company.logo_url is defined and company.logo_url is not empty %}
-                                            <img src="{{ company.logo_url }}" alt="" style="width: 40px; height: 40px; border-radius: 4px; object-fit: contain; background: #fff; border: 1px solid var(--border-color);">
-                                        {% else %}
-                                            <div style="width: 40px; height: 40px; border-radius: 4px; background: var(--bg-alt); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">🏢</div>
-                                        {% endif %}
-                                        <div>
-                                            <div style="font-weight: 600;">{{ company.name }}</div>
-                                            <div class="text-xs text-muted">SIREN {{ company.siren }}</div>
-                                        </div>
+                            <td>
+                                <div class="company-info" style="display: flex; align-items: center; gap: 10px;">
+                                    <div class="company-logo-placeholder" style="font-size: 1.5rem;">🏢</div>
+                                    <div>
+                                        <strong>{{ company.name }}</strong>
+                                        <div class="text-xs text-muted">SIREN : {{ company.siren|default('NC') }}</div>
                                     </div>
-                                </td>
-                                <td style="padding: 1rem;" class="text-sm">{{ company.sector_name|default('Non spécifié') }}</td>
-                                <td style="padding: 1rem;" class="text-sm">{{ company.location|default('-') }}</td>
-                                <td style="padding: 1rem;">
-                                    <span class="badge {{ company.is_active ? 'badge-success' : 'badge-warning' }}" style="font-size: 0.75rem; padding: 2px 8px;">
-                                        {{ company.is_active ? '● Actif' : '○ En attente' }}
-                                    </span>
-                                </td>
-                                <td style="padding: 1rem; text-align: right;">
-                                    <a href="/dashboard/companies/{{ company.id }}" class="btn btn-ghost btn-sm">Gérer</a>
-                                </td>
-                            </tr>
-                        {% else %}
-                            <tr>
-                                <td colspan="5" style="padding: 4rem 2rem; text-align: center;">
-                                    <div style="font-size: 2rem; margin-bottom: 1rem;">📭</div>
-                                    <h3 class="text-muted">Aucune entreprise répertoriée</h3>
-                                    <p class="text-sm">Modifiez vos filtres ou créez une nouvelle fiche.</p>
-                                </td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
+                                </div>
+                            </td>
+                            <td class="text-sm">{{ company.sector_name|default('Général') }}</td>
+                            <td class="text-sm">{{ company.location|default('-') }}</td>
+                            <td>
+                                <span class="badge {{ company.is_active ? 'badge-success' : 'badge-warning' }}">
+                                    {{ company.is_active ? 'Actif' : 'En attente' }}
+                                </span>
+                            </td>
+                            <td class="text-right">
+                                <a href="/dashboard/companies/{{ company.id }}" class="btn btn-ghost btn-sm">Gérer</a>
+                            </td>
+                        </tr>
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center p-4">
+                                <p class="text-muted">Aucune entreprise trouvée.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
-    {# --- Pagination --- #}
-    {% set currentPage = filters.page|default(1) %}
-    {% if companies|length > 0 %}
-        <div class="pagination" style="display: flex; justify-content: center; align-items: center; gap: 15px; margin-top: 3rem;">
-            {% if currentPage > 1 %}
-                <a href="?{{ app.request.query|merge({'page': currentPage - 1})|url_encode }}" class="btn btn-ghost">← Précédent</a>
-            {% endif %}
+    {# --- Pagination : Style Catalogue --- #}
+    {% set page = filters.page|default(1) %}
+    <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center;">
+        {% if page > 1 %}
+            <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
+        {% endif %}
+        
+        <span class="text-sm">Page <strong>{{ page }}</strong></span>
 
-            <span class="text-sm text-muted">Page <strong>{{ currentPage }}</strong></span>
-
-            {% if companies|length >= 10 %}
-                <a href="?{{ app.request.query|merge({'page': currentPage + 1})|url_encode }}" class="btn btn-ghost">Suivant →</a>
-            {% endif %}
-        </div>
-    {% endif %}
+        {% if companies|length >= 10 %}
+            <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
+        {% endif %}
+    </div>
 {% endblock %}

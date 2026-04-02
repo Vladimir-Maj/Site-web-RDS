@@ -13,10 +13,10 @@
 
 		<nav id="main-nav">
 			<div class="nav-content">
-				<a href="/app/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
+				<a href="/dashboard/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
 
 				{% if user and (user.role == 'admin' or user.role == 'pilote') %}
-					<a href="/app/offers/new" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
+					<a href="/dashboard/offers/new" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
 					<a href="/app/skills" class="{{ currentPage|default('') == 'skills' ? 'active' : '' }}">Compétences</a>
 					<a href="/app/companies" class="{{ currentPage|default('') == 'companies' ? 'active' : '' }}">Entreprises</a>
 				{% endif %}

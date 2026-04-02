@@ -141,11 +141,9 @@ class CompanyController extends BaseController
                 throw new Exception("Échec de l'enregistrement en base de données.");
             }
 
-            if ($isNew) {
-                header("Location: /app/companies?created=1");
-            } else {
-                header("Location: /app/companies/{$id}?success=1");
-            }
+            $resolvedId = $company->id_company ?? $finalId;
+            $redirectUrl = "/dashboard/companies/{$resolvedId}?" . ($isNew ? "created=1" : "success=1");
+            header("Location: $redirectUrl");
             exit;
 
         } catch (Exception $e) {
@@ -166,10 +164,10 @@ class CompanyController extends BaseController
             if (!$this->repo->deleteById($companyId)) {
                 throw new Exception("Deletion failed.");
             }
-            header("Location: /app/companies?deleted=1");
+            header("Location: /dashboard/companies?deleted=1");
         } catch (Exception $e) {
             $_SESSION['flash_error'] = "Erreur lors de la suppression : " . $e->getMessage();
-            header("Location: /app/companies");
+            header("Location: /dashboard/companies");
         }
         exit;
     }

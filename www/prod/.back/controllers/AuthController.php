@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Repository\UserRepository;
 use App\Models\UserModel;
 use App\Models\RoleEnum;
+use PharIo\Manifest\Email;
 use PDO;
 use Twig\Environment;
 use App\Util;
@@ -33,7 +34,7 @@ class AuthController extends BaseController
             exit;
         }
 
-        $cvFast = new CVFast($this->userRepository, $this->pdo, $this->twig);
+        $cvFast = new CVFast($this->userRepository, $this->twig, $this->pdo);
         $error = null;
         $success = null;
         $userId = Util::getUserId();
@@ -45,7 +46,6 @@ class AuthController extends BaseController
 
             $file = $_FILES['cv_file'] ?? null;
             $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] === '1';
-
             if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
                 $error = ($file && $file['error'] === UPLOAD_ERR_INI_SIZE)
                     ? "Le fichier dépasse la limite autorisée."
@@ -74,7 +74,7 @@ class AuthController extends BaseController
                     if ($cvFast->store($userId, $originalName, $publicPath, $isPrimary)) {
                         $success = "Votre CV a été ajouté avec succès.";
                     } else {
-                        unlink($destPath); 
+                        unlink($destPath);
                         $error = "Erreur lors de l'enregistrement en base de données.";
                     }
                 } else {
@@ -89,6 +89,7 @@ class AuthController extends BaseController
             'csrf_token' => Util::getCSRFToken(),
         ]);
     }
+
 
     public function register(): void
     {
@@ -118,7 +119,7 @@ class AuthController extends BaseController
             } else {
                 try {
                     $user = new UserModel();
-                    $user->email = $emailRaw;
+                    $user->email = new Email($emailRaw);
                     $user->password = password_hash($password, PASSWORD_ARGON2ID);
                     $user->role = RoleEnum::tryFrom($roleRaw) ?? RoleEnum::Student;
                     $user->first_name = $firstName;
@@ -128,7 +129,7 @@ class AuthController extends BaseController
                     $this->userRepository->push($user);
                     $success = "Votre compte a été créé !";
                     $old = [];
-                } catch (\Exception $e) {
+                } catch (\Throwable $e) {
                     error_log("Registration Error: " . $e->getMessage());
                     $error = "Une erreur technique est survenue.";
                 }
@@ -178,7 +179,7 @@ class AuthController extends BaseController
             $hashedPassword = password_hash($tempPassword, PASSWORD_ARGON2ID);
 
             $user = new UserModel();
-            $user->email = $email;
+            $user->email = new Email($email);
             $user->password = $hashedPassword;
             $user->first_name = $firstName;
             $user->last_name = $lastName;
