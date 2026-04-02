@@ -1,6 +1,7 @@
 /.idea/
 /www/cdn/uploads/*
 /www/prod/vendor/
+/www/prod/.back/util/db_connect
 /gitignore/
 
 *.patch
