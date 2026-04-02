@@ -53,6 +53,12 @@ abstract class BaseController
         }
     }
 
+    protected function redirect(string $url, int $status = 302): void
+    {
+        header("Location: $url", true, $status);
+        exit;
+    }
+
     /**
      * Checks if the provided ID matches the current session.
      * Note: IDs are compared as strings for consistency.
