@@ -185,11 +185,13 @@ class OfferRepository
         $keyword = $filters['keyword'] ?? $filters['title_internship_offer'] ?? null;
         if (!empty($keyword)) {
             $sql .= " AND (
-                o.title_internship_offer LIKE :keyword
-                OR o.description_internship_offer LIKE :keyword
-                OR c.name_company LIKE :keyword
-            )";
-            $params['keyword'] = '%' . $keyword . '%';
+        o.title_internship_offer LIKE :keyword_title
+        OR o.description_internship_offer LIKE :keyword_desc
+        OR c.name_company LIKE :keyword_company
+        )";
+            $params['keyword_title'] = '%' . $keyword . '%';
+            $params['keyword_desc'] = '%' . $keyword . '%';
+            $params['keyword_company'] = '%' . $keyword . '%';
         }
 
         $city = $filters['city'] ?? $filters['city_company_site'] ?? null;
