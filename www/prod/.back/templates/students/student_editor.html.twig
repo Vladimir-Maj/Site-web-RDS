@@ -1,70 +1,127 @@
 {% extends "dashboard/layout.html.twig" %}
 
-{% block title %}Modifier Étudiant — StageFlow{% endblock %}
+{% block title %}Modifier Étudiant — StageFlow
+{% endblock %}
 
 {% block dashboard_content %}
-    <div class="page-header">
-        <h1>Modifier l'étudiant</h1>
-        <p class="text-muted">Profil de {{ student.first_name }} {{ student.last_name }}</p>
-    </div>
+	<div class="page-header">
+		<h1>Modifier l'étudiant</h1>
+		<p class="text-muted">Profil de
+			{{ student.first_name }}
+			{{ student.last_name }}</p>
+	</div>
 
-    {% if error %}<div class="notice notice-error mb-2"><p>{{ error }}</p></div>{% endif %}
-    {% if success %}<div class="notice notice-info mb-2"><p>Profil mis à jour !</p></div>{% endif %}
+	{% if error %}
+		<div class="notice notice-error mb-2">
+			<p>{{ error }}</p>
+		</div>
+	{% endif %}
+	{% if success %}
+		<div class="notice notice-info mb-2">
+			<p>Profil mis à jour !</p>
+		</div>
+	{% endif %}
 
-    <div class="card company-form">
-        <form action="/dashboard/etudiants/{{ id }}" method="POST" class="card-body">
-            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+	<div class="card company-form">
+		<form action="/dashboard/etudiants/{{ id }}" method="POST" class="card-body">
+			<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-            <div class="info-section">
-                <span class="section-label">Identité & Promotion</span>
-                <div class="form-grid">
-                    <div class="form-group">
-                        <label>Prénom</label>
-                        <input type="text" name="first_name" value="{{ student.first_name }}" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Nom</label>
-                        <input type="text" name="last_name" value="{{ student.last_name }}" required>
-                    </div>
-                    
-                    <div class="form-group span-full">
-                        <label>Promotion</label>
-                        <select name="promotion_id">
-                            {% for promo in all_promotions %}
-                                <option value="{{ promo.id }}" {{ current_promo and current_promo.id == promo.id ? 'selected' : '' }}>
-                                    {{ promo.label }} ({{ promo.academic_year }})
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
+			<div class="info-section">
+				<span class="section-label">Identité & Promotion</span>
+				<div class="form-grid">
+					<div class="form-group">
+						<label>Prénom</label>
+						<input type="text" name="first_name" value="{{ student.first_name }}" required>
+					</div>
+					<div class="form-group">
+						<label>Nom</label>
+						<input type="text" name="last_name" value="{{ student.last_name }}" required>
+					</div>
 
-                    {# ---> LE NOUVEAU MENU DÉROULANT POUR LE STATUT EST ICI <--- #}
-                    <div class="form-group span-full">
-                        <label>Statut de la recherche de stage</label>
-                        <select name="status">
-                            <option value="Searching" {{ student.status|default('Searching') == 'Searching' ? 'selected' : '' }}>🔍 En recherche de stage</option>
-                            <option value="Hired" {{ student.status|default('') == 'Hired' ? 'selected' : '' }}>✅ En poste (Stage trouvé)</option>
-                        </select>
-                    </div>
-                    {# --------------------------------------------------------- #}
-                    
-                </div>
-            </div>
+					<div class="form-group span-full">
+						<label>Campus</label>
+						<select name="campus_id" id="campus-select">
+							{% for campus in all_campuses %}
+								<option value="{{ campus.id }}" {{ current_promo and current_promo.campus_id == campus.id ? 'selected' : '' }}>
+									{{ campus.label }}
+								</option>
+							{% endfor %}
+						</select>
+					</div>
 
-            <div class="info-section">
-                <span class="section-label">Sécurité</span>
-                <div class="form-grid">
-                    <div class="form-group span-full">
-                        <label>Changer le mot de passe (laisser vide pour garder l'actuel)</label>
-                        <input type="text" name="password" placeholder="Nouveau mot de passe">
-                    </div>
-                </div>
-            </div>
+					<div class="form-group span-full">
+						<label>Promotion</label>
+						<select name="promotion_id" id="promotion-select"></select>
+					</div>
 
-            <div class="form-actions" style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
-                <a href="/dashboard/etudiants" class="btn btn-ghost">Annuler</a>
-                <button type="submit" class="btn btn-primary">💾 Enregistrer</button>
-            </div>
-        </form>
-    </div>
+					<div class="form-group span-full">
+						<label>Statut de la recherche de stage</label>
+						<select name="status">
+							<option value="Searching" {{ student.status|default('Searching') == 'Searching' ? 'selected' : '' }}>
+								🔍 En recherche de stage
+							</option>
+							<option value="Hired" {{ student.status|default('') == 'Hired' ? 'selected' : '' }}>
+								✅ En poste (Stage trouvé)
+							</option>
+						</select>
+					</div>
+				</div>
+			</div>
+
+			<div class="info-section">
+				<span class="section-label">Sécurité</span>
+				<div class="form-grid">
+					<div class="form-group span-full">
+						<label>Changer le mot de passe (laisser vide pour garder l'actuel)</label>
+						<input type="text" name="password" placeholder="Nouveau mot de passe">
+					</div>
+				</div>
+			</div>
+
+			<div class="form-actions" style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 1rem;">
+				<a href="/dashboard/etudiants" class="btn btn-ghost">Annuler</a>
+				<button type="submit" class="btn btn-primary">💾 Enregistrer</button>
+			</div>
+		</form>
+	</div>
+
+<script>
+async function loadPromotions(campusId, selectedPromoId = null) {
+    const promoSelect = document.getElementById('promotion-select');
+    try {
+        const res = await fetch(`/api/campus/${campusId}/promotions`);
+        if (!res.ok) throw new Error('Erreur lors du chargement des promotions');
+        const promos = await res.json();
+
+        promoSelect.innerHTML = '';
+        promos.forEach(p => {
+            // Map API keys to consistent names
+            const id = p.id_promotion;
+            const label = p.label_promotion;
+            const academicYear = p.academic_year_promotion;
+
+            const option = document.createElement('option');
+            option.value = id;
+            option.textContent = `${label} (${academicYear})`;
+            if (selectedPromoId && selectedPromoId == id) option.selected = true;
+            promoSelect.appendChild(option);
+        });
+    } catch (err) {
+        promoSelect.innerHTML = '<option disabled>Impossible de charger les promotions</option>';
+        console.error(err);
+    }
+}
+
+// On page load, populate promotions for the current campus
+document.addEventListener('DOMContentLoaded', () => {
+    const campusSelect = document.getElementById('campus-select');
+    const currentCampusId = campusSelect.value;
+    const currentPromoId = '{{ current_promo.id_promotion|default('') }}'; // match API key
+    loadPromotions(currentCampusId, currentPromoId);
+
+    campusSelect.addEventListener('change', function() {
+        loadPromotions(this.value);
+    });
+});
+</script>
 {% endblock %}
