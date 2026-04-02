@@ -26,7 +26,7 @@ class SiteController extends BaseController
      * GET /app/companies/{companyId}/sites
      * Displays the list of all sites for a specific company
      */
-    public function index(string $companyId): void
+    public function index(int $companyId): void
     {
         $company = $this->companyRepository->getById($companyId);
         $sites = $this->repo->getSitesByCompany($companyId);
@@ -41,12 +41,9 @@ class SiteController extends BaseController
      * GET /api/companies/{companyId}/sites
      * Returns JSON for AJAX requests
      */
-    // App/Controller/SiteController.php
-
-    public function getSitesJson(string $companyId): void
+    public function getSitesJson(int $companyId): void
     {
-        // This will show up in your terminal/CLI
-        error_log("[AJAX] Request received for Company HEX: " . $companyId);
+        error_log("[AJAX] Request received for Company ID: " . $companyId);
 
         try {
             $sites = $this->repo->getSitesByCompany($companyId);
@@ -69,7 +66,7 @@ class SiteController extends BaseController
      */
     public function new(): void
     {
-        $companyId = $_GET['company_id'] ?? null;
+        $companyId = isset($_GET['company_id']) ? (int) $_GET['company_id'] : null;
         if (!$companyId) {
             header("Location: /app/companies");
             exit;
@@ -77,9 +74,8 @@ class SiteController extends BaseController
 
         $company = $this->companyRepository->getById($companyId);
 
-        // Create an empty model instance for the form
         $site = new CompanySiteModel(null);
-        $site->company_id = $companyId;
+        $site->company_id_company_site = $companyId;
 
         echo $this->twig->render('sites/form.html.twig', [
             'company' => $company,
@@ -90,7 +86,7 @@ class SiteController extends BaseController
     /**
      * GET /app/sites/{id}
      */
-    public function show(string $id): void
+    public function show(int $id): void
     {
         $site = $this->repo->getById($id);
 
@@ -98,7 +94,7 @@ class SiteController extends BaseController
             throw new Exception("Site not found.");
         }
 
-        $company = $this->companyRepository->getById($site->company_id);
+        $company = $this->companyRepository->getById($site->company_id_company_site);
 
         if (!$company) {
             throw new Exception("Associated company not found.");
@@ -116,18 +112,27 @@ class SiteController extends BaseController
     public function handleSave(): void
     {
         try {
-            $companyId = $_POST['company_id'] ?? null;
+            $companyId = isset($_POST['company_id_company_site'])
+                ? (int) $_POST['company_id_company_site']
+                : (isset($_POST['company_id']) ? (int) $_POST['company_id'] : null);
+
             if (!$companyId) {
                 throw new Exception("Company ID missing");
             }
 
-            $isNew = empty($_POST['id']) || $_POST['id'] === 'new';
+            $isNew = empty($_POST['id_company_site']) && (empty($_POST['id']) || $_POST['id'] === 'new');
 
-            // Logic check: We use the ID from POST if editing, or generate one if new
-            $id = $isNew ? bin2hex(random_bytes(16)) : $_POST['id'];
+            $id = $isNew
+                ? null
+                : (isset($_POST['id_company_site']) ? (int) $_POST['id_company_site'] : (int) $_POST['id']);
 
-            // Merging data to ensure the ID is passed into the model factory
-            $data = array_merge($_POST, ['id' => $id]);
+            $data = array_merge($_POST, [
+                'id_company_site' => $id,
+                'company_id_company_site' => $companyId,
+                'address_company_site' => $_POST['address_company_site'] ?? ($_POST['address'] ?? null),
+                'city_company_site' => $_POST['city_company_site'] ?? ($_POST['city'] ?? null),
+            ]);
+
             $site = CompanySiteModel::fromArray($data);
 
             if (!$this->repo->pushSite($site)) {
@@ -146,9 +151,12 @@ class SiteController extends BaseController
     /**
      * POST /app/sites/delete/{id}
      */
-    public function delete(string $id): void
+    public function delete(int $id): void
     {
-        $companyId = $_POST['company_id'] ?? null;
+        $companyId = isset($_POST['company_id_company_site'])
+            ? (int) $_POST['company_id_company_site']
+            : (isset($_POST['company_id']) ? (int) $_POST['company_id'] : null);
+
         $this->repo->deleteSiteById($id);
 
         header("Location: /app/companies/{$companyId}?site_deleted=1");

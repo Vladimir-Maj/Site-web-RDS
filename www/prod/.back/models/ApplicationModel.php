@@ -1,33 +1,70 @@
 <?php
-declare (strict_types= 1);
-// .back/models/ApplicationModel.php
+
 namespace App\Models;
 
-use function PHPUnit\Framework\returnArgument;
-class ApplicationModel extends BaseModel {
-    public string $id;
-    public string $student_id;
-    public string $offer_id;
-    public ?string $cv_path;
-    public ?string $cover_letter_path;
-    public string $status; // pending, accepted, rejected
-    public string $applied_at;
 
-    public static function fromArray(array $data): self {
+use App\Models\BaseModel;
+
+class ApplicationModel extends BaseModel
+{
+    // --- New Schema ---
+    public ?int $id_application = null;
+    public int $student_id_application;
+    public int $offer_id_application;
+    public ?string $cv_path_application = null;
+    public ?string $cover_letter_path_application = null;
+    public string $status_application = 'pending';
+    public ?string $applied_at_application = null;
+
+    // --- Legacy Aliases ---
+    public ?string $id = null;
+    public ?string $student_id = null;
+    public ?string $offer_id = null;
+    public ?string $cv_path = null;
+    public ?string $cover_letter_path = null;
+    public string $status = 'pending';
+    public string $applied_at = '';
+
+    public static function fromArray(array $data): self
+    {
         $inst = new self(null);
-        $inst->id = $data['id'] ?? '';
-        $inst->student_id = $data['student_id'] ?? '';
-        $inst->offer_id = $data['offer_id'] ?? '';
-        $inst->cv_path = $data['cv_path'] ?? null;
-        $inst->cover_letter_path = $data['cover_letter_path'] ?? null;
-        $inst->status = $data['status'] ?? 'pending';
-        $inst->applied_at = $data['applied_at'] ?? '';
+
+        $inst->id_application = isset($data['id_application']) && $data['id_application'] !== ''
+            ? (int) $data['id_application']
+            : (isset($data['id']) && $data['id'] !== '' ? (int) $data['id'] : null);
+
+        $inst->student_id_application = isset($data['student_id_application'])
+            ? (int) $data['student_id_application']
+            : (int) ($data['student_id'] ?? 0);
+
+        $inst->offer_id_application = isset($data['offer_id_application'])
+            ? (int) $data['offer_id_application']
+            : (int) ($data['offer_id'] ?? 0);
+
+        $inst->cv_path_application              = $data['cv_path_application'] ?? ($data['cv_path'] ?? null);
+        $inst->cover_letter_path_application    = $data['cover_letter_path_application'] ?? ($data['cover_letter_path'] ?? null);
+        $inst->status_application               = $data['status_application'] ?? ($data['status'] ?? 'pending');
+        $inst->applied_at_application           = $data['applied_at_application'] ?? ($data['applied_at'] ?? null);
+
+        // Legacy aliases
+        $inst->id               = (string) $inst->id_application;
+        $inst->student_id       = (string) $inst->student_id_application;
+        $inst->offer_id         = (string) $inst->offer_id_application;
+        $inst->cv_path          = $inst->cv_path_application;
+        $inst->cover_letter_path = $inst->cover_letter_path_application;
+        $inst->status           = $inst->status_application;
+        $inst->applied_at       = $inst->applied_at_application ?? '';
+
         return $inst;
     }
 
-    public function getStudentId(): string {
-        return $this->student_id;
+    public function getStudentId(): int
+    {
+        return $this->student_id_application;
     }
 
-    public function isPending(): bool { return $this->status === 'pending'; }
+    public function isPending(): bool
+    {
+        return $this->status_application === 'pending';
+    }
 }

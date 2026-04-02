@@ -17,41 +17,112 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 ---
 
-## Démo
-
-> 🔗 [prod.localhost:8080](http://prod.localhost:8080) — accessible en local après installation
-
-| Identifiant de test | Rôle |
-|---|---|
-| `admin@stageflow.fr` / `Admin1234!` | Administrateur |
-| `pilote@stageflow.fr` / `Pilote1234!` | Pilote de promotion |
-| `etudiant@stageflow.fr` / `Etudiant1234!` | Étudiant |
-
----
-
 ## Démarrage rapide
 
-### Prérequis
+## Prérequis
 
-- Docker Desktop (ou Docker + Docker Compose)
 - Git
+- Docker + Docker Compose v2
+- Composer (pour l'installation locale des dépendances PHP)
 
-### Installation
+> **Ports requis :** `80` (HTTP) et `443` (HTTPS).  
+> Si Apache tourne déjà sur votre machine, libérez les ports avant de lancer le projet :
+> ```bash
+> sudo systemctl stop apache2
+> sudo systemctl disable apache2  # Empêche le redémarrage automatique au boot
+> ```
+
+---
+## Installation
+
+### 1. Cloner le projet
+```bash
+git clone git@github.com:Vladimir-Maj/WS-priv.git
+cd WS-priv
+```
+
+### 2. Installer les dépendances PHP (obligatoire)
+> Sans cette étape, le conteneur `phpunit` échoue au démarrage avec l'erreur `vendor/bin/phpunit: no such file or directory`.
 
 ```bash
-git clone git@github.com:Vladimir-Maj/Site-web-RDS.git
-cd Site-web-RDS
-docker compose up -d
+cd www/prod
+composer install
+cd ../..
+```
+
+### 3. Configurer les domaines locaux
+```bash
+echo "127.0.0.1 prod.stageflow.fr" | sudo tee -a /etc/hosts
+echo "127.0.0.1 cdn.stageflow.fr" | sudo tee -a /etc/hosts
+```
+
+### 4. Construire et démarrer les conteneurs
+```bash
+docker compose up -d --build
 ```
 
 C'est tout. Docker monte automatiquement Apache, PHP et MySQL avec la base de données initialisée.
 
-### Accès aux environnements
+### 5. Vérifier que tout tourne
+```bash
+docker compose ps
+```
+
+---
+
+## Comptes de test
+
+> Les comptes ci-dessous fonctionnent uniquement si un seed SQL a été importé. Le schéma seul ne crée aucun compte.
+
+| Email | Mot de passe | Rôle |
+|---|---|---|
+| `admin@example.com` | `Admin1234!` | Administrateur |
+| `pilot@example.com` | `Pilote1234!` | Pilote |
+| `pilot2@example.com` | `Pilote1234!` | Pilote |
+| `student1@example.com` | `Etudiant1234!` | Étudiant |
+| `student2@example.com` | `EtudiantBis1234!` | Étudiant |
+| `test@example.com` | `Test1234!` | Étudiant |
+
+
+## Accès
 
 | Environnement | URL |
 |---|---|
-| Application (Vhost PROD) | http://prod.localhost:8080 |
-| Assets & Médias (Vhost CDN) | http://cdn.localhost:8080 |
+| Application (Vhost PROD) | http://prod.stageflow.fr |
+| Assets & Médias (Vhost CDN) | http://cdn.stageflow.fr |
+
+> L'accès se fait directement sur le port **80**, sans numéro de port dans l'URL.
+
+---
+
+## Base de données
+
+La connexion est configurée dans `www/prod/.back/util/db_connect.php` :
+
+| Paramètre | Valeur |
+|---|---|
+| Hôte | `db` |
+| Port | `3306` |
+| Base | `sql_db` |
+| Utilisateur | `website-local` |
+| Mot de passe | `1234` |
+
+Le schéma est chargé automatiquement au démarrage depuis `mysql/init/01-create-tables.sql`.
+
+> **Important :** le code attend le nouveau schéma avec les colonnes nommées `id_user`, `email_user`, `title_internship_offer`, etc. Utiliser un ancien schéma cassera l'application.
+
+---
+
+## Charger le jeu de données
+
+Une fois les conteneurs démarrés, vous pouvez importer le jeu de données dans MySQL avec le fichier `seed.sql` placé à la racine du projet.
+
+### Import du seed
+
+Depuis la racine du projet :
+
+```bash
+docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p1234 sql_db < seed.sql
 
 ### Scripts utilitaires
 
@@ -89,9 +160,9 @@ La liste complète des 25 fonctionnalités (SFx1 à SFx25) est détaillée dans 
 Le projet suit une architecture **MVC stricte**, sans framework backend ni CMS.
 
 ```
-Site-web-RDS/
+WS-priv/
 ├── apache/
-│   ├── entrypoint.sh          # Script de démarrage Apache
+│   ├── entrypoint.sh          # Script de démarrage Apache (génère le certificat SSL)
 │   └── vhosts.conf            # Configuration des vhosts (prod + cdn)
 ├── deprecated/                # Anciennes pages (non actives)
 │   ├── account/
@@ -121,6 +192,11 @@ Site-web-RDS/
 │   │   └── styles.css         # Feuille de style principale
 │   └── prod/
 │       ├── .back/             # Logique serveur (routeur, auth, contrôleurs)
+│       │   ├── controllers/
+│       │   ├── models/
+│       │   ├── repository/
+│       │   ├── templates/
+│       │   └── util/
 │       ├── tests/             # Tests unitaires PHPUnit
 │       ├── .htaccess          # Réécriture d'URL (mod_rewrite)
 │       ├── composer.json
@@ -130,8 +206,6 @@ Site-web-RDS/
 ├── CLAUDE.md
 ├── Dockerfile
 ├── docker-compose.yaml
-├── logger.sh
-├── test.json
 └── README.md
 ```
 
@@ -145,22 +219,24 @@ Les interactions avec la base de données sont centralisées dans des classes Re
 | `CompanyRepository` | Liste des entreprises, filtrage, évaluations, détails |
 | `UserRepository` | Authentification, gestion des profils étudiants et pilotes |
 | `ApplicationRepository` | Candidatures, wish-list, suivi par étudiant et par pilote |
+| `PromotionRepository` | Promotions et affectations pilotes |
+| `SkillRepository` | Compétences requises par les offres |
 
 ### Logique de recherche et filtres
 
-La recherche d'offres utilise une construction de requête dynamique avec `WHERE 1=1`, ce qui permet d'ajouter les filtres actifs sans casser la syntaxe SQL :
+La recherche d'offres utilise une construction de requête dynamique avec `WHERE 1=1` :
 
 ```php
-$sql = "SELECT * FROM offre_stage WHERE 1=1";
-if ($keyword)  $sql .= " AND (titre LIKE ? OR description LIKE ? OR nom_entreprise LIKE ?)";
-if ($location) $sql .= " AND localisation = ?";
-if ($company)  $sql .= " AND id_entreprise = ?";
-if ($type)     $sql .= " AND type_contrat = ?";
+$sql = "SELECT * FROM internship_offer WHERE 1=1";
+if ($keyword)  $sql .= " AND (title_internship_offer LIKE ? OR description_internship_offer LIKE ?)";
+if ($location) $sql .= " AND city_company_site = ?";
+if ($company)  $sql .= " AND id_company = ?";
 ```
 
 Chaque filtre est optionnel et les valeurs sont passées via requête préparée (PDO).
 
 ---
+
 
 ## Stack technique
 
@@ -168,9 +244,9 @@ Chaque filtre est optionnel et les valeurs sont passées via requête préparée
 |---|---|
 | Serveur | Apache 2.4 (via Docker) |
 | Frontend | HTML5 / CSS3 / JavaScript vanilla |
-| Backend | PHP 8.x — POO, PSR-12 |
+| Backend | PHP 8.2 — POO, PSR-12 |
 | Moteur de template | Twig |
-| Base de données | MySQL / MariaDB |
+| Base de données | MySQL 8 |
 | Tests | PHPUnit |
 | Conteneurisation | Docker + Docker Compose |
 | Versionning | Git — workflow Git Flow |
@@ -193,17 +269,6 @@ docker exec -it stageflow-php ./vendor/bin/phpunit www/prod/tests/
 
 ---
 
-## Sécurité
-
-- Mots de passe hashés avec `password_hash()` (bcrypt)
-- Sessions serveur + cookies `HttpOnly`, `Secure`, `SameSite=Strict`
-- Protection SQL via PDO et requêtes préparées exclusivement
-- Protection XSS via l'échappement automatique Twig (`{{ var }}`)
-- Tokens CSRF sur tous les formulaires
-- HTTPS en production
-
----
-
 ## Workflow Git
 
 Le projet utilise **Git Flow** :
@@ -214,6 +279,17 @@ Le projet utilise **Git Flow** :
 - `fix/[nom]` — correction de bug
 
 Chaque fonctionnalité passe par une Pull Request relue par un autre membre avant merge sur `develop`.
+
+---
+
+## Sécurité
+
+- Mots de passe hashés avec `password_hash()` / vérifiés avec `password_verify()` (bcrypt)
+- Sessions serveur + cookies `HttpOnly`, `Secure`, `SameSite=Strict`
+- Protection SQL via PDO et requêtes préparées exclusivement
+- Protection XSS via l'échappement automatique Twig (`{{ var }}`)
+- Tokens CSRF sur tous les formulaires
+- HTTPS activé via certificat auto-signé
 
 ---
 

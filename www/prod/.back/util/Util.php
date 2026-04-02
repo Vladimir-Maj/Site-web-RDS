@@ -7,15 +7,12 @@ use App\Models\RoleEnum;
 class Util
 {
     // --- GETTERS ---
-    // --- GETTERS ---
     public static function getCSRFToken(): string
     {
-        // Ensure session is started (just in case)
         if (session_status() === PHP_SESSION_NONE) {
             session_start();
         }
 
-        // If no token exists, generate, set, and then return it
         if (empty($_SESSION["csrf_token"])) {
             $token = bin2hex(random_bytes(32));
             self::setCSRFToken($token);
@@ -25,19 +22,15 @@ class Util
     }
 
     public static function validateCSRFToken(string $token): bool
-{
-    if (session_status() === PHP_SESSION_NONE) {
-        session_start();
+    {
+        $storedToken = self::getCSRFToken();
+
+        if (empty($token) || empty($storedToken) || !hash_equals($storedToken, $token)) {
+            return false;
+        }
+
+        return true;
     }
-
-    $storedToken = Util::getCSRFToken();
-
-    if (!$storedToken || !hash_equals($storedToken, $token)) {
-        return false;
-    }
-
-    return true;
-}
 
     public static function getUserId(): ?string
     {
@@ -60,7 +53,6 @@ class Util
 
     public static function getUserName(): ?string
     {
-        // Checks the nested user array we set in AuthController
         return $_SESSION['user']['first_name'] ?? null;
     }
 

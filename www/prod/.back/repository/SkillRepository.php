@@ -12,73 +12,98 @@ class SkillRepository
     {
     }
 
-    public function getById(string $id): SkillModel|null {
-     $sql = "SELECT HEX(id) as id, label FROM skill WHERE id = UNHEX(:id)";
-     $stmt = $this->db->prepare($sql);
-     $stmt->execute(['id' => $id]);
-     $row = $stmt->fetch(PDO::FETCH_ASSOC);
-     return $row ? SkillModel::fromArray($row) : null;
+    public function getById(int|string $id): ?SkillModel
+    {
+        $sql = "SELECT 
+                    id_skill,
+                    id_skill AS id,
+                    label_skill,
+                    label_skill AS label
+                FROM skill
+                WHERE id_skill = :id";
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(['id' => (int) $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        return $row ? SkillModel::fromArray($row) : null;
     }
 
-    public function deleteById(string $id): void {
-     $sql = "DELETE FROM skill WHERE id = UNHEX(:id)";
-$stmt = $this->db->prepare($sql);
-$stmt->execute(['id' => $id]);
-}
-
+    public function deleteById(int|string $id): bool
+    {
+        $sql = "DELETE FROM skill WHERE id_skill = :id";
+        $stmt = $this->db->prepare($sql);
+        return $stmt->execute(['id' => (int) $id]);
+    }
 
     /**
-     * Retrieves all skills. 
-     * Uses HEX(id) so the Model receives the 32-char string.
      * @return SkillModel[]
      */
     public function findAll(): array
     {
-        $sql = "SELECT HEX(id) as id, label FROM skill ORDER BY label ASC";
-        
+        $sql = "SELECT 
+                    id_skill,
+                    id_skill AS id,
+                    label_skill,
+                    label_skill AS label
+                FROM skill
+                ORDER BY label_skill ASC";
+
         $stmt = $this->db->query($sql);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         return array_map(fn($row) => SkillModel::fromArray($row), $rows);
     }
 
-    /**
-     * Implementation for saving or updating.
-     * On INSERT, we only send the label; the Trigger handles the Binary ID.
-     */
     public function pushSkill(SkillModel $skill): bool
     {
-        if (empty($skill->id)) {
-            // INSERT: Trigger handles the id (binary(16))
-            $sql = "INSERT INTO skill (label) VALUES (:label)";
-            $params = ['label' => $skill->label];
+        $id = $skill->id_skill ?? $skill->id ?? null;
+        $label = $skill->label_skill ?? $skill->label ?? '';
+
+        if (empty($id)) {
+            $sql = "INSERT INTO skill (label_skill) VALUES (:label)";
+            $params = ['label' => $label];
         } else {
-            // UPDATE: Find by Hex string converted to Binary
-            $sql = "UPDATE skill SET label = :label WHERE id = UNHEX(:id)";
+            $sql = "UPDATE skill SET label_skill = :label WHERE id_skill = :id";
             $params = [
-                'label' => $skill->label,
-                'id'    => $skill->id
+                'label' => $label,
+                'id'    => (int) $id,
             ];
         }
 
         $stmt = $this->db->prepare($sql);
-        return $stmt->execute($params);
+        $success = $stmt->execute($params);
+
+        if ($success && empty($id)) {
+            $newId = (int) $this->db->lastInsertId();
+            $skill->id = $newId;
+            $skill->id_skill = $newId;
+        }
+
+        return $success;
     }
 
     /**
      * Fetch skills already linked to a specific offer.
-     * Used for the "Edit Offer" view to pre-check checkboxes.
+     *
+     * @return SkillModel[]
      */
-    public function getSkillsByOffer(string $offerHexId): array
+    public function getSkillsByOffer(int|string $offerId): array
     {
-        $sql = "SELECT HEX(s.id) as id, s.label 
+        $sql = "SELECT 
+                    s.id_skill,
+                    s.id_skill AS id,
+                    s.label_skill,
+                    s.label_skill AS label
                 FROM skill s
-                JOIN offer_skill os ON s.id = os.skill_id
-                WHERE os.offer_id = UNHEX(:offer_id)";
+                JOIN offer_requirement os 
+                    ON s.id_skill = os.skill_requirement_id
+                WHERE os.offer_requirement_id = :offer_id
+                ORDER BY s.label_skill ASC";
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute(['offer_id' => $offerHexId]);
-        
+        $stmt->execute(['offer_id' => (int) $offerId]);
+
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
         return array_map(fn($row) => SkillModel::fromArray($row), $rows);
     }

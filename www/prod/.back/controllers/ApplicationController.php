@@ -4,8 +4,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Models\ApplicationModel;
+use App\Models\RoleEnum;
 use App\Repository\ApplicationRepository;
 use App\Repository\OfferRepository;
+use App\Repository\UserRepository;
 use Twig\Environment;
 use App\Util;
 
@@ -13,15 +15,55 @@ class ApplicationController extends BaseController
 {
     private ApplicationRepository $repo;
     private OfferRepository $offerRepository;
+    private UserRepository $userRepository;
 
-    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, Environment $twig)
+    public function __construct(ApplicationRepository $repo, OfferRepository $offerRepository, UserRepository $userRepository, Environment $twig)
     {
         parent::__construct($twig);
         $this->offerRepository = $offerRepository;
         $this->repo = $repo;
+        $this->userRepository = $userRepository;
     }
 
-    // --- SECTION : VUES WEB (Rendu Twig) ---
+    /**
+     * Permet à un Admin/Pilote de voir les candidatures d'un étudiant spécifique
+     */
+    public function viewStudentApplications(string $id): void 
+    {
+        $student = $this->userRepository->findById($id);
+        $currentUser = Util::getUser();
+        
+        // Sécurité : Vérifier que l'utilisateur est bien un étudiant
+        assert($student->role === RoleEnum::Student);
+        
+        $applications = $this->repo->findByStudent($student->id);
+
+        echo $this->twig->render("dashboard/my_applications.html.twig", [
+            "user" => $currentUser,
+            "student" => $student,
+            "applications" => $applications,
+            "sidebar_active" => "applications",
+            "is_student" => false 
+        ]);
+    }
+
+    /**
+     * GET /dashboard/applications
+     * Affiche les candidatures envoyées par l'étudiant connecté.
+     */
+    public function myApplications(): void
+    {
+        $myId = Util::getUserId();
+        $myApplications = $this->repo->findByStudent($myId);
+        $currentUser = $this->userRepository->findById($myId);
+
+        echo $this->twig->render("dashboard/my_applications.html.twig", [
+            "user" => $currentUser,
+            "applications" => $myApplications,
+            "sidebar_active" => "applications",
+            "is_student" => true 
+        ]);
+    }
 
     /**
      * GET /app/offers/{id}/apply
@@ -32,9 +74,8 @@ class ApplicationController extends BaseController
         $off = $this->offerRepository->findById($id);
         $usr = Util::getUser();
 
-        // Diagnostic — remove once fixed
-        if (is_object($off) && $off instanceof __PHP_Incomplete_Class) {
-            // Class name that failed to deserialize
+        // Diagnostic deserialization check
+        if (is_object($off) && $off instanceof \__PHP_Incomplete_Class) {
             $className = (array) $off;
             error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
         }
@@ -52,16 +93,15 @@ class ApplicationController extends BaseController
 
     /**
      * POST /app/offers/{id}/apply
-     * Traitement classique de formulaire avec redirection
      */
     public function doApply(string $id): void
     {
         $application = ApplicationModel::fromArray([
-            'student_id' => Util::getUserId(),
-            'offer_id' => $id,
-            'cv_path' => $_POST['cv_path'] ?? null,
-            'cover_letter_path' => $_POST['cover_letter_path'] ?? null,
-            'status' => 'pending'
+            'student_id_application' => Util::getUserId(),
+            'offer_id_application' => $id,
+            'cv_path_application' => $_POST['cv_path'] ?? null,
+            'cover_letter_path_application' => $_POST['cover_letter_path'] ?? null,
+            'status_application' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
@@ -72,22 +112,19 @@ class ApplicationController extends BaseController
         exit;
     }
 
-    // --- SECTION : API AJAX (JSON) ---
-
     /**
-     * POST /api/offers/{id}/apply
-     * Création d'une candidature via AJAX
+     * POST /api/offers/{id}/apply (AJAX)
      */
     public function applyAjax(string $id): void
     {
         $input = json_decode(file_get_contents('php://input'), true);
 
         $application = ApplicationModel::fromArray([
-            'student_id' => Util::getUserId(),
-            'offer_id' => $id,
-            'cv_path' => $input['cv_path'] ?? null,
-            'cover_letter_path' => $input['cover_letter_path'] ?? null,
-            'status' => 'pending'
+            'student_id_application' => Util::getUserId(),
+            'offer_id_application' => $id,
+            'cv_path_application' => $input['cv_path'] ?? null,
+            'cover_letter_path_application' => $input['cover_letter_path'] ?? null,
+            'status_application' => 'pending'
         ]);
 
         if ($this->repo->push($application)) {
@@ -108,8 +145,8 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
         }
 
-        // Sécurité : Autoriser si c'est le propriétaire OU un utilisateur privilégié (Admin/Pilote)
-        if ($app->student_id !== Util::getUserId() && !$this->isPrivileged()) {
+        // Sécurité : Propriétaire OU Admin/Pilote
+        if ($app->student_id_application !== Util::getUserId() && !$this->isPrivileged()) {
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }
 
@@ -149,7 +186,7 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature inexistante'], 404);
         }
 
-        $app->status = $status;
+        $app->status_application = $status;
         $this->repo->push($app);
 
         $this->jsonResponse(['status' => 'updated', 'new_status' => $status]);

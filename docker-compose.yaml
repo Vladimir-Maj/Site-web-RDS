@@ -1,8 +1,21 @@
 version: "3.9"
 
 services:
+  db:
+    image: mysql:8.0
+    container_name: lamp-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: sql_db
+      MYSQL_USER: website-local
+      MYSQL_PASSWORD: 1234
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d
+    networks:
+      - lamp-network
+
   web:
-    build: .
     image: php:8.2-apache
     container_name: lamp-web
     ports:
@@ -29,21 +42,6 @@ services:
       - db
     # This command runs tests and then stops the container
     entrypoint: ["/var/www/html/prod/vendor/bin/phpunit", "/var/www/html/tests"]
-    networks:
-      - lamp-network
-
-  db:
-    image: mysql:8.0
-    container_name: lamp-db
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: sql_db
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-    volumes:
-      - db_data:/var/lib/mysql
-      - ./mysql/init:/docker-entrypoint-initdb.d
     networks:
       - lamp-network
 

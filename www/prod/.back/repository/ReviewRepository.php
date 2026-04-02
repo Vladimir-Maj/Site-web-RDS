@@ -4,8 +4,7 @@ declare(strict_types=1);
 namespace App\Repository;
 
 use PDO;
-use App\Models\BusinessReviewModel;
-use DateTime;
+use App\Models\BuisnessReviewModel;
 
 class ReviewRepository
 {
@@ -18,75 +17,100 @@ class ReviewRepository
 
     /**
      * Create a new business review.
-     * Note: Since pilot_id and company_id are a composite primary key, 
-     * this will fail if the same pilot reviews the same company twice.
+     * Composite primary key:
+     * (pilot_id_business_review, company_id_business_review)
      */
-    public function push(BusinessReviewModel $review): bool
+    public function push(BuisnessReviewModel $review): bool
     {
-        $sql = "INSERT INTO business_review (pilot_id, company_id, rating, comment, reviewed_at) 
-                VALUES (UNHEX(:pilot_id), UNHEX(:company_id), :rating, :comment, :reviewed_at)";
+        $sql = "INSERT INTO business_review (
+                    pilot_id_business_review,
+                    company_id_business_review,
+                    rating_business_review,
+                    comment_business_review,
+                    reviewed_at_business_review
+                ) VALUES (
+                    :pilot_id,
+                    :company_id,
+                    :rating,
+                    :comment,
+                    :reviewed_at
+                )";
 
         $stmt = $this->pdo->prepare($sql);
-        
+
         return $stmt->execute([
-            ':pilot_id'   => $review->reviewer_id, // Assuming hex string
-            ':company_id' => $review->business_id,  // Assuming hex string
-            ':rating'     => $review->rating,
-            ':comment'    => $review->comment,
-            ':reviewed_at'=> $review->review_date->format('Y-m-d H:i:s')
+            ':pilot_id'    => $review->pilot_id_business_review,
+            ':company_id'  => $review->company_id_business_review,
+            ':rating'      => $review->rating_business_review,
+            ':comment'     => $review->comment_business_review,
+            ':reviewed_at' => $review->reviewed_at_business_review->format('Y-m-d H:i:s')
         ]);
     }
 
     /**
      * Finds all reviews for a specific company.
      */
-    public function findByBusinessId(string $businessHexId): array
+    public function findByBusinessId(int|string $companyId): array
     {
-        $sql = "SELECT 
-                HEX(pilot_id) as reviewer_id, 
-                HEX(company_id) as business_id, 
-                rating, comment, reviewed_at as review_date
-                FROM business_review 
-                WHERE company_id = UNHEX(?)";
+        $sql = "SELECT
+                    pilot_id_business_review,
+                    pilot_id_business_review AS reviewer_id,
+                    company_id_business_review,
+                    company_id_business_review AS business_id,
+                    rating_business_review,
+                    rating_business_review AS rating,
+                    comment_business_review,
+                    comment_business_review AS comment,
+                    reviewed_at_business_review,
+                    reviewed_at_business_review AS review_date
+                FROM business_review
+                WHERE company_id_business_review = ?";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([$businessHexId]);
-        
+        $stmt->execute([(int) $companyId]);
+
         $reviews = [];
         while ($row = $stmt->fetch(PDO::FETCH_ASSOC)) {
-            $reviews[] = BusinessReviewModel::fromArray($row);
+            $reviews[] = BuisnessReviewModel::fromArray($row);
         }
-        
+
         return $reviews;
     }
 
     /**
      * Deletes a specific review based on the composite primary key.
      */
-    public function delete(string $pilotHexId, string $companyHexId): bool
+    public function delete(int|string $pilotId, int|string $companyId): bool
     {
-        $sql = "DELETE FROM business_review 
-                WHERE pilot_id = UNHEX(?) AND company_id = UNHEX(?)";
-        
+        $sql = "DELETE FROM business_review
+                WHERE pilot_id_business_review = ?
+                  AND company_id_business_review = ?";
+
         $stmt = $this->pdo->prepare($sql);
-        return $stmt->execute([$pilotHexId, $companyHexId]);
+        return $stmt->execute([(int) $pilotId, (int) $companyId]);
     }
 
     /**
      * Updates an existing review's rating and comment.
      */
-    public function update(BusinessReviewModel $review): bool
+    public function update(BuisnessReviewModel $review): bool
     {
-        $sql = "UPDATE business_review 
-                SET rating = :rating, comment = :comment 
-                WHERE pilot_id = UNHEX(:pilot_id) AND company_id = UNHEX(:company_id)";
+        $sql = "UPDATE business_review
+                SET
+                    rating_business_review = :rating,
+                    comment_business_review = :comment,
+                    reviewed_at_business_review = :reviewed_at
+                WHERE pilot_id_business_review = :pilot_id
+                  AND company_id_business_review = :company_id";
 
         $stmt = $this->pdo->prepare($sql);
+
         return $stmt->execute([
-            ':rating'     => $review->rating,
-            ':comment'    => $review->comment,
-            ':pilot_id'   => $review->reviewer_id,
-            ':company_id' => $review->business_id
+            ':rating'      => $review->rating_business_review,
+            ':comment'     => $review->comment_business_review,
+            ':reviewed_at' => $review->reviewed_at_business_review->format('Y-m-d H:i:s'),
+            ':pilot_id'    => $review->pilot_id_business_review,
+            ':company_id'  => $review->company_id_business_review
         ]);
     }
 }
