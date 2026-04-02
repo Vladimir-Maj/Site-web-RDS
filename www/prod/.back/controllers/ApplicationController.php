@@ -74,7 +74,7 @@ class ApplicationController extends BaseController
      * GET /app/offers/{id}/apply
      * Affiche le formulaire de candidature
      */
-    public function viewApply(string $id): void
+    public function viewApply(string|int $id): void
     {
         $off = $this->offerRepository->findById($id);
         $usr = Util::getUser();
@@ -84,6 +84,13 @@ class ApplicationController extends BaseController
             $className = (array) $off;
             error_log('Incomplete class: ' . ($className['__PHP_Incomplete_Class_Name'] ?? 'unknown'));
         }
+        
+        if (
+            currentRoleValue() !== RoleEnum::Admin->value
+            && currentRoleValue() !== RoleEnum::Pilote->value
+        ) {
+            $this->offerRepository->incrementViews((int) $id);
+        }
 
         echo $this->twig->render('offers/apply.html.twig', [
             'offer_id' => $id,
@@ -92,7 +99,9 @@ class ApplicationController extends BaseController
             'title' => 'Candidature à l\'offre',
             'error' => 0,
             'success' => 0,
-            'csrf_token' => Util::getCSRFToken()
+            'csrf_token' => Util::getCSRFToken(),
+            'views' => $this->offerRepository->countViews((int) $id),
+            'applications' => $this->repo->countByOffer((int) $id),
         ]);
     }
 

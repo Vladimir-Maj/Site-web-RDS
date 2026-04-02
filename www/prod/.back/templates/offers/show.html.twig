@@ -79,6 +79,30 @@
 					<strong>Attention :</strong>
 					Ne partagez jamais vos coordonnées bancaires lors d'une candidature.</p>
 			</div>
+
+			{# ========================================================================
+			   STATISTICS CARD — Displays view count and application count
+			   ======================================================================== #}
+			<div class="card mt-2" style="padding: 1.25rem; background-color: rgba(var(--primary-rgb), 0.03);">
+				<p class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color); margin-bottom: 0.75rem;">
+					Statistiques de l'offre
+				</p>
+				<div class="data-grid">
+					<div class="data-item">
+						<span class="data-label">👀 Vues</span>
+						<span class="data-value">{{ views }}</span>
+					</div>
+					<div class="data-item">
+						<span class="data-label">📩 Candidatures</span>
+						<span class="data-value">{{ applications }}</span>
+					</div>
+				</div>
+
+				{# Optional: Add a small social proof progress bar #}
+				{% if applications > 10 %}
+					<p class="text-xs text-muted mt-2">🔥 Offre très demandée !</p>
+				{% endif %}
+			</div>
 		</aside>
 
 		<section>

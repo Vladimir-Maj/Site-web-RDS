@@ -5,10 +5,10 @@ declare(strict_types=1);
 namespace App\Controllers;
 
 use App\Util\ComplianceLogger;
-use App\Util\Util;
+use App\Util;
 use App\Repository\ApplicationRepository;
 use App\Repository\UserRepository;
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use Twig\Environment;
 use PDO;
 use ZipArchive;
@@ -34,7 +34,7 @@ class DataExportController
 
     public function __construct(
         PDO $pdo,
-        Twig\Environment $twig,
+        Environment $twig,
         ComplianceLogger $complianceLogger,
         string $exportDir = '/tmp/data-exports'
     ) {
@@ -127,7 +127,7 @@ class DataExportController
         $applications = $appRepo->findByStudentId($userId); // adjust method name if needed
 
         // Wishlist
-        $wishlistRepo = new WishlistRepository($this->pdo);
+        $wishlistRepo = new WishListRepository($this->pdo);
         $wishlist = $wishlistRepo->findByStudentId($userId);
 
         // Build export structure
