@@ -135,6 +135,15 @@ class ApplicationController extends BaseController
     }
 
     /**
+     * GET /api/applications/student (AJAX)
+     */
+    public function listForStudentJson(): void
+    {
+        $applications = $this->repo->findByStudent(Util::getUserId());
+        $this->jsonResponse($applications);
+    }
+
+    /**
      * DELETE /api/applications/{id}
      */
     public function deleteAjax(string $id): void
@@ -145,13 +154,13 @@ class ApplicationController extends BaseController
             $this->jsonResponse(['error' => 'Candidature introuvable'], 404);
         }
 
-        // Sécurité : Propriétaire OU Admin/Pilote
+        // Security check: Owner OR Admin/Pilot
         if ($app->student_id_application !== Util::getUserId() && !$this->isPrivileged()) {
             $this->jsonResponse(['error' => 'Action non autorisée'], 403);
         }
 
         $this->repo->delete($id)
-            ? $this->jsonResponse(['status' => 'deleted'])
+            ? $this->jsonResponse(['status' => 'success', 'deleted_id' => $id])
             : $this->jsonResponse(['error' => 'Échec de la suppression'], 500);
     }
 

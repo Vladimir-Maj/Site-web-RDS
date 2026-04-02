@@ -55,8 +55,8 @@ class OfferController extends BaseController
             'mode' => 'edit',
             'offer' => $offer,
             'sites' => $sites,
-            'error' => null,        // ← add this
-            'companies' => [],      // ← add this (edit mode doesn't need the full list, AJAX handles it)
+            'error' => null,
+            'companies' => [],
             'csrf_token' => Util::getCSRFToken(),
             'sidebar_active' => 'offers'
         ]);
@@ -110,7 +110,6 @@ class OfferController extends BaseController
             'isPrivileged' => $this->isPrivileged(),
             'sidebar_active' => 'offers'
         ]);
-
     }
 
     public function search(): void
@@ -157,16 +156,17 @@ class OfferController extends BaseController
         $offset = ($page - 1) * $limit;
 
         $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
+        $totalCount = $results['total'] ?? 0;
 
         $this->jsonResponse([
             'data' => $results['data'] ?? [],
-            'total' => $results['total'] ?? 0,
+            'total' => $totalCount,
             'page' => $page,
-            'total_pages' => (int) ceil(($results['total'] ?? 0) / $limit),
+            'total_pages' => (int) ceil($totalCount / $limit),
         ]);
     }
 
-    public function show(int $id): void
+    public function show(string $id): void
     {
         $offer = $this->offerRepository->findById((int) $id);
 
@@ -233,7 +233,7 @@ class OfferController extends BaseController
 
     public function destroy(int $id): void
     {
-        $this->abortIfNotPriv(); // Added security check from common logic
+        $this->abortIfNotPriv();
         if ($this->offerRepository->delete((int) $id)) {
             header('Location: /app/offers?deleted=1');
             exit;

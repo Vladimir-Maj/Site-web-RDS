@@ -57,7 +57,7 @@ class UserController extends BaseController
     /**
      * API Endpoint: Returns user data in JSON format.
      */
-    public function getUserByIdJson(int $id): void
+    public function getUserByIdJson(string|int $id): void
     {
         if (!$this->isTargetOrPrivileged($id)) {
             $this->jsonError("Forbidden", 403);
@@ -69,8 +69,7 @@ class UserController extends BaseController
             $this->jsonError("User not found", 404);
         }
 
-        // Note: Repository attributes should map to {attribute}_{table} internally,
-        // but we output clean keys for the JSON response.
+        // Note: Repository attributes mapping to clean keys for the JSON response.
         $this->jsonResponse([
             'id'         => $user->id,
             'email'      => $user->email->asString(),
@@ -89,7 +88,7 @@ class UserController extends BaseController
             $this->abort(403, "Unauthorized access.");
         }
 
-        if (!empty($user->id) && $this->repo->findById((int) $user->id) !== null) {
+        if (!empty($user->id) && $this->repo->findById($user->id) !== null) {
             $this->abort(400, "User with this ID already exists.");
         }
 

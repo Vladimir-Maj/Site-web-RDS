@@ -127,66 +127,47 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
         $studentProgress = $applicationRepo->getStudentProgress($studentId);
         $recentApplications = $applicationRepo->findStudentApplicationsOverview($studentId, 5);
     }
+}
 
-    echo $twig->render('index.html.twig', defaultViewData([
-        'offers' => $offerRepo->findPaginated($limit, $offset),
-        'totalOffers' => $totalOffers,
-        'totalPages' => (int) ceil($totalOffers / $limit),
-        'page' => $page,
-        'studentProgress' => $studentProgress,
-        'recentApplications' => $recentApplications,
-    ]));
-});
+// --- AJAX/API ROUTES ---
 
-// ── DASHBOARDS ───────────────────────────────────────────────────────────────
-$router->add('GET', '/admin/dashboard',     fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Admin->value]);
-$router->add('GET', '/pilote/dashboard',    fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Pilote->value]);
-$router->add('GET', '/dashboard/pilotes',   fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->pilots(), roles: [RoleEnum::Admin->value]);
-$router->add('GET', '/dashboard/etudiants', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->students(), roles: $staff);
-$router->add('GET', '/dashboard/companies', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);
-$router->add('GET', '/dashboard/offers',    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index(), roles: $staff);
-$router->add('GET', '/dashboard/applications', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(), roles: $student);
-$router->add('GET', '/dashboard/applications/'.$idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p), roles: $staff);
+// Existant
+if (preg_match('#^/app/companies/([a-fA-F0-9]{32})/sites$#', $path, $m)) {
+    $repo = new CompanyRepository($pdo);
+    (new CompanyController($repo, $twig))->getSitesByCompany($m[1]);
+    exit;
+}
 
-// ── COMPANIES ────────────────────────────────────────────────────────────────
-$router->add('GET',  '/dashboard/companies/new',           fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm('new'), roles: $staff);
-$router->add('POST', '/dashboard/companies/new',           fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave('new'), roles: $staff);
-$router->add('GET',  '/dashboard/companies/' . $idPattern, fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm((int) $p[0]), roles: $staff);
-$router->add('POST', '/dashboard/companies/' . $idPattern, fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave((int) $p[0]), roles: $staff);
+// Applications : GET /api/applications  (liste de l'étudiant connecté)
+if ($path === '/api/applications' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new ApplicationController($applicationRepo, $twig))->listForStudentJson();
+    exit;
+}
 
-// ── OFFERS ───────────────────────────────────────────────────────────────────
-$router->add('GET',  '/app/offers',                        fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
-$router->add('GET',  '/app/offers/search',                 fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
-$router->add('GET',  '/app/offers/new',                    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
-$router->add('POST', '/app/offers/new',                   fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
-$router->add('GET',  '/app/offers/show/' . $idPattern,     fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show((int) $p[0]));
-$router->add('GET',  '/app/offers/edit/' . $idPattern,     fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
-$router->add('POST', '/app/offers/update/' . $idPattern,  fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p), roles: $staff);
-$router->add('POST', '/app/offers/delete/' . $idPattern,  fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy((int) $p[0]), roles: $staff);
+// Applications : GET /api/applications/{id}
+if (preg_match('#^/api/applications/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new ApplicationController($applicationRepo, $twig))->showJson($m[1]);
+    exit;
+}
 
-// ── SITES ────────────────────────────────────────────────────────────────────
-$router->add('GET',  '/dashboard/companies/' . $idPattern . '/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index($p), roles: $staff);
-$router->add('GET',  '/app/sites/new',                               fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
-$router->add('POST', '/app/sites/save',                              fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
-$router->add('GET',  '/app/sites/' . $idPattern,                     fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show($p), roles: $staff);
-$router->add('POST', '/app/sites/delete/' . $idPattern,              fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete($p), roles: $staff);
-$router->add('GET',  '/api/companies/' . $idPattern . '/sites',      fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getSitesByCompany($p), roles: $staff);
+// Applications : DELETE /api/applications/{id}
+if (preg_match('#^/api/applications/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'DELETE') {
+    (new ApplicationController($applicationRepo, $twig))->deleteJson($m[1]);
+    exit;
+}
 
-// ── SKILLS ───────────────────────────────────────────────────────────────────
-$router->add('GET',    '/app/skills',                         fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
-$router->add('GET',    '/api/skills',                         fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
-$router->add('POST',   '/api/skills/create',                  fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(), roles: $staff);
-$router->add('PATCH',  '/api/skills/update/' . $idPattern,    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p), roles: $staff);
-$router->add('DELETE', '/api/skills/delete/' . $idPattern,    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p), roles: $staff);
+// Offers : GET /api/offers/search
+if ($path === '/api/offers/search' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new OfferController($twig, $offerRepo, $pdo))->searchJson();
+    exit;
+}
 
-// ── APPLICATIONS ─────────────────────────────────────────────────────────────
-$router->add('GET',   '/app/offers/' . $idPattern . '/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p), roles: $student);
-$router->add('POST',  '/app/offers/' . $idPattern . '/apply',        fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p), roles: $student);
-$router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p), roles: $staff);
+// Users : GET /api/users/{id}
+if (preg_match('#^/api/users/([a-fA-F0-9-]+)$#', $path, $m) && $_SERVER['REQUEST_METHOD'] === 'GET') {
+    (new UserController($userRepo, $twig))->getUserByIdJson($m[1]);
+    exit;
+}
 
-// ── WISHLIST ─────────────────────────────────────────────────────────────────
-$router->add('GET',  '/app/wishlist',                       fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->index(), roles: $student);
-$router->add('POST', '/app/wishlist/toggle/' . $idPattern, fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->toggle($p), roles: $student);
-
-// --- 7. DISPATCH ---
-$router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);
+// 404
+http_response_code(404);
+die("Page non trouvée.");
