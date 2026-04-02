@@ -1,22 +1,24 @@
-{% extends "dashboard/layout.html.twig" %}
+{% extends "base.html.twig" %}
+
 {% block title %}Ma wishlist — StageFlow{% endblock %}
-{% block dashboard_content %}
 
-<div class="page-header">
-    <div>
-        <h1>Ma wishlist</h1>
-        <p>Retrouvez ici les offres que vous avez sauvegardées.</p>
-    </div>
-</div>
-
-<div class="offer-list">
-    {% for offer in offers %}
-        {{ include('components/card_template.twig', {'offer': offer}) }}
-    {% else %}
-        <div class="card" style="padding: 2rem; text-align: center;">
-            <p class="text-muted">Aucune offre dans votre wishlist.</p>
+{% block body %}
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+        <div>
+            <h1>Ma wishlist</h1>
+            <p>Retrouvez ici les offres que vous avez sauvegardées.</p>
         </div>
-    {% endfor %}
-</div>
 
+        <a href="/app/offers" class="btn btn-ghost">← Retour aux offres</a>
+    </div>
+
+    <div class="offer-list">
+        {% for offer in offers %}
+            {{ include('components/card_template.twig', {'offer': offer, 'from': 'offers'}) }}
+        {% else %}
+            <div class="card" style="padding: 2rem; text-align: center;">
+                <p class="text-muted">Aucune offre dans votre wishlist.</p>
+            </div>
+        {% endfor %}
+    </div>
 {% endblock %}
