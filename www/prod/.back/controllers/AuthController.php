@@ -24,6 +24,8 @@ class AuthController extends BaseController
     }
 
     /**
+     * @deprecated MARKED FOR REMOVAL
+     * 
      * Handles CV Uploads. 
      * Uses CVFast to support multiple CVs if applicable.
      */
