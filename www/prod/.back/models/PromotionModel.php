@@ -27,4 +27,15 @@ class PromotionModel extends BaseModel
 
         return $inst;
     }
+
+    // Inside App\Models\PromotionModel
+public function getLabel(): string
+{
+    return $this->label_promotion;
+}
+
+public function getAcademicYear(): string
+{
+    return $this->academic_year_promotion;
+}
 }
