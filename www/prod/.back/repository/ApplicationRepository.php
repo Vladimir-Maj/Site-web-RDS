@@ -51,11 +51,11 @@ class ApplicationRepository
         $stmt = $this->pdo->prepare($sql);
 
         $params = [
-            ':student_id_application'        => $app->student_id_application,
-            ':offer_id_application'          => $app->offer_id_application,
-            ':cv_path_application'           => $app->cv_path_application,
+            ':student_id_application' => $app->student_id_application,
+            ':offer_id_application' => $app->offer_id_application,
+            ':cv_path_application' => $app->cv_path_application,
             ':cover_letter_path_application' => $app->cover_letter_path_application,
-            ':status_application'            => $app->status_application,
+            ':status_application' => $app->status_application,
         ];
 
         if (!empty($app->id_application)) {
@@ -172,5 +172,28 @@ class ApplicationRepository
     {
         $stmt = $this->pdo->prepare("DELETE FROM application WHERE id_application = ?");
         return $stmt->execute([(int) $id]);
+
+
+    }
+
+    /**
+     * Return how many applications have been submitted for a given offer.
+     */
+    public function countByOffer(int $offerId): int
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT COUNT(*)
+         FROM application
+         WHERE offer_id_application = :offer_id'
+        );
+        $stmt->execute(['offer_id' => $offerId]);
+
+        // Store the result in a variable so it isn't lost
+        $count = (int) $stmt->fetchColumn();
+
+        error_log("countByOffer executed for offer_id: " . $offerId);
+        error_log("countByOffer returned: " . $count);
+
+        return $count;
     }
 }

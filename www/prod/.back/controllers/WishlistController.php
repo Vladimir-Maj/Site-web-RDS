@@ -3,14 +3,14 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use Twig\Environment;
 use App\Util;
 
 class WishlistController extends BaseController
 {
     public function __construct(
-        private WishlistRepository $wishlistRepository,
+        private WishListRepository $wishlistRepository,
         protected Environment $twig
     ) {
         parent::__construct($twig);

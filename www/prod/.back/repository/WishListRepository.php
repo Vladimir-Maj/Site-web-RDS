@@ -6,7 +6,7 @@ namespace App\Repository;
 use PDO;
 use App\Models\OfferModel;
 
-class WishlistRepository
+class WishListRepository
 {
     public function __construct(private PDO $pdo)
     {
