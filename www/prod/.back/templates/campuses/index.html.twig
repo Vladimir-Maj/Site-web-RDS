@@ -7,54 +7,94 @@
     <div class="page-header">
         <div>
             <h1>Catalogue des Campus</h1>
-            <p>Gestion centrale des campus et leurs adresses.</p>
+            <p>Gestion centrale des campus et de leurs localisations.</p>
         </div>
         {% if isPrivileged %}
-            <div style="display: flex; gap: 10px;">
-                <a href="/dashboard/campus/new" class="btn btn-primary">+ Ajouter un Campus</a>
+            <div>
+                <a href="/dashboard/campus/new" class="btn btn-primary">+ Ajouter un campus</a>
             </div>
         {% endif %}
     </div>
 
-    {# Search / Filter Bar #}
+    {# --- BARRE DE RECHERCHE (Consistent with Pilots) --- #}
     <form method="GET" action="/dashboard/campus" class="search-bar">
         <div class="form-group">
-            <label>Mots-clés</label>
-            <input type="text" name="keyword" placeholder="Nom, adresse..." value="{{ filters.keyword|default('') }}">
+            <label>Recherche</label>
+            <input type="text" name="keyword" placeholder="Nom du campus, ville..." value="{{ filters.keyword|default('') }}">
+        </div>
+        {# Example of a second field to maintain alignment consistency #}
+        <div class="form-group">
+            <label>Localisation</label>
+            <select name="region" disabled>
+                <option value="">Toutes les régions</option>
+            </select>
         </div>
         <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
         <a href="/dashboard/campus" class="btn btn-ghost">Réinitialiser</a>
     </form>
 
-    <div class="notice notice-info">
+    <div class="notice notice-info" style="margin-top: 1.5rem;">
         <div class="notice-icon">ℹ️</div>
         <p>
-            Il y a actuellement <strong>{{ campuses|length }} campus{{ campuses|length > 1 ? 's' : '' }}</strong>
-            correspondant à vos critères.
+            Il y a actuellement <strong>{{ campuses|length }} campus</strong> correspondant à vos critères.
         </p>
     </div>
 
-    <div class="campus-list">
-        {% for campus in campuses %}
-            <div class="card" style="padding: 1.5rem; margin-bottom: 1rem;">
-                <h2>{{ campus.name_campus }}</h2>
-                {% if campus.address_campus %}
-                    <p class="text-muted">{{ campus.address_campus }}</p>
+    {# --- TABLEAU DES CAMPUS --- #}
+    <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Nom du Campus</th>
+                    <th>Localisation / Adresse</th>
+                    {% if isPrivileged %}
+                        <th class="text-right">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for campus in campuses %}
+                    <tr>
+                        <td><strong>{{ campus.name_campus }}</strong></td>
+                        <td>
+                            {% if campus.address_campus %}
+                                <span class="text-muted">📍 {{ campus.address_campus }}</span>
+                            {% else %}
+                                <span class="text-muted"><em>Adresse non renseignée</em></span>
+                            {% endif %}
+                        </td>
+                        {% if isPrivileged %}
+                            <td class="text-right">
+                                <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                                    <a href="/dashboard/campus/edit/{{ campus.id_campus }}" class="btn btn-ghost btn-sm">Modifier</a>
+                                    <a href="/dashboard/campus/delete/{{ campus.id_campus }}" 
+                                       class="btn btn-danger btn-sm" 
+                                       onclick="return confirm('Voulez-vous vraiment supprimer ce campus ?');">Supprimer</a>
+                                </div>
+                            </td>
+                        {% endif %}
+                    </tr>
                 {% else %}
-                    <p class="text-muted"><em>Adresse non renseignée</em></p>
-                {% endif %}
-                {% if isPrivileged %}
-                    <div style="margin-top: 0.5rem;">
-                        <a href="/dashboard/campus/edit/{{ campus.id_campus }}" class="btn btn-sm btn-ghost">Modifier</a>
-                        <a href="/dashboard/campus/delete/{{ campus.id_campus }}" class="btn btn-sm btn-danger" 
-                           onclick="return confirm('Voulez-vous vraiment supprimer ce campus ?');">Supprimer</a>
-                    </div>
-                {% endif %}
-            </div>
-        {% else %}
-            <div class="card" style="padding: 2rem; text-align: center;">
-                <p class="text-muted">Aucun campus ne correspond à votre recherche.</p>
-            </div>
-        {% endfor %}
+                    <tr>
+                        <td colspan="{{ isPrivileged ? 3 : 2 }}" style="padding: 2rem; text-align: center;" class="text-muted">
+                            Aucun campus ne correspond à votre recherche.
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
+
+    {# --- PAGINATION --- #}
+    {% if totalPages is defined and totalPages > 1 %}
+        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 2rem; align-items: center;">
+            {% if page > 1 %}
+                <a href="?page={{ page - 1 }}{{ filters.keyword ? '&keyword=' ~ filters.keyword : '' }}" class="btn btn-ghost btn-sm">← Précédent</a>
+            {% endif %}
+            <span class="text-sm">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+            {% if page < totalPages %}
+                <a href="?page={{ page + 1 }}{{ filters.keyword ? '&keyword=' ~ filters.keyword : '' }}" class="btn btn-ghost btn-sm">Suivant →</a>
+            {% endif %}
+        </div>
+    {% endif %}
 {% endblock %}

@@ -1,0 +1,54 @@
+{% extends 'legals.html.twig' %}
+
+{% block title %}Suppression Confirmee — StageFlow{% endblock %}
+
+{% block body %}
+<div class="deletion-confirmed-container">
+    <div class="confirmation-card">
+        <div class="success-icon">✅</div>
+        
+        <h1>Suppression Confirmée</h1>
+        
+        <p class="main-message">
+            Votre demande de suppression de compte a été <strong>confirmée avec succès</strong>.
+        </p>
+
+        <div class="info-box">
+            <h2>Voici ce qu'il se passe maintenant :</h2>
+            <ol>
+                <li>Votre compte a été marqué pour suppression</li>
+                <li>Toutes vos données personnelles seront supprimées <strong>dans les 24 heures</strong></li>
+                <li>Vos CVs et lettres de motivation seront effacés du serveur</li>
+                <li>Les sauvegardes seront supprimées après 30 jours (raisons techniques)</li>
+                <li>Vous recevrez un email de confirmation</li>
+            </ol>
+        </div>
+
+        <div class="next-steps">
+            <h2>Prochaines Étapes :</h2>
+            <p>Vous êtes actuellement <strong>déconnecté</strong>.</p>
+            <p>
+                Si vous aviez un compte personnel, il ne sera plus accessible après la suppression.
+            </p>
+            <p>
+                Pour toute question, contactez : <a href="mailto:{{ contactEmail }}">{{ contactEmail }}</a>
+            </p>
+        </div>
+
+        <div class="actions">
+            <a href="/" class="btn btn-primary">
+                ← Retour à l'accueil
+            </a>
+        </div>
+
+        <footer class="confirmation-footer">
+            <p>
+                <strong>Preuve :</strong> Un email de confirmation a été envoyé à votre adresse enregistrée.<br>
+                Conservez cet email pour vos dossiers (preuve de conformité RGPD).
+            </p>
+        </footer>
+    </div>
+</div>
+
+
+{% endblock %}

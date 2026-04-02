@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="fr">
+	<head>
+		<meta charset="UTF-8">
+		<title>
+			{% block title %}StageFlow
+			{% endblock %}
+		</title>
+
+		<link rel="stylesheet" href="{{ cdn_url }}/styles.css">
+		<link rel="stylesheet" href="{{cdn_url}}/legals.css"> {% block head %}{% endblock %}
+		</head>
+		<body>
+
+			{% include 'header_template.html.twig' %}
+
+			<div class="page-wrapper">
+				<main class="container">
+					{% if flashMessage %}
+						<div class="card" style="
+								                    padding: 1rem 1.25rem;
+								                    margin: 1.5rem 0;
+								                    border-left: 4px solid
+								                    {% if flashType == 'success' %}#16a34a{% elseif flashType == 'error' %}#dc2626{% else %}#2563eb{% endif %};
+								                    ">
+							<p style="margin: 0;">
+								{{ flashMessage }}
+							</p>
+						</div>
+					{% endif %}
+
+					{% block body %}{% endblock %}
+				</main>
+			</div>
+
+			{% include 'footer_template.html.twig' %}
+
+			{% block scripts %}{% endblock %}
+		</body>
+
+		 <script>
+		    (function() {
+		        const saved = localStorage.getItem('stageflow-theme');
+		        const dark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		        if (saved === 'dark' || (!saved && dark)) {
+		            document.documentElement.setAttribute('data-theme', 'dark');
+		        }
+		    })();
+		</script>
+	</html>

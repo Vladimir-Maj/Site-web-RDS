@@ -1,0 +1,277 @@
+{% extends 'legals.html.twig' %}
+
+{% block title %}Mes Donnees & Droits RGPD — StageFlow{% endblock %}
+
+{% block body %}
+<div class="data-rights-container">
+    <header class="page-header">
+        <h1>💾 Mes Données & Droits RGPD</h1>
+        <p class="subtitle">Gérez vos données personnelles et exercez vos droits</p>
+    </header>
+
+    {% if flashMessage %}
+        <div class="alert alert-{{ flashType }}">
+            {{ flashMessage }}
+        </div>
+    {% endif %}
+
+    <div class="rights-grid">
+
+        <!-- ================================================================
+             CARD 1: DOWNLOAD MY DATA
+             ================================================================ -->
+        <section class="rights-card">
+            <h2>📥 Télécharger Mes Données</h2>
+            <p class="description">Obtenir une copie de toutes vos données personnelles au format ZIP portable.</p>
+
+            <div class="details">
+                <h3>Inclus dans l'export :</h3>
+                <ul>
+                    <li>✅ Profil utilisateur (prénom, nom, email)</li>
+                    <li>✅ Historique candidatures</li>
+                    <li>✅ CVs et lettres de motivation</li>
+                    <li>✅ Wish-list (offres sauvegardées)</li>
+                    <li>✅ Évaluations vous concernant</li>
+                </ul>
+
+                <h3>Détails :</h3>
+                <dl>
+                    <dt>Format :</dt>
+                    <dd>ZIP sécurisé (JSON + fichiers PDF)</dd>
+                    <dt>Délai de réponse :</dt>
+                    <dd>Immédiat (généralement &lt; 1 minute)</dd>
+                    <dt>Disponibilité :</dt>
+                    <dd>24 heures (puis suppression automatique)</dd>
+                    <dt>Coût :</dt>
+                    <dd>Gratuit</dd>
+                </dl>
+
+                <p class="info-box">
+                    <strong>Droit légal :</strong> Article 15 du RGPD
+                    (Droit d'accès aux données personnelles)
+                </p>
+            </div>
+
+            <div class="actions">
+                <form method="POST" action="/dashboard/account/export-data?ajax=1" id="export-form">
+                    <button type="submit" class="btn btn-primary">
+                        📥 Générer et télécharger mes données
+                    </button>
+                </form>
+                <p class="note">Un fichier ZIP sera téléchargé immédiatement.</p>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             CARD 2: RETENTION PERIODS
+             ================================================================ -->
+        <section class="rights-card">
+            <h2>⏳ Durée de Conservation Mes Données</h2>
+            <p class="description">Combien de temps vos données sont conservées.</p>
+
+            <table class="retention-table">
+                <thead>
+                    <tr>
+                        <th>Type de Donnée</th>
+                        <th>Durée Rétention</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Compte utilisateur actif</td>
+                        <td>Jusqu'à votre suppression</td>
+                    </tr>
+                    <tr>
+                        <td>CVs et lettres</td>
+                        <td>Jusqu'à suppression candidaturee</td>
+                    </tr>
+                    <tr>
+                        <td>Historique candidatures</td>
+                        <td>Jusqu'à suppression compte</td>
+                    </tr>
+                    <tr>
+                        <td>Sauvegardes DB</td>
+                        <td>Maximum 30 jours</td>
+                    </tr>
+                    <tr>
+                        <td>Logs audit RGPD</td>
+                        <td>3 ans (conformité légale)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <p class="info-box">
+                <strong>👉 Vous contrôlez :</strong> Vous pouvez demander la suppression à tout moment
+                (voir "Supprimer Mon Compte" ci-dessous).
+            </p>
+        </section>
+
+        <!-- ================================================================
+             CARD 3: CORRECT MY DATA
+             ================================================================ -->
+        <section class="rights-card">
+            <h2>✏️ Corriger Mesonnées</h2>
+            <p class="description">Modifier vos informations personnelles inexactes.</p>
+
+            <div class="details">
+                <h3>Vous pouvez corriger :</h3>
+                <ul>
+                    <li>✅ Prénom & Nom</li>
+                    <li>✅ Adresse email</li>
+                    <li>✅ Numéro de téléphone</li>
+                    <li>✅ Campus d'affectation</li>
+                </ul>
+
+                <p class="info-box">
+                    <strong>Droit légal :</strong> Article 16 du RGPD (Droit de rectification)
+                </p>
+            </div>
+
+            <div class="actions">
+                <a href="/dashboard/profile" class="btn btn-secondary">
+                    ✏️ Aller à mon profil →
+                </a>
+            </div>
+        </section>
+
+        <!-- ================================================================
+             CARD 4: DELETE MY ACCOUNT
+             ================================================================ -->
+        <section class="rights-card delete-account-card">
+            <h2>🗑️ Supprimer Mon Compte</h2>
+            <p class="description">Demander la suppression définitive de votre compte et données.</p>
+
+            <div class="warning-box" style="background: #ffe6e6; border-left: 4px solid #dc3545; padding: 1rem; border-radius: 4px; margin-bottom: 1rem;">
+                <p style="color: #721c24; margin: 0;">
+                    <strong>⚠️ ATTENTION :</strong> Cette action est <strong>IRRÉVERSIBLE</strong>.
+                    Votre compte et données seront définitivement supprimés.
+                </p>
+            </div>
+
+            <div class="details">
+                <h3>Processus :</h3>
+                <ol>
+                    <li>Vous cliquez "Demander suppression"</li>
+                    <li>Un email de confirmation est envoyé</li>
+                    <li>Vous cliquez le lien dans l'email (valide 7 jours)</li>
+                    <li>Confirmation → Compte supprimé immédiatement</li>
+                </ol>
+
+                <h3>Sera supprimé :</h3>
+                <ul>
+                    <li>✅ Votre compte et profil</li>
+                    <li>✅ CVs et lettres de motivation</li>
+                    <li>✅ Historique candidatures</li>
+                    <li>✅ Wish-list</li>
+                </ul>
+
+                <h3>Sera conservé (anonymisé) :</h3>
+                <ul>
+                    <li>📊 Sauvegardes DB : 30 jours (raisons techniques)</li>
+                    <li>📋 Logs audit RGPD : 3 ans (conformité légale)</li>
+                </ul>
+
+                <p class="info-box">
+                    <strong>Droit légal :</strong> Article 17 du RGPD (Droit à l'effacement, "droit à l'oubli")
+                </p>
+            </div>
+
+            {% if pendingRequest %}
+                <div class="pending-request">
+                    <p>
+                        <strong>Status :</strong> Demande de suppression en attente<br>
+                        <strong>Demandé le :</strong> {{ pendingRequest.requested_at|date('d/m/Y H:i') }}<br>
+                        <strong>Expires le :</strong> {{ pendingRequest.confirmation_token_expires_at|date('d/m/Y H:i') }}
+                    </p>
+                    <p>Vérifiez votre email pour le lien de confirmation.</p>
+
+                    <form method="POST" action="/dashboard/account/cancel-deletion" style="margin-top: 1rem;">
+                        <button type="submit" class="btn btn-secondary">
+                            Annuler la suppression
+                        </button>
+                    </form>
+                </div>
+            {% else %}
+                <div class="actions">
+                    <form id="delete-confirmation-form" onsubmit="return confirm('Êtes-vous certain de vouloir supprimer votre compte ? C\\'est irréversible.');">
+                        <input type="hidden" name="action" value="request-deletion">
+                        <button type="button" class="btn btn-danger" onclick="showDeleteConfirmation()">
+                            🗑️ Demander suppression du compte
+                        </button>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+
+        <!-- ================================================================
+             CARD 5: GDPR RIGHTS & CONTACT
+             ================================================================ -->
+        <section class="rights-card full-width">
+            <h2>ℹ️ Vos Droits & Contact</h2>
+
+            <div class="rights-summary">
+                <h3>Articles RGPD Applicables :</h3>
+                <ul>
+                    <li><strong>Article 15 :</strong> Droit d'accès → Télécharger mes données</li>
+                    <li><strong>Article 16 :</strong> Droit de rectification → Corriger mes données</li>
+                    <li><strong>Article 17 :</strong> Droit à l'oubli → Supprimer mon compte</li>
+                    <li><strong>Article 20 :</strong> Droit à la portabilité → Export en format portable</li>
+                    <li><strong>Article 21 :</strong> Droit d'opposition → Contacter l'équipe légale</li>
+                </ul>
+
+                <h3>Questions ou Réclamations :</h3>
+                <address>
+                    💌 <strong>Email :</strong> <a href="mailto:legal@example.fr">legal@example.fr</a><br>
+                    📞 <strong>Téléphone :</strong> [À REMPLIR]<br>
+                    🌐 <strong>Legales :</strong> <a href="/legals">/legals</a><br>
+                    <br>
+                    <strong>Délai réponse :</strong> 15 jours ouvrables (GDPR = max 30 jours calendaires)
+                </address>
+
+                <h3>Si toujours pas satisfait :</h3>
+                <p>
+                    Vous avez le droit de déposer plainte auprès de la <strong>CNIL (Commission Nationale de l'Informatique et des Libertés)</strong> :
+                </p>
+                <address>
+                    3 Place de Fontenoy<br>
+                    75007 Paris, France<br>
+                    <a href="https://www.cnil.fr" target="_blank">www.cnil.fr</a> | 
+                    <a href="mailto:plaintes@cnil.fr">plaintes@cnil.fr</a>
+                </address>
+            </div>
+        </section>
+
+    </div>
+
+</div>
+
+
+<script>
+function showDeleteConfirmation() {
+    const confirmed = confirm('⚠️ Êtes-vous CERTAIN de vouloir supprimer votre compte ?\n\nCette action est IRRÉVERSIBLE. Toutes vos données seront supprimées.');
+    if (confirmed) {
+        const form = document.getElementById('delete-confirmation-form');
+        const formData = new FormData(form);
+        
+        fetch('/dashboard/account/request-deletion?ajax=1', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('✅ Demande reçue. Vérifiez votre email pour confirmer.');
+                location.reload();
+            } else {
+                alert('❌ Erreur : ' + data.message);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('❌ Erreur lors de la demande.');
+        });
+    }
+}
+</script>
+
+{% endblock %}
