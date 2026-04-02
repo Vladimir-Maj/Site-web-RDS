@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Repository\CampusRepository;
 use App\Repository\PromotionRepository;
 use App\Models\PromotionModel;
 use App\Models\RoleEnum;
@@ -13,7 +14,8 @@ class PromotionController extends BaseController
 {
     public function __construct(
         Environment $twig,
-        private readonly PromotionRepository $promotionRepository
+        private readonly PromotionRepository $promotionRepository,
+        private readonly CampusRepository $campusRepository
     ) {
         parent::__construct($twig);
     }
@@ -101,5 +103,32 @@ class PromotionController extends BaseController
         }
 
         $this->promotionRepository->deleteById($id);
+    }
+
+    public function getAllAjax(int|string $campusId): void 
+    {
+        $this->abortIfNotPriv();
+
+        $promotions = $this->promotionRepository->getByCampus($campusId);
+
+        header('Content-Type: application/json');
+        echo json_encode($promotions);
+    }
+
+    /**
+     * Render the promotions index page.
+     */
+    public function renderIndex(): void
+    {
+        $this->abortIfNotPriv();
+
+        // Fetch all campuses for the campus selector
+        $campusCtl = new CampusController($this->twig, $this->campusRepository);
+        $allCampuses = $campusCtl->findAllAsAjax(); // Returns array of campuses with id & label
+
+        echo $this->twig->render('promotions/index.html.twig', [
+            'all_campuses' => $allCampuses,
+            'sidebar_active' => 'promotions',
+        ]);
     }
 }
