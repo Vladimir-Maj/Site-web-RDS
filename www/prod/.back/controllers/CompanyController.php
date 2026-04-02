@@ -97,7 +97,8 @@ class CompanyController extends BaseController
             'csrf_token' => Util::getCSRFToken(),
             'error'      => $_SESSION['flash_error'] ?? null,
             'success'    => $_GET['success'] ?? null,
-            'sidebar_active' => 'companies'
+            'sidebar_active' => 'companies',
+            'role' => Util::getRole()->value
         ]);
 
         unset($_SESSION['flash_error']);
@@ -191,6 +192,25 @@ class CompanyController extends BaseController
 
         if (strlen((string) $siren) !== 9) {
             throw new \InvalidArgumentException("Le SIREN doit comporter 9 chiffres.");
+        }
+    }
+
+    public function getCompaniesAjax(): void
+    {
+        try {
+            $filters = [
+                'name'      => $_GET['q'] ?? $_GET['name'] ?? null,
+                'sector_id' => $_GET['sector_id'] ?? null,
+                'status'    => $_GET['status'] ?? 1, // Default to active only if needed
+                'limit'     => (int) ($_GET['limit'] ?? 20),
+            ];
+
+            // Reuse your existing search logic
+            $companies = $this->repo->search($filters);
+            
+            $this->jsonResponse($companies);
+        } catch (Exception $e) {
+            $this->jsonResponse(['error' => 'Failed to fetch companies'], 500);
         }
     }
 }

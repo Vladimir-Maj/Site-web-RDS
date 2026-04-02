@@ -62,31 +62,6 @@ class OfferController extends BaseController
         ]);
     }
 
-    public function update(string $id): void
-    {
-        $this->abortIfNotPriv();
-        $this->validateCSRF();
-
-        $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
-
-        $data = [
-            'title_internship_offer' => $_POST['title'] ?? '',
-            'description_internship_offer' => $_POST['description'] ?? '',
-            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
-            'is_active_internship_offer' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
-            'start_date_internship_offer' => $_POST['start_date'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
-            'company_site_id_internship_offer' => $siteId,
-        ];
-
-        if ($this->offerRepository->update((int) $id, $data)) {
-            header("Location: /app/offers/show/$id?updated=1");
-            exit;
-        }
-
-        $this->abort(500, "Erreur lors de la mise à jour.");
-    }
-
     public function index(): void
     {
         $limit = 10;
@@ -114,34 +89,38 @@ class OfferController extends BaseController
     }
 
     public function search(): void
-    {
-        $filters = [
-            'title_internship_offer' => $_GET['keyword'] ?? null,
-            'city_company_site' => $_GET['city'] ?? null,
-            'duration_weeks_internship_offer' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-            'sort' => $_GET['sort'] ?? 'recent',
-        ];
+{
+    // Collect filters from query parameters
+    $filters = [
+        'keyword'  => $_GET['keyword'] ?? null,
+        'city'     => $_GET['city'] ?? null,
+        'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
+        'sort'     => $_GET['sort'] ?? 'recent',
+    ];
 
-        $limit = 10;
-        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
-        $offset = ($page - 1) * $limit;
+    // Pagination
+    $limit = 10;
+    $page = max(1, (int) ($_GET['page'] ?? 1));
+    $offset = ($page - 1) * $limit;
 
-        $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
+    // Fetch results
+    $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
 
-        $offers = $results['data'] ?? [];
-        $totalCount = $results['total'] ?? 0;
-        $totalPages = (int) ceil($totalCount / $limit);
+    $offers     = $results['data'] ?? [];
+    $totalCount = $results['total'] ?? 0;
+    $totalPages = (int) ceil($totalCount / $limit);
 
-        echo $this->twig->render('offers/offer_search.html.twig', [
-            'offers' => $offers,
-            'filters' => $filters,
-            'count' => $totalCount,
-            'page' => $page,
-            'totalPages' => $totalPages,
-            'isPrivileged' => $this->isPrivileged(),
-            'sidebar_active' => 'offers'
-        ]);
-    }
+    // Render template
+    echo $this->twig->render('offers/offer_search.html.twig', [
+        'offers'         => $offers,
+        'filters'        => $filters,
+        'count'          => $totalCount,
+        'page'           => $page,
+        'totalPages'     => $totalPages,
+        'isPrivileged'   => $this->isPrivileged(),
+        'sidebar_active' => 'offers',
+    ]);
+}
 
     public function searchJson(): void
     {
@@ -180,11 +159,16 @@ class OfferController extends BaseController
             $isWishlisted = $wishlistRepo->exists((int) Util::getUserId(), (int) $offer->id);
         }
 
+        $skillsString = $this->offerRepository->getSkillsAsString((int) $offer->id);
+        $skills = array_filter(array_map('trim', explode(',', $skillsString)));
+
+
         echo $this->twig->render('offers/show.html.twig', [
             'offer' => $offer,
             'isPrivileged' => $this->isPrivileged(),
             'csrf_token' => Util::getCSRFToken(),
             'isWishlisted' => $isWishlisted,
+            'skills' => $skills
         ]);
     }
 
@@ -207,6 +191,17 @@ class OfferController extends BaseController
         ]);
     }
 
+    public function destroy(int $id): void
+    {
+        $this->abortIfNotPriv(); // Added security check from common logic
+        if ($this->offerRepository->delete((int) $id)) {
+            header('Location: /app/offers?deleted=1');
+            exit;
+        }
+
+        $this->abort(400, "Impossible de supprimer cette offre.");
+    }
+
     public function store(): void
     {
         $this->abortIfNotPriv();
@@ -221,6 +216,7 @@ class OfferController extends BaseController
             'start_date_internship_offer' => $_POST['start_date'] ?? null,
             'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
             'company_site_id_internship_offer' => $siteId,
+            'required_skills' => $_POST['required_skills'] ?? null, // <-- added
         ];
 
         if ($this->offerRepository->create($data)) {
@@ -231,14 +227,29 @@ class OfferController extends BaseController
         $this->abort(500, "Erreur lors de la création de l'offre.");
     }
 
-    public function destroy(int $id): void
+    public function update(string $id): void
     {
         $this->abortIfNotPriv();
-        if ($this->offerRepository->delete((int) $id)) {
-            header('Location: /app/offers?deleted=1');
+        $this->validateCSRF();
+
+        $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
+
+        $data = [
+            'title_internship_offer' => $_POST['title'] ?? '',
+            'description_internship_offer' => $_POST['description'] ?? '',
+            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
+            'is_active_internship_offer' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
+            'start_date_internship_offer' => $_POST['start_date'] ?? null,
+            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
+            'company_site_id_internship_offer' => $siteId,
+            'required_skills' => $_POST['required_skills'] ?? null, // <-- added
+        ];
+
+        if ($this->offerRepository->update((int) $id, $data)) {
+            header("Location: /app/offers/show/$id?updated=1");
             exit;
         }
 
-        $this->abort(400, "Impossible de supprimer cette offre.");
+        $this->abort(500, "Erreur lors de la mise à jour.");
     }
 }
