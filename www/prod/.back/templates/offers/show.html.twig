@@ -17,29 +17,29 @@
 				<strong>{{ offer.company_name }}</strong>
 			</p>
 		</div>
-		{% if currentRole == 'student' %}
-			<form action="/app/wishlist/toggle/{{ offer.id }}" method="POST" style="display:inline;">
-				<button type="submit" class="btn {{ isWishlisted ? 'btn-danger' : 'btn-outline' }}">
-					{{ isWishlisted ? '💔 Retirer de la wishlist' : '❤️ Ajouter à la wishlist' }}
-				</button>
-			</form>
-		{% endif %}
-		{# Ensure isPrivileged matches your RoleEnum checks (Admin/Pilote) #}
-		{% if isPrivileged %}
-			<div
-				style="display: flex; gap: 10px;">
-				{# Link to Edit: /app/offers/edit/[HEX_ID] #}
+
+		<div
+			style="display: flex; gap: 10px; align-items: center;">
+			{# Student Actions: Wishlist #}
+			{% if currentRole == 'student' %}
+				<form action="/app/wishlist/toggle/{{ offer.id }}" method="POST" style="display:inline;">
+					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+					<button type="submit" class="btn {{ isWishlisted ? 'btn-danger' : 'btn-outline' }}">
+						{{ isWishlisted ? '💔 Retirer de la wishlist' : '❤️ Ajouter à la wishlist' }}
+					</button>
+				</form>
+			{% endif %}
+
+			{# Admin/Pilot Actions: Edit & Delete #}
+			{% if isPrivileged %}
 				<a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">Modifier</a>
 
-				{# Delete Form: Matches router POST /app/offers/delete/([a-fA-F0-9]{32}) #}
-				<form
-					action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');">
-					{# Always include CSRF for state-changing actions #}
+				<form action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Archiver cette offre ?');" style="display:inline;">
 					<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 					<button type="submit" class="btn btn-danger">Supprimer</button>
 				</form>
-			</div>
-		{% endif %}
+			{% endif %}
+		</div>
 	</div>
 
 	<div class="profile-layout">
@@ -66,20 +66,18 @@
 					</div>
 				</div>
 
-				{# Future logic: /app/offers/show/[HEX_ID]/apply #}
-				{# Future logic: /app/offers/[HEX_ID]/apply #}
-				<form
-					action="/app/offers/{{ offer.id }}/apply" method="GET">
-					{# If this is just a redirect to a form page, GET is fine. 
-					       If this were an immediate action, you'd use POST. #}
-					<button type="submit" class="btn btn-primary w-100 mt-3" style="width: 100%; padding: 10px;">
+				{# Apply Button: Usually only for students #}
+				{% if currentRole == 'student' %}
+					<a href="/app/offers/{{ offer.id }}/apply" class="btn btn-primary w-100 mt-3" style="display: block; text-align: center; padding: 10px; text-decoration: none;">
 						Postuler via StageFlow
-					</button>
-				</form>
+					</a>
+				{% endif %}
 			</div>
 
 			<div class="notice notice-warn mt-2">
-				<p class="text-sm">Attention : Ne partagez jamais vos coordonnées bancaires lors d'une candidature.</p>
+				<p class="text-sm">
+					<strong>Attention :</strong>
+					Ne partagez jamais vos coordonnées bancaires lors d'une candidature.</p>
 			</div>
 		</aside>
 
@@ -93,15 +91,22 @@
 				</div>
 			</div>
 
-			{% if offer.required_skills %}
+			{# .back/views/offers/show.html.twig #}
+
+			{% if skills is not empty %}
 				<div class="legal-section mt-2">
 					<div class="legal-section-header">
 						<h2>Compétences requises</h2>
 					</div>
-					<div class="legal-section-body">
-						<div style="display: flex; gap: 8px; flex-wrap: wrap;">
-							{% for skill in offer.required_skills|split(',') %}
-								<span class="tag tag-slate">{{ skill|trim }}</span>
+					<div
+						class="legal-section-body">
+						{# We use your container class to handle the gap and flex layout #}
+						<div class="skills-container" style="border: none; padding: 0;">
+							{% for skill in skills %}
+								<div class="skill-tag">
+									{{ skill }}
+									{# No button here because this is the view-only mode #}
+								</div>
 							{% endfor %}
 						</div>
 					</div>

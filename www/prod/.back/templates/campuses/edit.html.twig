@@ -1,0 +1,35 @@
+{# .back/views/campus/edit.html.twig #}
+{% extends "dashboard/layout.html.twig" %}
+
+{% block title %}Modifier le Campus — StageFlow{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-header">
+        <h1>Modifier le Campus</h1>
+        <p>Mettre à jour les informations d'un campus existant.</p>
+    </div>
+
+    {% if error %}
+        <div class="notice notice-danger">
+            <div class="notice-icon">⚠️</div>
+            <p>{{ error }}</p>
+        </div>
+    {% endif %}
+
+    <form method="POST" action="/dashboard/campus/edit/{{ campus.id_campus }}">
+        <div class="form-group">
+            <label>Nom du campus</label>
+            <input type="text" name="name_campus" value="{{ campus.name_campus }}" required>
+        </div>
+
+        <div class="form-group">
+            <label>Adresse</label>
+            <input type="text" name="address_campus" value="{{ campus.address_campus|default('') }}">
+        </div>
+
+        <div style="display: flex; gap: 10px; margin-top: 1rem;">
+            <button type="submit" class="btn btn-primary">Enregistrer</button>
+            <a href="/dashboard/campus" class="btn btn-ghost">Annuler</a>
+        </div>
+    </form>
+{% endblock %}

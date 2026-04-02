@@ -2,44 +2,54 @@
 {% extends "base.html.twig" %}
 
 {% block body %}
-	{% set role = user.role.value|default(user.role|default('guest')) %}
-	<div class="dashboard-shell">
-		<aside class="dashboard-sidebar">
-			<h2 class="dashboard-sidebar-title">Dashboard</h2>
-			<p class="dashboard-role">Role: {{ role|upper }}</p>
-			<nav class="dashboard-menu">
-				<a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
-					Gestion des entreprises
-				</a>
-				<a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
-					Gestion des offres
-				</a>
+    {# Compatibility: Robust role detection handles both BackedEnums and raw strings #}
+    {% set role = user.role.value|default(user.role|default('guest')) %}
 
-				{% if user and role == 'student' %}
-					<a href="/dashboard/applications" class="dashboard-menu-link {{ sidebar_active|default('') == 'applications' ? 'active' : '' }}">
-						Mes candidatures
-					</a>
-				{% endif %}
+    <div class="dashboard-shell">
+        <aside class="dashboard-sidebar">
+            <h2 class="dashboard-sidebar-title">Dashboard</h2>
+            <p class="dashboard-role">Role: {{ role|upper }}</p>
+            
+            <nav class="dashboard-menu">
+                {# Global Access or Common Links #}
+                <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
+                    Gestion des offres
+                </a>
 
-				{% if user and role == 'admin' %}
-					<a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
-						Gestion des pilotes
-					</a>
-					<a href="/dashboard/campuses" class="dashboard-menu-link {{ sidebar_active|default('') == 'campuses' ? 'active' : '' }}">
-						Gestion des campus
-					</a>
-				{% endif %}
+                {# Admin & Pilote Permissions #}
+                {% if role in ['admin', 'pilote'] %}
+                    <a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
+                        Gestion des entreprises
+                    </a>
+                    <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
+                        Gestion des étudiants
+                    </a>
+                {% endif %}
 
-				{% if user and (role == 'admin' or role == 'pilote') %}
-					<a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
-						Gestion des étudiants
-					</a>
-				{% endif %}
-			</nav>
-		</aside>
+                {# Admin Specific #}
+                {% if role == 'admin' %}
+                    <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
+                        Gestion des pilotes
+                    </a>
+                    <a href="/dashboard/campuses" class="dashboard-menu-link {{ sidebar_active|default('') == 'campuses' ? 'active' : '' }}">
+                        Gestion des campus
+                    </a>
+                {% endif %}
 
-		<section class="dashboard-main">
-			{% block dashboard_content %}{% endblock %}
-		</section>
-	</div>
+                {# Student Specific #}
+                {% if role == 'student' %}
+                    <a href="/dashboard/applications" class="dashboard-menu-link {{ sidebar_active|default('') == 'applications' ? 'active' : '' }}">
+                        Mes candidatures
+                    </a>
+                    <a href="/dashboard/wishlist" class="dashboard-menu-link {{ sidebar_active|default('') == 'wishlist' ? 'active' : '' }}">
+                        Ma liste de souhaits
+                    </a>
+                {% endif %}
+            </nav>
+        </aside>
+
+        <section class="dashboard-main">
+            {% block dashboard_content %}{% endblock %}
+        </section>
+    </div>
 {% endblock %}
