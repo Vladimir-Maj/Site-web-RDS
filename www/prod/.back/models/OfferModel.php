@@ -37,6 +37,9 @@ class OfferModel
     public ?string $location = null;
     public ?string $address = null;
 
+    public ?int $views_internship_offer = 0;
+    public int $views = 0;
+
     public static function fromArray(array $data): self
     {
         $offer = new self();
@@ -44,6 +47,13 @@ class OfferModel
         $id = isset($data['id_internship_offer']) && $data['id_internship_offer'] !== ''
             ? (int) $data['id_internship_offer']
             : (isset($data['id']) && $data['id'] !== '' ? (int) $data['id'] : null);
+
+        $views = isset($data['views_internship_offer'])
+            ? (int) $data['views_internship_offer']
+            : (isset($data['views']) ? (int) $data['views'] : 0);
+
+        $offer->views_internship_offer = $views;
+        $offer->views = $views;
 
         $title = $data['title_internship_offer'] ?? ($data['title'] ?? null);
         $description = $data['description_internship_offer'] ?? ($data['description'] ?? null);
