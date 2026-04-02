@@ -24,7 +24,7 @@
         </p>
 
         <div class="card-actions">
-            <a href="/app/offers/show/{{ offer.id }}" class="btn btn-primary">
+            <a href="/app/offers/show/{{ offer.id }}{% if from is defined %}?from={{ from }}{% endif %}" class="btn btn-primary">
                 Voir l'offre
             </a>
 
