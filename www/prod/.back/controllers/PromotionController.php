@@ -1,38 +1,38 @@
 <?php
 
-declare (strict_types= 1);
+declare(strict_types=1);
+
+namespace App\Controllers;
 
 use App\Repository\PromotionRepository;
 use App\Models\PromotionModel;
 use App\Models\RoleEnum;
+use Twig\Environment;
 
-class PromotionController extends BaseController {
+class PromotionController extends BaseController 
+{
     public function __construct(
         Environment $twig,
-        private PromotionRepository $promotionRepository) {
+        private readonly PromotionRepository $promotionRepository
+    ) {
         parent::__construct($twig);
     }
 
-
     /**
-     *
-     * @return array of Every Promotion
+     * Get all promotions for a specific campus.
+     * * @return array Array of Promotion objects
      */
-    public function index(int $campusId) : array {
+    public function index(int $campusId): array 
+    {
         $this->abortIfNotPriv();
-
         return $this->promotionRepository->getByCampus($campusId);
-
     }
 
     /**
-     *
-     *
-     *
-     *
+     * Persist a Promotion model directly.
      */
-
-    public function push(PromotionModel $model) : void {
+    public function push(PromotionModel $model): void 
+    {
         $this->abortIfNotPriv();
 
         $success = $this->promotionRepository->save($model);
@@ -43,13 +43,17 @@ class PromotionController extends BaseController {
     }
 
     /**
-     * array $model a map of attributes to store.
-     * $model->id_promotion is nullable
+     * Validate and store promotion data from an associative array.
+     * Uses the updated schema: {attribute}_{table_name}
      */
-    public function store(array $model) : void {
+    public function store(array $model): void 
+    {
         $this->abortIfNotPriv();
 
-        if (empty($model['label_promotion']) || empty($model['academic_year_promotion']) || empty($model['campus_id_promotion'])) {
+        // Validation using new schema naming
+        if (empty($model['label_promotion']) || 
+            empty($model['academic_year_promotion']) || 
+            empty($model['campus_id_promotion'])) {
             $this->jsonError('Fields "label_promotion", "academic_year_promotion" and "campus_id_promotion" are required', 422);
         }
 
@@ -65,10 +69,13 @@ class PromotionController extends BaseController {
         if (!$success) {
             $this->jsonError('Failed to store promotion', 500);
         }
-
     }
 
-    public function getById(int $id) : PromotionModel {
+    /**
+     * Retrieve a single promotion by its ID.
+     */
+    public function getById(int $id): PromotionModel 
+    {
         $this->abortIfNotPriv();
 
         $promotion = $this->promotionRepository->getById($id);
@@ -80,7 +87,11 @@ class PromotionController extends BaseController {
         return $promotion;
     }
 
-    public function deleteById(int $id) : void {
+    /**
+     * Delete a promotion. Restricted to Admin role.
+     */
+    public function deleteById(int $id): void 
+    {
         $this->checkRole([RoleEnum::Admin]);
 
         $promotion = $this->promotionRepository->getById($id);
