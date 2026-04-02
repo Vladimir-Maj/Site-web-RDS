@@ -1,56 +1,66 @@
 {% extends "dashboard/layout.html.twig" %}
+
 {% block title %}
-	{% if is_student %}Mes Candidatures{% else %}Candidatures de
-		{{ student.first_name }}
-		{{ student.last_name }}
-	{% endif %}
-	— StageFlow
+    {% if is_student %}Mes Candidatures{% else %}Candidatures de {{ student.first_name }} {{ student.last_name }}{% endif %}
+    — StageFlow
 {% endblock %}
 
 {% block dashboard_content %}
-	<header class="page-header">
-		<div>
-			{% if is_student %}
-				<h1>Mes Candidatures</h1>
-				<p>Retrouvez ici toutes vos candidatures de stage</p>
-			{% else %}
-				<h1>Candidatures de
-					{{ student.first_name }}
-					{{ student.last_name }}</h1>
-				<p>Vue administrateur — Étudiant ID :
-					{{ student.id }}</p>
-			{% endif %}
-		</div>
-	</header>
+    <header class="page-header">
+        <div>
+            {% if is_student %}
+                <h1>Mes Candidatures</h1>
+                <p>Retrouvez ici toutes vos candidatures de stage</p>
+            {% else %}
+                <h1>Candidatures de {{ student.first_name }} {{ student.last_name }}</h1>
+                <p>Vue administrateur — Étudiant ID : {{ student.id }}</p>
+            {% endif %}
+        </div>
+    </header>
 
-	<div class="card">
-		<div class="card-body" style="display:block;">
-			{% if applications is empty %}
-				<p>Aucune candidature trouvée.</p>
-			{% else %}
-				<table style="width:100%; border-collapse:collapse;">
-					<thead>
-						<tr>
-							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">ID Candidature</th>
-							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">ID Offre</th>
-							<th style="text-align:left; padding:8px; border-bottom:1px solid #ddd;">Statut</th>
-						</tr>
-					</thead>
-					<tbody>
-						{% for app in applications %}
-							<tr>
-								<td style="padding:8px; border-bottom:1px solid #eee;">{{ app.id }}</td>
-								<td style="padding:8px; border-bottom:1px solid #eee;">{{ app.offer_id }}</td>
-								<td style="padding:8px; border-bottom:1px solid #eee;">
-									<span class="badge badge-{{ app.status == 'pending' ? 'warning' : (app.status == 'accepted' ? 'success' : 'danger') }}">
-										{{ app.status }}
-									</span>
-								</td>
-							</tr>
-						{% endfor %}
-					</tbody>
-				</table>
-			{% endif %}
-		</div>
-	</div>
+    <div class="card">
+        <div class="card-body" style="display:block; padding: 20px;">
+            {% if applications is empty %}
+                <p>Aucune candidature trouvée.</p>
+            {% else %}
+                <table style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background-color: #f8f9fa;">
+                            <th style="text-align:left; padding:12px; border-bottom:2px solid #dee2e6;">Offre #</th>
+                            <th style="text-align:left; padding:12px; border-bottom:2px solid #dee2e6;">Date d'application</th>
+                            <th style="text-align:left; padding:12px; border-bottom:2px solid #dee2e6;">Documents</th>
+                            <th style="text-align:left; padding:12px; border-bottom:2px solid #dee2e6;">Statut</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for app in applications %}
+                            <tr>
+                                {# Using legacy aliases for simplicity, but app.offer_id_application works too #}
+                                <td style="padding:12px; border-bottom:1px solid #eee;">
+                                    <strong>{{ app.offer_id }}</strong>
+                                </td>
+                                <td style="padding:12px; border-bottom:1px solid #eee;">
+                                    {{ app.applied_at ? app.applied_at|date("d/m/Y") : 'N/A' }}
+                                </td>
+                                <td style="padding:12px; border-bottom:1px solid #eee;">
+                                    {% if app.cv_path %}
+                                        <a href="{{ app.cv_path }}" target="_blank" style="margin-right: 10px;">📄 CV</a>
+                                    {% endif %}
+                                    {% if app.cover_letter_path %}
+                                        <a href="{{ app.cover_letter_path }}" target="_blank">✉️ LM</a>
+                                    {% endif %}
+                                </td>
+                                <td style="padding:12px; border-bottom:1px solid #eee;">
+                                    <span class="badge badge-{{ app.status == 'pending' ? 'warning' : (app.status == 'accepted' ? 'success' : 'danger') }}" 
+                                          style="padding: 5px 10px; border-radius: 4px; text-transform: capitalize;">
+                                        {{ app.status }}
+                                    </span>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

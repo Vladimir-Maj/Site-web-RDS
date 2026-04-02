@@ -1,0 +1,60 @@
+{# .back/views/campus/index.html.twig #}
+{% extends "dashboard/layout.html.twig" %}
+
+{% block title %}Catalogue des Campus — StageFlow{% endblock %}
+
+{% block dashboard_content %}
+    <div class="page-header">
+        <div>
+            <h1>Catalogue des Campus</h1>
+            <p>Gestion centrale des campus et leurs adresses.</p>
+        </div>
+        {% if isPrivileged %}
+            <div style="display: flex; gap: 10px;">
+                <a href="/dashboard/campus/new" class="btn btn-primary">+ Ajouter un Campus</a>
+            </div>
+        {% endif %}
+    </div>
+
+    {# Search / Filter Bar #}
+    <form method="GET" action="/dashboard/campus" class="search-bar">
+        <div class="form-group">
+            <label>Mots-clés</label>
+            <input type="text" name="keyword" placeholder="Nom, adresse..." value="{{ filters.keyword|default('') }}">
+        </div>
+        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
+        <a href="/dashboard/campus" class="btn btn-ghost">Réinitialiser</a>
+    </form>
+
+    <div class="notice notice-info">
+        <div class="notice-icon">ℹ️</div>
+        <p>
+            Il y a actuellement <strong>{{ campuses|length }} campus{{ campuses|length > 1 ? 's' : '' }}</strong>
+            correspondant à vos critères.
+        </p>
+    </div>
+
+    <div class="campus-list">
+        {% for campus in campuses %}
+            <div class="card" style="padding: 1.5rem; margin-bottom: 1rem;">
+                <h2>{{ campus.name_campus }}</h2>
+                {% if campus.address_campus %}
+                    <p class="text-muted">{{ campus.address_campus }}</p>
+                {% else %}
+                    <p class="text-muted"><em>Adresse non renseignée</em></p>
+                {% endif %}
+                {% if isPrivileged %}
+                    <div style="margin-top: 0.5rem;">
+                        <a href="/dashboard/campus/edit/{{ campus.id_campus }}" class="btn btn-sm btn-ghost">Modifier</a>
+                        <a href="/dashboard/campus/delete/{{ campus.id_campus }}" class="btn btn-sm btn-danger" 
+                           onclick="return confirm('Voulez-vous vraiment supprimer ce campus ?');">Supprimer</a>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="card" style="padding: 2rem; text-align: center;">
+                <p class="text-muted">Aucun campus ne correspond à votre recherche.</p>
+            </div>
+        {% endfor %}
+    </div>
+{% endblock %}

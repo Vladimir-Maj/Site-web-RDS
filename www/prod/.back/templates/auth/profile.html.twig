@@ -1,106 +1,36 @@
 {% extends "base.html.twig" %}
-
 {% block body %}
-	<main class="container">
-		<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
-			<h1>Mon compte</h1>
-			{# Updated to MVC route #}
-			<a href="/logout" class="btn btn-outline">Déconnexion</a>
-		</div>
+<main class="container">
+    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+        <h1>Mon compte</h1>
+        <a href="/logout" class="btn btn-outline">Déconnexion</a>
+    </div>
 
-		<div
-			class="profile-layout" style="display: flex; gap: 2rem;">
-			{# Colonne latérale #}
-			<aside style="flex: 1;">
-				<div class="card" style="text-align: center; padding: 2rem;">
-					<div
-						class="avatar" style="width: 80px; height: 80px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1rem;">
-						{# Using first char of email as fallback if username isn't set #}
-						{{ (user.username|default(user.email.asString))|slice(0, 1)|upper }}
-					</div>
-					<h3 style="margin-bottom: 0.5rem;">{{ user.username|default('Utilisateur') }}</h3>
-					<p style="color: #666; margin-bottom: 1rem;">{{ user.email.asString }}</p>
-					<span class="tag" style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
-						{{ user.role.value|upper }}
-					</span>
-				</div>
-			</aside>
+    <div class="profile-layout" style="display: flex; gap: 2rem;">
 
-			{# Section principale #}
-			<section style="flex: 2;">
-				<div class="card" style="padding: 2rem;">
-					<h2 style="margin-bottom: 1.5rem;">Informations personnelles</h2>
-					{# Handle the date format from the created_at string #}
-					{# Change line 32 to: #}
-					<p>
-						<strong>Membre depuis :</strong>
-						{{ user.created_at ? user.created_at|date('d/m/Y') : 'Non renseigné' }}</p>
+        <aside style="flex: 1;">
+            <div class="card" style="text-align: center; padding: 2rem;">
+                <div class="avatar" style="width: 80px; height: 80px; background: #6366f1; color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1rem;">
+                    {{ (user.first_name_user|default(user.email_user))|slice(0, 1)|upper }}
+                </div>
+                <h3 style="margin-bottom: 0.5rem;">{{ user.first_name_user }} {{ user.last_name_user }}</h3>
+                <p style="color: #666; margin-bottom: 1rem;">{{ user.email_user }}</p>
+                <span class="tag" style="background: #e0e7ff; color: #4338ca; padding: 0.2rem 0.8rem; border-radius: 12px; font-size: 0.8rem; font-weight: bold;">
+                    {{ user.role.value|upper }}
+                </span>
+            </div>
+        </aside>
 
-					<hr style="margin: 2rem 0; border: 0; border-top: 1px solid #eee;">
+        <section style="flex: 2;">
+            <div class="card" style="padding: 2rem;">
+                <h2 style="margin-bottom: 1.5rem;">Informations personnelles</h2>
+                <p>
+                    <strong>Membre depuis :</strong>
+                    {{ user.created_at_user ? user.created_at_user|date('d/m/Y') : 'Non renseigné' }}
+                </p>
+            </div>
+        </section>
 
-					<h2 style="margin-bottom: 1.5rem;">CV / Documents</h2>
-
-					{% if user.cv_path %}
-						{# State: CV Exists #}
-						<div style="display: flex; gap: 1rem; align-items: center;">
-							<a href="{{ user.cv_path }}" class="btn btn-primary" target="_blank">Voir mon CV actuel</a>
-							<a href="/dashboard/profile/upload-cv" class="btn btn-ghost">Modifier le fichier</a>
-						</div>
-					{% else %}
-						{# State: Interactive Drop Zone #}
-						<form action="/dashboard/profile/upload-cv" method="POST" enctype="multipart/form-data" id="quickUploadForm">
-							<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-							<label id="drop-zone" style="display: block; border: 2px dashed #cbd5e1; border-radius: 12px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.2s ease; background: #f8fafc;">
-								<span style="font-size: 2.5rem; display: block; margin-bottom: 1rem;">📄</span>
-								<p style="margin-bottom: 0.5rem; font-weight: bold; color: #1e293b;">Déposez votre CV ici</p>
-								<p style="font-size: 0.85rem; color: #64748b;">ou cliquez pour parcourir (PDF max 2Mo)</p>
-								<input type="file" name="cv_file" id="cv_file_hidden" accept=".pdf" style="display: none;">
-							</label>
-						</form>
-
-						 <script>
-						        const dropZone = document.getElementById('drop-zone');
-						        const fileInput = document.getElementById('cv_file_hidden');
-						        const form = document.getElementById('quickUploadForm');
-						
-						        if (dropZone) {
-						            // Click to upload
-						            fileInput.addEventListener('change', () => {
-						                if (fileInput.files.length > 0) form.submit();
-						            });
-						
-						            // Visual feedback for drag
-						            ['dragenter', 'dragover'].forEach(name => {
-						                dropZone.addEventListener(name, (e) => {
-						                    e.preventDefault();
-						                    dropZone.style.borderColor = '#6366f1';
-						                    dropZone.style.background = '#eff6ff';
-						                });
-						            });
-						
-						            ['dragleave', 'drop'].forEach(name => {
-						                dropZone.addEventListener(name, (e) => {
-						                    e.preventDefault();
-						                    dropZone.style.borderColor = '#cbd5e1';
-						                    dropZone.style.background = '#f8fafc';
-						                });
-						            });
-						
-						            // Handle the drop
-						            dropZone.addEventListener('drop', e => {
-						                const files = e.dataTransfer.files;
-						                if (files.length > 0 && files[0].type === 'application/pdf') {
-						                    fileInput.files = files;
-						                    form.submit();
-						                } else {
-						                    alert("Seuls les fichiers PDF sont acceptés.");
-						                }
-						            });
-						        }
-						    </script>
-					{% endif %}
-				</div>
-			</section>
-		</div>
-	</main>
+    </div>
+</main>
 {% endblock %}
