@@ -15,7 +15,7 @@ use App\Controllers\PromotionController;
 use App\Controllers\SiteController;
 use App\Controllers\SkillController;
 use App\Controllers\StudentController;
-use App\Controllers\WishlistController;
+use App\Controllers\WishListController;
 use App\Controllers\LegalsController;
 use App\Controllers\DataExportController;
 use App\Controllers\AccountDeletionController;
@@ -114,7 +114,7 @@ $appHandler = fn($pdo, $twig) => new ApplicationController(
     $twig
 );
 
-$wishlistHandler = fn($pdo, $twig) => new WishlistController(new WishlistRepository($pdo), $twig);
+$wishlistHandler = fn($pdo, $twig) => new WishListController(new WishlistRepository($pdo), $twig);
 $pilotHandler = fn($pdo, $twig) => new PilotController(new UserRepository($pdo), $twig, $pdo);
 $studentHandler = fn($pdo, $twig) => new StudentController(new UserRepository($pdo), $twig, $pdo);
 $campusHandler = fn($pdo, $twig) => new CampusController($twig, new CampusRepository($pdo));
@@ -123,7 +123,7 @@ $legalsHandler = fn($pdo, $twig) => new LegalsController($twig);
 $complianceLogger = new ComplianceLogger($pdo);
 $dataExportHandler = fn($pdo, $twig) => new DataExportController($pdo, $twig, $complianceLogger);
 //$dataDeletionManager = new DataDeletionManager($pdo, $complianceLogger, 'https://example.fr', 'legal@example.fr');
-$accountDeletionHandler = fn($pdo, $twig) => new AccountDeletionController($pdo, $twig, $complianceLogger, $dataDeletionManager);
+//$accountDeletionHandler = fn($pdo, $twig) => new AccountDeletionController($pdo, $twig, $complianceLogger, $dataDeletionManager);
 
 $promotionHandler = fn($pdo, $twig) => new PromotionController(
     $twig,
@@ -366,7 +366,7 @@ $router->add(
     'GET',
     '/dashboard/offers',
     fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index(),
-    roles: $staff
+    roles: $everyone
 );
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -387,6 +387,14 @@ $router->add(
     fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),
     roles: $staff
 );
+
+$router->add(
+    'POST',
+    '/api/skills/save' . $idPattern,
+    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->handleSave(),
+    roles: $staff
+);
+
 
 $router->add(
     'PATCH',
@@ -454,7 +462,7 @@ $router->add(
 $router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: [RoleEnum::Pilote->value]);
 // API — Update application status
 $router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: [RoleEnum::Pilote->value]);
-    
+
 // ════════════════════════════════════════════════════════════════════════════
 // WISHLIST (Student Management)
 // ════════════════════════════════════════════════════════════════════════════

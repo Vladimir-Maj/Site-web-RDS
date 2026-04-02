@@ -6,9 +6,8 @@ namespace App\Controllers;
 use App\Repository\WishListRepository;
 use Twig\Environment;
 use App\Util;
-use Twig\Environment;
 
-class WishlistController extends BaseController
+class WishListController extends BaseController
 {
     public function __construct(
         private WishListRepository $wishlistRepository,

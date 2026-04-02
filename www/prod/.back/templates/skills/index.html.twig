@@ -1,9 +1,9 @@
 {# .back/views/skills/index.html.twig #}
-{% extends "base.html.twig" %}
+{% extends "dashboard/layout.html.twig" %}
 
 {% block title %}Gestion des Compétences — StageFlow{% endblock %}
 
-{% block body %}
+{% block dashboard_content %}
     <div class="page-header">
         <div>
             <h1>Gestion des Compétences</h1>
@@ -11,96 +11,138 @@
         </div>
     </div>
 
-    {# Form for Creating/Updating #}
+    {# --- FORM CARD --- #}
     <div class="card" style="margin-bottom: 2rem; border-left: 4px solid var(--primary-color);">
-        <form method="POST" action="/app/skills/save" id="skill-form">
-            <input type="hidden" name="id" id="skill-id" value="">
-            
+        <div id="skill-form"> {# Changed from <form> to <div> to prevent accidental native submission #}
+            <input type="hidden" id="skill-id" value="">
+
             <div style="display: flex; align-items: flex-end; gap: 15px; padding: 1rem;">
                 <div class="form-group" style="flex-grow: 1; margin-bottom: 0;">
                     <label id="form-label-text">Ajouter une nouvelle compétence</label>
-                    <input type="text" name="label" id="skill-label" placeholder="ex: Docker, React, Management..." required>
+                    <input type="text" id="skill-label" placeholder="ex: Docker, React..." required>
                 </div>
-                <button type="submit" class="btn btn-primary" id="submit-btn">Enregistrer</button>
+                <button type="button" class="btn btn-primary" id="submit-btn" onclick="saveSkill()">Enregistrer</button>
                 <button type="button" class="btn btn-ghost" id="cancel-btn" style="display: none;" onclick="resetSkillForm()">Annuler</button>
             </div>
-        </form>
+        </div>
     </div>
 
-    {# Flash Notifications using variables passed from Controller #}
+    {# --- FLASH NOTIFICATIONS (Still useful for redirect feedback) --- #}
     {% if status or error %}
-        <div class="notice notice-info" style="{{ error ? 'border-color: #ff5555;' : '' }}">
+        <div class="notice {{ error ? 'notice-error' : 'notice-info' }}">
             <div class="notice-icon">{{ error ? '⚠️' : '✅' }}</div>
             <p>
                 {% if status == 'success' %}Compétence enregistrée avec succès.
-                {% elseif status == 'deleted' %}Compétence supprimée avec succès.
-                {% elseif error == 'label_required' %}Le libellé est obligatoire.
-                {% elseif error == 'save_failed' %}Échec de l'enregistrement en base de données.
+                {% elseif status == 'deleted' %}Compétence supprimée.
+                {% elseif error == 'save_failed' %}Échec de l'opération.
                 {% else %}Action effectuée.{% endif %}
             </p>
         </div>
     {% endif %}
 
-    <div class="card">
-        <table style="width: 100%; border-collapse: collapse;">
+    {# --- DATA TABLE --- #}
+    <div class="card p-0 overflow-hidden">
+        <table class="table">
             <thead>
-                <tr style="text-align: left; border-bottom: 1px solid var(--border-color); color: var(--text-muted);">
-                    <th style="padding: 1rem;">Compétence</th>
-                    <th style="padding: 1rem;">ID Système</th>
-                    <th style="padding: 1rem; text-align: right;">Actions</th>
+                <tr>
+                    <th>Compétence</th>
+                    <th>ID Système</th>
+                    <th class="text-right">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for skill in skills %}
-                    <tr style="border-bottom: 1px solid var(--border-color);">
-                        <td style="padding: 1rem;">
-                            <span class="badge" style="background: var(--bg-secondary); border: 1px solid var(--primary-color); padding: 5px 12px; border-radius: 4px; font-weight: bold;">
-                                {{ skill.label }}
+                    <tr id="skill-row-{{ skill.id_skill }}">
+                        <td>
+                            <span class="badge" style="background: var(--bg-secondary); border: 1px solid var(--primary-color); color: var(--text-main); font-weight: bold;">
+                                {{ skill.label_skill }}
                             </span>
                         </td>
-                        <td style="padding: 1rem; font-family: monospace; font-size: 0.85rem; opacity: 0.7;">
-                            {{ skill.id }}
-                        </td>
-                        <td style="padding: 1rem; text-align: right;">
+                        <td><span class="text-xs text-muted" style="font-family: monospace;">#{{ skill.id_skill }}</span></td>
+                        <td class="text-right">
                             <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                                <button type="button" class="btn btn-ghost" 
-                                        onclick="editSkill('{{ skill.id }}', '{{ skill.label|e('js') }}')">
-                                    Modifier
-                                </button>
-
-                                <form action="/app/skills/delete/{{ skill.id }}" method="POST" onsubmit="return confirm('Supprimer définitivement cette compétence ?');">
-                                    <button type="submit" class="btn btn-ghost" style="color: #ff5555;">Supprimer</button>
-                                </form>
+                                <button type="button" class="btn btn-ghost btn-sm" onclick="editSkill('{{ skill.id_skill }}', '{{ skill.label_skill|e('js') }}')">Modifier</button>
+                                <button type="button" class="btn btn-ghost btn-sm" style="color: var(--error-color, #ff5555);" onclick="confirmDelete('{{ skill.id_skill }}')">Supprimer</button>
                             </div>
                         </td>
                     </tr>
                 {% else %}
-                    <tr>
-                        <td colspan="3" style="padding: 4rem; text-align: center;" class="text-muted">
-                            Aucune compétence trouvée.
-                        </td>
-                    </tr>
+                    <tr><td colspan="3" class="text-center p-4 text-muted">Aucune compétence trouvée.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
     <script>
-        function editSkill(id, label) {
-            document.getElementById('skill-id').value = id;
-            document.getElementById('skill-label').value = label;
-            document.getElementById('form-label-text').innerText = "Modifier la compétence : " + label;
-            document.getElementById('submit-btn').innerText = "Mettre à jour";
-            document.getElementById('cancel-btn').style.display = "inline-block";
-            document.getElementById('skill-label').focus();
-        }
+    /**
+     * Handles both Create (POST) and Update (PATCH)
+     */
+    async function saveSkill() {
+        const id = document.getElementById('skill-id').value;
+        const label = document.getElementById('skill-label').value.trim();
 
-        function resetSkillForm() {
-            document.getElementById('skill-id').value = "";
-            document.getElementById('skill-label').value = "";
-            document.getElementById('form-label-text').innerText = "Ajouter une nouvelle compétence";
-            document.getElementById('submit-btn').innerText = "Enregistrer";
-            document.getElementById('cancel-btn').style.display = "none";
+        if (!label) return alert("Le libellé est requis.");
+
+        // logic: if id exists, we use PATCH /update/{id}, else POST /save
+        const isUpdate = id !== "";
+        const url = isUpdate ? `/api/skills/update/${id}` : `/api/skills/create`;
+        const method = isUpdate ? 'PATCH' : 'POST';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ label_skill: label })
+            });
+
+            if (response.ok) {
+                // Refresh to show the updated list and flash messages
+                window.location.href = '/dashboard/skills?status=success';
+            } else {
+                const err = await response.json();
+                alert("Erreur: " + (err.error || "Échec de l'enregistrement"));
+            }
+        } catch (e) {
+            console.error(e);
         }
+    }
+
+    /**
+     * Triggers the DELETE /api/skills/delete/{id} route
+     */
+    async function confirmDelete(id) {
+        if (!confirm('Supprimer définitivement cette compétence ?')) return;
+
+        try {
+            const response = await fetch(`/api/skills/delete/${id}`, {
+                method: 'DELETE'
+            });
+
+            if (response.ok) {
+                window.location.href = '/dashboard/skills?status=deleted';
+            } else {
+                alert("Impossible de supprimer cette compétence.");
+            }
+        } catch (error) {
+            console.error("Delete request failed", error);
+        }
+    }
+
+    function editSkill(id, label) {
+        document.getElementById('skill-id').value = id;
+        document.getElementById('skill-label').value = label;
+        document.getElementById('form-label-text').innerText = "Modifier : " + label;
+        document.getElementById('submit-btn').innerText = "Mettre à jour";
+        document.getElementById('cancel-btn').style.display = "inline-block";
+        document.getElementById('skill-label').focus();
+    }
+
+    function resetSkillForm() {
+        document.getElementById('skill-id').value = "";
+        document.getElementById('skill-label').value = "";
+        document.getElementById('form-label-text').innerText = "Ajouter une nouvelle compétence";
+        document.getElementById('submit-btn').innerText = "Enregistrer";
+        document.getElementById('cancel-btn').style.display = "none";
+    }
     </script>
 {% endblock %}
