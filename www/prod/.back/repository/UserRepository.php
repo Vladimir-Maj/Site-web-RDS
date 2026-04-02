@@ -289,20 +289,27 @@ class UserRepository
         $offset = ($page - 1) * $limit;
 
         $sql = "SELECT
-                u.id_user AS id,
-                u.email_user AS email,
-                u.first_name_user AS first_name,
-                u.last_name_user AS last_name,
-                u.is_active_user AS is_active,
-                u.created_at_user AS created_at
+                u.id_user          AS id,
+                u.email_user       AS email,
+                u.first_name_user  AS first_name,
+                u.last_name_user   AS last_name,
+                u.is_active_user   AS is_active,
+                u.created_at_user  AS created_at
             FROM user u
             INNER JOIN pilot p ON u.id_user = p.id_pilot
-                WHERE 1=1";
+            WHERE 1=1";
 
         $params = [];
+
         if (!empty($filters['name'])) {
-            $sql .= " AND (u.first_name_user LIKE :name OR u.last_name_user LIKE :name OR u.email_user LIKE :name)";
-            $params['name'] = '%' . $filters['name'] . '%';
+            // ✅ Three distinct placeholders for the same value
+            $sql .= " AND (u.first_name_user LIKE :name1
+                    OR u.last_name_user  LIKE :name2
+                    OR u.email_user      LIKE :name3)";
+            $nameVal = '%' . $filters['name'] . '%';
+            $params['name1'] = $nameVal;
+            $params['name2'] = $nameVal;
+            $params['name3'] = $nameVal;
         }
 
         if (!empty($filters['status'])) {
@@ -313,14 +320,18 @@ class UserRepository
         $sql .= " ORDER BY u.last_name_user ASC LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+
         $stmt->bindValue('limit', $limit, PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, PDO::PARAM_INT);
-
         $stmt->execute();
+
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
-    
+
 
     /**
      * Met à jour les infos de base d'un utilisateur
@@ -332,7 +343,7 @@ class UserRepository
                     last_name_user = :last_name, 
                     is_active_user = :is_active 
                 WHERE id_user = :id";
-                
+
         $stmt = $this->pdo->prepare($sql);
         return $stmt->execute([
             ':first_name' => $data['first_name'],
@@ -378,18 +389,27 @@ class UserRepository
         $page = max(1, (int) ($filters['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 
-        $sql = "SELECT u.id_user as id, u.email_user as email, u.first_name_user as first_name, u.last_name_user as last_name, u.is_active_user as is_active, u.created_at_user as created_at, 
-                   s.status_student as status, pr.label_promotion as promo_label
-                FROM user u
+        $sql = "SELECT u.id_user as id, u.email_user as email, u.first_name_user as first_name,
+                   u.last_name_user as last_name, u.is_active_user as is_active,
+                   u.created_at_user as created_at, s.status_student as status,
+                   pr.label_promotion as promo_label
+            FROM user u
             INNER JOIN student s ON u.id_user = s.id_student
             LEFT JOIN student_enrollment se ON s.id_student = se.student_id_student_enrollment
             LEFT JOIN promotion pr ON se.promotion_id_student_enrollment = pr.id_promotion
-                WHERE 1=1";
+            WHERE 1=1";
 
         $params = [];
+
         if (!empty($filters['name'])) {
-            $sql .= " AND (u.first_name_user LIKE :name OR u.last_name_user LIKE :name OR u.email_user LIKE :name)";
-            $params['name'] = '%' . $filters['name'] . '%';
+            // ✅ Three distinct placeholders for the same value
+            $sql .= " AND (u.first_name_user LIKE :name1
+                    OR u.last_name_user  LIKE :name2
+                    OR u.email_user      LIKE :name3)";
+            $nameVal = '%' . $filters['name'] . '%';
+            $params['name1'] = $nameVal;
+            $params['name2'] = $nameVal;
+            $params['name3'] = $nameVal;
         }
 
         if (!empty($filters['status'])) {
@@ -400,11 +420,15 @@ class UserRepository
         $sql .= " ORDER BY u.last_name_user ASC LIMIT :limit OFFSET :offset";
 
         $stmt = $this->pdo->prepare($sql);
-        foreach ($params as $key => $val) $stmt->bindValue($key, $val);
+
+        foreach ($params as $key => $val) {
+            $stmt->bindValue($key, $val);
+        }
+
         $stmt->bindValue('limit', $limit, \PDO::PARAM_INT);
         $stmt->bindValue('offset', $offset, \PDO::PARAM_INT);
-
         $stmt->execute();
+
         return $stmt->fetchAll(\PDO::FETCH_ASSOC);
     }
 
@@ -431,11 +455,11 @@ class UserRepository
                 INNER JOIN student_enrollment se ON p.id_promotion = se.promotion_id_student_enrollment
                 WHERE se.student_id_student_enrollment = ?
                 ORDER BY se.enrolled_at DESC LIMIT 1";
-                
+
         $stmt = $this->pdo->prepare($sql);
         $stmt->execute([(int) $studentId]);
         $res = $stmt->fetch(\PDO::FETCH_ASSOC);
-        
+
         return $res ?: null;
     }
 
@@ -450,7 +474,7 @@ class UserRepository
         $sql = "INSERT INTO student_enrollment (promotion_id_student_enrollment, student_id_student_enrollment, enrolled_at) 
                 VALUES (?, ?, NOW())";
         $stmt = $this->pdo->prepare($sql);
-        
+
         return $stmt->execute([(int) $promoId, (int) $studentId]);
     }
 }

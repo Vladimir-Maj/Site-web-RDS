@@ -1,0 +1,409 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Mentions Légales & Politique de Confidentialité{% endblock %}
+
+{% block body %}
+<div class="legals-container">
+    <header class="legals-hero">
+        <h1>Mentions Légales & Politique de Confidentialité</h1>
+        <p class="subtitle">Plateforme de Gestion de Stages</p>
+        <p class="last-updated">Mise à jour : 02 avril 2026</p>
+    </header>
+
+    <div class="legals-main">
+        <!-- Sidebar Navigation -->
+        <nav class="legals-nav">
+            <div class="nav-title">Sections</div>
+            <ul>
+                <li><a href="#section-legal-notices">Mentions Légales</a></li>
+                <li><a href="#section-privacy">Politique de Confidentialité</a></li>
+                <li class="nested">
+                    <a href="#privacy-data-collected">Données collectées</a>
+                </li>
+                <li class="nested">
+                    <a href="#privacy-retention">Durée de conservation</a>
+                </li>
+                <li class="nested">
+                    <a href="#privacy-rights">Vos droits RGPD</a>
+                </li>
+                <li><a href="#section-terms">Conditions d'Utilisation</a></li>
+                <li><a href="#section-gdpr-procedures">Procédures RGPD</a></li>
+                <li><a href="#section-contact">Contact & Escalade</a></li>
+            </ul>
+        </nav>
+
+        <!-- Main Content -->
+        <article class="legals-content">
+
+            <!-- ================================================================
+                 SECTION 1: LEGAL NOTICES
+                 ================================================================ -->
+            <section id="section-legal-notices" class="legal-section">
+                <h2>📋 Mentions Légales</h2>
+
+                <h3>Directeur de Publication</h3>
+                <dl>
+                    <dt>Entreprise :</dt>
+                    <dd>[À REMPLIR : Nom de l'entreprise]</dd>
+                    <dt>SIRET :</dt>
+                    <dd>[À REMPLIR : Numéro SIRET]</dd>
+                    <dt>Adresse :</dt>
+                    <dd>[À REMPLIR : Adresse complète du siège social]</dd>
+                    <dt>Téléphone :</dt>
+                    <dd>[À REMPLIR : Numéro de contact]</dd>
+                </dl>
+
+                <h3>Responsable Publication</h3>
+                <p>
+                    <strong>Directeur :</strong> [À REMPLIR : Nom complet]<br>
+                    <strong>Email :</strong> legal@example.fr
+                </p>
+
+                <h3>Hébergement</h3>
+                <dl>
+                    <dt>Hébergeur :</dt>
+                    <dd>[À REMPLIR : Nom hébergeur]</dd>
+                    <dt>Adresse :</dt>
+                    <dd>[À REMPLIR : Adresse hébergeur]</dd>
+                </dl>
+
+                <h3>Propriété Intellectuelle</h3>
+                <p>
+                    © 2026 [NOM ENTREPRISE]. Tous droits réservés.<br>
+                    La plateforme et son contenu sont protégés par les droits d'auteur.
+                    Toute reproduction sans autorisation écrite est interdite.
+                </p>
+
+                <p class="info-box">
+                    <strong>Exception :</strong> Les documents téléchargés par les utilisateurs
+                    (CV, lettres de motivation) restent leur propriété exclusive.
+                </p>
+            </section>
+
+            <!-- ================================================================
+                 SECTION 2: PRIVACY POLICY
+                 ================================================================ -->
+            <section id="section-privacy" class="legal-section">
+                <h2>🔒 Politique de Confidentialité</h2>
+
+                <h3 id="privacy-data-collected">Données Collectées</h3>
+
+                <h4>Étudiants / Apprenants</h4>
+                <ul>
+                    <li><strong>Données personnelles :</strong> Prénom, nom, email, n° téléphone</li>
+                    <li><strong>Authentification :</strong> Mot de passe (haché avec Argon2id, jamais en clair)</li>
+                    <li><strong>Profil :</strong> Rôle (Étudiant), campus, promotion</li>
+                    <li><strong>Documents :</strong> CV et lettres de motivation (fichiers PDF, max 2 MB)</li>
+                    <li><strong>Candidatures :</strong> Historique applications, statuts</li>
+                    <li><strong>Wish-list :</strong> Offres sauvegardées</li>
+                    <li><strong>Audit :</strong> Date création compte, dernière connexion</li>
+                </ul>
+
+                <h4>Pilotes de Stage / Encadrants</h4>
+                <ul>
+                    <li><strong>Données personnelles :</strong> Prénom, nom, email, n° téléphone</li>
+                    <li><strong>Authentification :</strong> Mot de passe (haché)</li>
+                    <li><strong>Rôle & Permissions :</strong> Accès complet à suivi étudiants assignés</li>
+                    <li><strong>Évaluations :</strong> Notes et commentaires sur entreprises (optionnel)</li>
+                </ul>
+
+                <h4>Administrateurs</h4>
+                <ul>
+                    <li><strong>Accès complet :</strong> Toutes donnnées de la plateforme</li>
+                    <li><strong>Logs d'audit :</strong> Traçabilité des actions</li>
+                </ul>
+
+                <h4>Entreprises</h4>
+                <ul>
+                    <li><strong>Identification :</strong> Nom, SIRET, email, téléphone</li>
+                    <li><strong>Description :</strong> Secteur, localisation, offres de stage</li>
+                    <li><strong>Évaluations :</strong> Commentaires des pilotes (optionnel)</li>
+                </ul>
+
+                <h3>Base Juridique de Traitement</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Data Type</th>
+                            <th>Base Juridique</th>
+                            <th>Justification</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Profil utilisateur, authentification</td>
+                            <td><strong>Contrat</strong></td>
+                            <td>Nécessaire à l'exécution du service</td>
+                        </tr>
+                        <tr>
+                            <td>Évaluations, commentaires</td>
+                            <td><strong>Intérêt Légitime</strong></td>
+                            <td>Amélioration du service, retours utilisateur</td>
+                        </tr>
+                        <tr>
+                            <td>Logs d'audit système</td>
+                            <td><strong>Intérêt Légitime</strong></td>
+                            <td>Sécurité, détection fraude, conformité légale</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Partage des Données</h3>
+                <p>
+                    <strong>❌ Pas de partage externe :</strong> Vos données ne sont jamais vendues,
+                    partagées avec des tiers marketing, ou utilisées pour du tracking/publicité ciblée.
+                </p>
+                <p>
+                    <strong>✅ Accès interne limité :</strong> Uniquement le personnel administratif
+                    et technique pour exécution du service.
+                </p>
+
+                <h3>Sécurité</h3>
+                <ul>
+                    <li>✅ Mots de passe hachés avec <strong>Argon2id</strong> (résistant aux attaques)</li>
+                    <li>✅ Sessions sécurisées : <strong>HttpOnly, Secure, SameSite=Strict</strong></li>
+                    <li>✅ Connexion HTTPS obligatoire (certificat SSL/TLS)</li>
+                    <li>✅ Fichiers téléchargés validés et stockés hors accès web</li>
+                    <li>✅ Requêtes préparées (prévention injection SQL)</li>
+                </ul>
+
+                <h3 id="privacy-retention">Durée de Conservation</h3>
+                <table class="data-table retention-table">
+                    <thead>
+                        <tr>
+                            <th>Type de Donnée</th>
+                            <th>Durée Rétention</th>
+                            <th>Raison</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Comptes utilisateurs actifs</td>
+                            <td>Jusqu'à suppression</td>
+                            <td>Exécution du contrat</td>
+                        </tr>
+                        <tr>
+                            <td>CVs et Lettres</td>
+                            <td>Jusqu'à suppression compte/candidature</td>
+                            <td>Contrat de candidature</td>
+                        </tr>
+                        <tr>
+                            <td>Sauvegardes BDD</td>
+                            <td><strong>30 jours max</strong></td>
+                            <td>Récupération incident / audit</td>
+                        </tr>
+                        <tr>
+                            <td>Logs d'erreur/accès</td>
+                            <td>90 jours</td>
+                            <td>Sécurité système</td>
+                        </tr>
+                        <tr>
+                            <td>Audit RGPD</td>
+                            <td><strong>3 ans</strong></td>
+                            <td>Preuve conformité légale</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3 id="privacy-rights">Vos Droits RGPD</h3>
+
+                <h4>🔍 Droit d'Accès (Article 15)</h4>
+                <p><strong>Demander une copie de vos données :</strong></p>
+                <ol>
+                    <li>Connectez-vous à votre compte</li>
+                    <li>Allez à "Mon Compte" → "Mes Données"</li>
+                    <li>Cliquez "Télécharger mes données"</li>
+                    <li>Un fichier ZIP sera généré (délai: 30 jours calendaires)</li>
+                </ol>
+                <p><em>Format :</em> JSON + fichiers attachés (CVs, lettres)</p>
+
+                <h4>✏️ Droit de Rectification (Article 16)</h4>
+                <p><strong>Corriger données inexactes :</strong></p>
+                <ol>
+                    <li>Allez à "Mon Profil"</li>
+                    <li>Modifiez vos informations</li>
+                    <li>Soumettez les changements</li>
+                </ol>
+
+                <h4>🗑️ Droit à l'Oubli (Article 17)</h4>
+                <p><strong>Demander suppression de votre compte :</strong></p>
+                <ol>
+                    <li>Allez à "Mon Compte" → "Paramètres"</li>
+                    <li>Cliquez "Supprimer mon compte"</li>
+                    <li>Un email de confirmation sera envoyé (valide 7 jours)</li>
+                    <li>Cliquez le lien de confirmation</li>
+                    <li>Votre compte et données supprimées immédiatement</li>
+                </ol>
+                <p><strong class="warning">⚠️ Action irréversible !</strong> Vos données seront définitivement supprimées.</p>
+
+                <h4>📦 Droit à la Portabilité (Article 20)</h4>
+                <p><strong>Exporter dans un format lisible :</strong></p>
+                <p>Voir "Droit d'Accès"—le format ZIP est portable et peut être importé ailleurs.</p>
+
+                <h4>✋ Droit d'Opposition (Article 21)</h4>
+                <p><strong>S'opposer au traitement :</strong> Contactez legal@example.fr avec détails.</p>
+
+                <h3 id="privacy-rights">Cookies & Suivi</h3>
+                <p>
+                    La plateforme utilise <strong>uniquement des cookies techniques</strong> (sessions).
+                </p>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Cookie</th>
+                            <th>Durée</th>
+                            <th>Finalité</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>PHPSESSID</td>
+                            <td>Jusqu'au logout</td>
+                            <td>Authentification sécurisée (HttpOnly, Secure, SameSite=Strict)</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><strong>❌ Pas de tracking :</strong> Google Analytics, Facebook Pixel, ou tiers ne sont PAS utilisés.</p>
+
+            </section>
+
+            <!-- ================================================================
+                 SECTION 3: TERMS OF SERVICE
+                 ================================================================ -->
+            <section id="section-terms" class="legal-section">
+                <h2>⚖️ Conditions d'Utilisation</h2>
+
+                <h3>Acceptation</h3>
+                <p>
+                    En utilisant la plateforme, vous acceptez ces conditions. Si vous n'acceptez pas,
+                    cessez votre utilisation immédiatement.
+                </p>
+
+                <h3>Utilisation Acceptable</h3>
+                <p><strong>Vous vous engagez à NE PAS :</strong></p>
+                <ul>
+                    <li>🚫 Violer les lois applicables</li>
+                    <li>🚫 Harceler, menacer, ou discriminer d'autres utilisateurs</li>
+                    <li>🚫 Télécharger virus ou contenu malveillant</li>
+                    <li>🚫 Usurper l'identité d'autres utilisateurs</li>
+                    <li>🚫 Accéder à des systèmes sans autorisation (hacking)</li>
+                    <li>🚫 Exécuter du spam ou contenu non sollicité</li>
+                    <li>🚫 Partager les données sensibles d'autres</li>
+                </ul>
+
+                <h3>Responsabilité</h3>
+                <ul>
+                    <li>✅ Vous êtes responsable de la confidentialité de votre mot de passe</li>
+                    <li>✅ Vous êtes responsable de toute activité sous votre compte</li>
+                    <li>✅ Acceptez la responsabilité de vos documents uploadés</li>
+                </ul>
+
+                <h3>Limitation de Responsabilité</h3>
+                <p>
+                    La plateforme est fournie "TEL QUEL" sans garantie. Nous ne sommes pas responsables
+                    de :
+                </p>
+                <ul>
+                    <li>Interruptions de service temporaires</li>
+                    <li>Perte de données (malgrémis à jour)</li>
+                    <li>Dommages indirects ou consécutifs</li>
+                </ul>
+
+                <h3>Modification</h3>
+                <p>
+                    Ces conditions peuvent être modifiées à tout moment. Modifications importantes
+                    seront communiquées par email.
+                </p>
+
+                <h3>Résiliation</h3>
+                <p>
+                    Nous nous réservons le droit de suspendre/supprimer un compte pour :
+                    violations de ces conditions, activité suspecte, ou raisons légales.
+                </p>
+
+            </section>
+
+            <!-- ================================================================
+                 SECTION 4: GDPR PROCEDURES
+                 ================================================================ -->
+            <section id="section-gdpr-procedures" class="legal-section">
+                <h2>📖 Procédures RGPD</h2>
+
+                <h3>Demande d'Accès (DSAR)</h3>
+                <dl>
+                    <dt>Délai réponse :</dt>
+                    <dd><strong>30 jours calendaires</strong> (extensible 60 jours si volume important)</dd>
+                    <dt>Format :</dt>
+                    <dd>JSON + fichiers attachés (ZIP protégé)</dd>
+                    <dt>Coût :</dt>
+                    <dd>Gratuit (première demande) ; 15€ si répétées excessivement</dd>
+                </dl>
+
+                <h3>Demande de Suppression</h3>
+                <dl>
+                    <dt>Délai :</dt>
+                    <dd><strong>Immédiat</strong> après confirmation email</dd>
+                    <dt>Exceptions :</dt>
+                    <dd>Backups conservés 30 jours (raisons techniques); logs audit 3 ans (anonymisés)</dd>
+                    <dt>Irréversibilité :</dt>
+                    <dd>⚠️ <strong>Action définitive et non-annulable</strong></dd>
+                </dl>
+
+                <h3>Recours CNIL</h3>
+                <p>
+                    Si vous estimez que vos droits ne sont pas respectés, vous pouvez déposer plainte auprès de :
+                </p>
+                <address>
+                    <strong>Commission Nationale de l'Informatique et des Libertés (CNIL)</strong><br>
+                    3 Place de Fontenoy<br>
+                    75007 Paris, France<br>
+                    🌐 <a href="https://www.cnil.fr" target="_blank">www.cnil.fr</a><br>
+                    📧 plaintes@cnil.fr
+                </address>
+
+            </section>
+
+            <!-- ================================================================
+                 SECTION 5: CONTACT
+                 ================================================================ -->
+            <section id="section-contact" class="legal-section">
+                <h2>📧 Contact & Escalade</h2>
+
+                <p><strong>Pour toute question, demande RGPD, réclamation :</strong></p>
+
+                <address>
+                    <strong>Email :</strong> legal@example.fr<br>
+                    <strong>Téléphone :</strong> [À REMPLIR]<br>
+                    <strong>Adresse :</strong> [À REMPLIR]<br>
+                    <strong>Délai réponse :</strong> 15 jours ouvrables (RGPD = 30 jours calendaires)
+                </address>
+
+                <h3>Escalade</h3>
+                <p>
+                    Si vous n'êtes pas satisfait de la réponse, vous avez le droit de déposer
+                    plainte auprès de la CNIL (voir section GDPR Procedures ci-dessus).
+                </p>
+
+            </section>
+
+            <!-- ================================================================
+                 FOOTER NOTES
+                 ================================================================ -->
+            <footer class="legals-footer">
+                <p>
+                    <strong>Version :</strong> 1.0 | 
+                    <strong>Dernière mise à jour :</strong> 02 avril 2026 | 
+                    <strong>Prochaine révision :</strong> 02 avril 2027
+                </p>
+                <p class="disclaimer">
+                    ⚠️ <strong>DISCLAIMER :</strong> Ce document a été généré à titre informatif.
+                    Avant publication, veuillez le faire relire par un conseiller juridique français
+                    pour vérifier conformité CNIL/RGPD spécifique à votre contexte.
+                </p>
+            </footer>
+
+        </article>
+    </div>
+
+</div>
+{% endblock %}

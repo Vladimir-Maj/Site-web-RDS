@@ -143,3 +143,148 @@ a {
 .mt-1 { margin-top: calc(var(--gap-base) * 0.5); }
 .mt-2 { margin-top: var(--gap-base); }
 .mt-3 { margin-top: calc(var(--gap-base) * 2); }
+
+/* ---------- RESPONSIVE BREAKPOINTS & UTILITIES ---------- */
+
+/* Mobile-first: text sizes on small screens */
+@media (max-width: 480px) {
+    h1 { font-size: 1.4rem; }
+    h2 { font-size: 1.2rem; }
+    h3 { font-size: 1rem; }
+    
+    .hide-mobile {
+        display: none !important;
+    }
+    
+    .container {
+        padding-right: clamp(0.75rem, 3vw, 1rem);
+        padding-left: clamp(0.75rem, 3vw, 1rem);
+    }
+}
+
+/* Tablet screens */
+@media (min-width: 481px) and (max-width: 768px) {
+    .show-tablet-up {
+        display: block !important;
+    }
+    
+    .hide-tablet {
+        display: none !important;
+    }
+}
+
+/* Desktop screens */
+@media (min-width: 769px) {
+    .hide-desktop {
+        display: none !important;
+    }
+    
+    .show-desktop-up {
+        display: block !important;
+    }
+}
+
+/* Large desktop */
+@media (min-width: 1200px) {
+    .container {
+        padding-right: 2rem;
+        padding-left: 2rem;
+    }
+}
+
+/* ---------- TOUCH-FRIENDLY TARGETS ---------- */
+/* Ensure all interactive elements have minimum 44x44px touch target */
+button,
+a,
+input[type="button"],
+input[type="submit"],
+input[type="reset"],
+.btn,
+label {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+/* ---------- RESPONSIVE IMAGE CONTAINERS ---------- */
+.img-responsive {
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.img-container {
+    position: relative;
+    width: 100%;
+    overflow: hidden;
+    border-radius: var(--border-radius);
+}
+
+.img-container img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+}
+
+/* 16:9 aspect ratio container */
+.aspect-16-9 {
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+}
+
+.aspect-16-9 img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ---------- OVERFLOW & SCROLLING ---------- */
+.overflow-x-auto {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.overflow-x-auto::-webkit-scrollbar {
+    height: 8px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-track {
+    background: var(--clr-border);
+    border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb {
+    background: var(--clr-text-muted);
+    border-radius: 10px;
+}
+
+.overflow-x-auto::-webkit-scrollbar-thumb:hover {
+    background: var(--clr-text);
+}
+
+/* ---------- PRINT STYLES ---------- */
+@media print {
+    .no-print {
+        display: none !important;
+    }
+    
+    body {
+        background: white;
+        color: black;
+        font-size: 12pt;
+        line-height: 1.5;
+    }
+    
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+    
+    .page-wrapper {
+        padding: 0;
+    }
+    
+    a {
+        text-decoration: none;
+        color: black;
+    }
+}

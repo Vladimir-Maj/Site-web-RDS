@@ -1,15 +1,15 @@
 /* ===================================================
    STAGEFLOW — RESPONSIVE FEATURES.CSS
    Specific Functional Modules & Page Logic
+   === FULLY RESPONSIVE DESIGN ===
    =================================================== */
 
 /* ---------- AUTH & LOGIN ---------- */
 .auth-container {
     width: 100%;
-    /* Use a fluid max-width to ensure it fits on small phones */
-    max-width: min(400px, 90vw); 
-    margin: clamp(2rem, 10vh, 6rem) auto;
-    padding: 0 1rem;
+    max-width: min(400px, 90vw);
+    margin: clamp(1.5rem, 8vh, 6rem) auto;
+    padding: 0 clamp(0.5rem, 2vw, 1rem);
 }
 
 .auth-container.auth-container-lg {
@@ -17,24 +17,23 @@
 }
 
 .auth-container-lg .card {
-    padding: clamp(1.5rem, 5vw, 3rem);
+    padding: clamp(1rem, 4vw, 3rem);
 }
 
 .auth-header {
     text-align: center;
-    margin-bottom: 2.5rem;
+    margin-bottom: clamp(1.5rem, 4vw, 2.5rem);
 }
 
 .auth-header h1 {
-    /* Fluid typography for the big login title */
-    font-size: clamp(1.5rem, 5vw, 2rem);
-    margin-bottom: 0.5rem;
+    font-size: clamp(1.3rem, 5vw, 2rem);
+    margin-bottom: clamp(0.3rem, 1vw, 0.5rem);
 }
 
 .form-footer {
-    margin-top: 2rem;
+    margin-top: clamp(1.5rem, 3vw, 2rem);
     text-align: center;
-    font-size: 0.9rem;
+    font-size: clamp(0.8rem, 1.2vw, 0.9rem);
     color: var(--clr-text-muted);
     line-height: 1.6;
 }
@@ -42,23 +41,25 @@
 /* ---------- UPLOADS (DROP ZONE) ---------- */
 .upload-container {
     width: 100%;
-    max-width: 600px;
-    margin: 2rem auto;
+    max-width: clamp(400px, 90vw, 600px);
+    margin: clamp(1.5rem, 4vw, 2rem) auto;
 }
 
 .drop-zone {
     border: 2px dashed var(--clr-border);
-    border-radius: 12px;
-    /* Responsive padding: smaller on mobile, larger on desktop */
-    padding: clamp(1.5rem, 8vw, 4rem);
+    border-radius: clamp(8px, 2vw, 12px);
+    padding: clamp(1.5rem, 6vw, 4rem);
     text-align: center;
     background: var(--clr-surface);
     cursor: pointer;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    justify-content: center;
+    gap: clamp(0.75rem, 2vw, 1rem);
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: clamp(120px, 25vh, 200px);
+    touch-action: manipulation;
 }
 
 .drop-zone:hover, 
@@ -68,63 +69,100 @@
     transform: translateY(-2px);
 }
 
+.drop-zone-icon {
+    font-size: clamp(2rem, 5vw, 3rem);
+    line-height: 1;
+}
+
+.drop-zone-text {
+    font-size: clamp(0.9rem, 1.5vw, 1rem);
+    color: var(--clr-text);
+}
+
+.drop-zone-hint {
+    font-size: clamp(0.75rem, 1.2vw, 0.85rem);
+    color: var(--clr-text-muted);
+}
+
 /* ---------- COMPANY & OFFER FORMS ---------- */
 .company-form.card {
     width: 100%;
 }
 
 .company-form .card-body {
-    display: block; 
-    /* Increase padding for a more professional "paper" feel on large screens */
-    padding: clamp(1rem, 5vw, 2.5rem);
+    display: block;
+    padding: clamp(1rem, 4vw, 2.5rem);
 }
 
 .section-label {
     display: block;
-    font-size: 0.7rem;
+    font-size: clamp(0.65rem, 0.9vw, 0.7rem);
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    color: var(--clr-accent); /* Branded label color */
-    margin-bottom: 1.25rem;
+    color: var(--clr-accent);
+    margin-bottom: clamp(1rem, 2vw, 1.25rem);
 }
 
 .info-section {
-    padding-top: 2rem;
+    padding-top: clamp(1.5rem, 3vw, 2rem);
     border-top: 1px solid var(--clr-border-light);
-    margin-bottom: 2rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2rem);
 }
 
 /* ---------- LEGAL SECTIONS ---------- */
 .legal-section {
     border: 1px solid var(--clr-border);
-    margin-bottom: 1.5rem;
+    margin-bottom: clamp(1rem, 2vw, 1.5rem);
     background: var(--clr-surface);
     border-radius: var(--border-radius-btn);
     overflow: hidden;
+    transition: box-shadow 0.2s;
+}
+
+.legal-section:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .legal-section-header {
     background: var(--clr-bg);
-    padding: 0.75rem 1rem;
+    padding: clamp(0.6rem, 1.5vw, 0.75rem) clamp(0.75rem, 1.5vw, 1rem);
     border-bottom: 1px solid var(--clr-border);
     font-weight: 700;
+    font-size: clamp(0.85rem, 1.2vw, 0.95rem);
+    cursor: pointer;
+    user-select: none;
+}
+
+.legal-section-header::before {
+    content: "▶";
+    display: inline-block;
+    margin-right: 0.5rem;
+    transition: transform 0.2s;
+}
+
+.legal-section-header.expanded::before {
+    transform: rotate(90deg);
 }
 
 .legal-section-body {
-    padding: 1rem;
-    line-height: 1.7;
-    font-size: 0.95rem;
+    padding: clamp(0.75rem, 2vw, 1rem);
+    line-height: clamp(1.6, 1.2vw, 1.8);
+    font-size: clamp(0.85rem, 1.1vw, 0.95rem);
 }
 
-.legal-section-body ul li {
+.legal-section-body ul {
+    margin-left: clamp(1rem, 2vw, 1.5rem);
+}
+
+.legal-section-body li {
     display: grid;
-    grid-template-columns: 1.5rem 1fr; /* Ensures text aligns perfectly next to the '>' */
-    margin-bottom: 0.5rem;
+    grid-template-columns: 1.5rem 1fr;
+    margin-bottom: clamp(0.4rem, 0.8vw, 0.5rem);
 }
 
-.legal-section-body ul li::before {
-    content: '→'; /* Modernized arrow */
+.legal-section-body li::before {
+    content: '→';
     color: var(--clr-accent);
     font-weight: 700;
 }
@@ -132,22 +170,22 @@
 /* ---------- USER AVATAR / PROFILE ---------- */
 .user-card {
     text-align: center;
-    padding: clamp(1.5rem, 5vw, 3rem) 1rem;
+    padding: clamp(1rem, 4vw, 3rem) clamp(0.75rem, 2vw, 1rem);
 }
 
 .avatar-circle {
-    /* Slightly fluid avatar sizing */
-    width: clamp(80px, 15vw, 110px);
-    height: clamp(80px, 15vw, 110px);
+    width: clamp(70px, 15vw, 110px);
+    height: clamp(70px, 15vw, 110px);
     background: var(--clr-surface);
     color: var(--clr-accent);
-    font-size: clamp(2rem, 5vw, 3rem);
+    font-size: clamp(1.8rem, 5vw, 3rem);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    margin: 0 auto 1.5rem;
-    border: 2px solid var(--clr-accent);
+    margin: 0 auto clamp(1rem, 2vw, 1.5rem);
+    border: 3px solid var(--clr-accent);
+}
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 

@@ -31,7 +31,13 @@
         <a href="/dashboard/pilotes" class="btn btn-ghost">Réinitialiser</a>
     </form>
 
-    {# --- Le reste du tableau (inchangé) --- #}
+    {# --- Notice : Style Catalogue --- #}
+    <div class="notice notice-info">
+        <div class="notice-icon">ℹ️</div>
+        <p>Il y a actuellement <strong>{{ pilots|length }} pilote{{ pilots|length > 1 ? 's' : '' }}</strong> correspondant à vos critères.</p>
+    </div>
+
+    {# --- Le reste du tableau --- #}
     <div class="card p-0 overflow-hidden" style="margin-top: 1rem;">
         <table class="table">
             <thead>
@@ -54,6 +60,12 @@
                         </td>
                         <td class="text-right">
                             <a href="/dashboard/pilotes/{{ pilot.id }}" class="btn btn-ghost btn-sm">Gérer</a>
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="4" class="text-center p-4 text-muted">
+                            Aucun pilote trouvé.
                         </td>
                     </tr>
                 {% endfor %}

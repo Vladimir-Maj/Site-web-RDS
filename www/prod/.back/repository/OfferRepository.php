@@ -81,6 +81,8 @@ class OfferRepository
                     o.is_active_internship_offer AS is_active,
                     o.published_at_internship_offer,
                     o.published_at_internship_offer AS published_at,
+                    o.published_at_internship_offer,
+                    o.published_at_internship_offer AS published_at,
                     o.company_site_id_internship_offer,
                     o.company_site_id_internship_offer AS site_id,
                     s.id_company_site,
@@ -169,6 +171,8 @@ class OfferRepository
             o.description_internship_offer AS description,
             o.hourly_rate_internship_offer AS hourly_rate,
             o.start_date_internship_offer AS start_date,
+            o.is_active_internship_offer AS is_active,
+            o.views_internship_offer AS views,
             o.duration_weeks_internship_offer AS duration_weeks,
             o.published_at_internship_offer AS published_at,
             o.is_active_internship_offer AS is_active,
@@ -266,6 +270,8 @@ class OfferRepository
                     o.duration_weeks_internship_offer AS duration_weeks,
                     o.published_at_internship_offer,
                     o.published_at_internship_offer AS published_at,
+                    o.is_active_internship_offer AS is_active,
+                    o.views_internship_offer AS views,
                     o.is_active_internship_offer,
                     o.is_active_internship_offer AS is_active,
                     o.company_site_id_internship_offer,
@@ -338,7 +344,7 @@ class OfferRepository
         ); //343 here!
         $stmt->execute($skills);
 
-        $existingSkills = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        $existingSkills = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($existingSkills as $skill) {
             $this->pdo->prepare(
@@ -362,9 +368,43 @@ class OfferRepository
     ");
 
         $stmt->execute([':id' => $offerId]);
-        $skills = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        $skills = $stmt->fetchAll(PDO::FETCH_COLUMN);
 
         return implode(', ', $skills);
     }
 
+    public function incrementViews(int|string $offerId): void
+    {
+
+        error_log("Incrementing views for offer ID: " . $offerId);
+        $offerId = (int) $offerId;
+        $stmt = $this->pdo->prepare(
+            'UPDATE internship_offer
+         SET views_internship_offer = views_internship_offer + 1
+         WHERE id_internship_offer = :id'
+        );
+        $stmt->execute(['id' => $offerId]);
+    }
+
+    public function countViews(int $offerId): string
+    {
+        $stmt = $this->pdo->prepare(
+            'SELECT views_internship_offer
+         FROM internship_offer
+         WHERE id_internship_offer = :id'
+        );
+        $stmt->execute(['id' => $offerId]);
+
+        // Fetch the result once
+        $views = $stmt->fetchColumn();
+
+        // Handle case where no row is found (fetchColumn returns false)
+        if ($views === false) {
+            return "0";
+        }
+
+        error_log("Counting views for offer ID: " . $offerId . "\nViews: " . $views);
+
+        return (string) $views;
+    }
 }

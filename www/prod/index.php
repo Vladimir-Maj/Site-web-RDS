@@ -16,6 +16,9 @@ use App\Controllers\SiteController;
 use App\Controllers\SkillController;
 use App\Controllers\StudentController;
 use App\Controllers\WishlistController;
+use App\Controllers\LegalsController;
+use App\Controllers\DataExportController;
+use App\Controllers\AccountDeletionController;
 use App\Models\RoleEnum;
 use App\Repository\ApplicationRepository;
 use App\Repository\CampusRepository;
@@ -25,8 +28,10 @@ use App\Repository\OfferRepository;
 use App\Repository\PromotionRepository;
 use App\Repository\SkillRepository;
 use App\Repository\UserRepository;
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use App\Util;
+use App\Util\ComplianceLogger;
+use App\Util\DataDeletionManager;
 
 // --- 1. SESSION & SECURITY ---
 session_set_cookie_params([
@@ -113,6 +118,12 @@ $wishlistHandler = fn($pdo, $twig) => new WishlistController(new WishlistReposit
 $pilotHandler = fn($pdo, $twig) => new PilotController(new UserRepository($pdo), $twig, $pdo);
 $studentHandler = fn($pdo, $twig) => new StudentController(new UserRepository($pdo), $twig, $pdo);
 $campusHandler = fn($pdo, $twig) => new CampusController($twig, new CampusRepository($pdo));
+$promotionHandler = fn($pdo, $twig) => new PromotionController($twig, new PromotionRepository($pdo), new CampusRepository($pdo));
+$legalsHandler = fn($pdo, $twig) => new LegalsController($twig);
+$complianceLogger = new ComplianceLogger($pdo);
+$dataExportHandler = fn($pdo, $twig) => new DataExportController($pdo, $twig, $complianceLogger);
+//$dataDeletionManager = new DataDeletionManager($pdo, $complianceLogger, 'https://example.fr', 'legal@example.fr');
+$accountDeletionHandler = fn($pdo, $twig) => new AccountDeletionController($pdo, $twig, $complianceLogger, $dataDeletionManager);
 
 $promotionHandler = fn($pdo, $twig) => new PromotionController(
     $twig,
@@ -131,12 +142,10 @@ $router->add('GET', '/logout', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)-
 $router->add('GET', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
 $router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
 
-$router->add(
-    'GET',
-    '/profile',
-    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(),
-    roles: $everyone
-);
+// Profile
+$router->add('GET', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
+$router->add('POST', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
+//$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
 
 $router->add(
     'POST',
@@ -441,20 +450,11 @@ $router->add(
     roles: $student
 );
 
-$router->add(
-    'GET',
-    '/dashboard/applications/' . $idPattern,
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]),
-    roles: $staff
-);
-
-$router->add(
-    'PATCH',
-    '/api/applications/' . $idPattern . '/status',
-    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]),
-    roles: $staff
-);
-
+// GET — Student applications (staff view)
+$router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: [RoleEnum::Pilote->value]);
+// API — Update application status
+$router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->updateStatusAjax($p[0]), roles: [RoleEnum::Pilote->value]);
+    
 // ════════════════════════════════════════════════════════════════════════════
 // WISHLIST (Student Management)
 // ════════════════════════════════════════════════════════════════════════════
@@ -564,6 +564,15 @@ $router->add(
     fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->edit((int) $p[0]),
     roles: [RoleEnum::Admin->value]
 );
+
+// ════════════════════════════════════════════════════════════════════════════
+// LEGALS & GDPR (Public & Protected)
+// ════════════════════════════════════════════════════════════════════════════
+
+// GET — Legal pages (public)
+$router->add('GET', '/legals', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
+$router->add('GET', '/mentions-legales', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
+$router->add('GET', '/privacy', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
 
 $router->add(
     'POST',

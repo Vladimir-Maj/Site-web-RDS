@@ -4,10 +4,11 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Repository\ApplicationRepository;
 use App\Util;
 use App\Repository\OfferRepository;
 use App\Repository\CompanyRepository;
-use App\Repository\WishlistRepository;
+use App\Repository\WishListRepository;
 use App\Models\OfferModel;
 use PDO;
 use Twig\Environment;
@@ -45,71 +46,75 @@ class OfferController extends BaseController
             $this->abort(404, "Offre introuvable.");
         }
 
-        $siteRepo  = new CompanyRepository($this->pdo);
+        $siteRepo = new CompanyRepository($this->pdo);
         $companyId = $offer->company_id_company_site ?? $offer->company_id ?? null;
-        $sites     = $companyId ? $siteRepo->findSitesByCompany((int) $companyId) : [];
+        $sites = $companyId ? $siteRepo->findSitesByCompany((int) $companyId) : [];
 
         echo $this->twig->render('offers/offer_editor.html.twig', [
-            'mode'           => 'edit',
-            'offer'          => $offer,
-            'sites'          => $sites,
-            'error'          => null,
-            'companies'      => [],
-            'csrf_token'     => Util::getCSRFToken(),
+            'mode' => 'edit',
+            'offer' => $offer,
+            'sites' => $sites,
+            'error' => null,
+            'companies' => [],
+            'csrf_token' => Util::getCSRFToken(),
             'sidebar_active' => 'offers',
         ]);
     }
 
     public function index(): void
     {
-        $limit  = 10;
-        $page   = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
         $offset = ($page - 1) * $limit;
 
         $filters = [
-            'title_internship_offer' => $_GET['q']    ?? null,
-            'city_company_site'      => $_GET['city'] ?? null,
+            'title_internship_offer' => $_GET['q'] ?? null,
+            'city_company_site' => $_GET['city'] ?? null,
         ];
 
-        $offers      = $this->offerRepository->findPaginated($limit, $offset);
+        $offers = $this->offerRepository->findPaginated($limit, $offset);
         $totalOffers = $this->offerRepository->countAll();
-        $totalPages  = (int) ceil($totalOffers / $limit);
+        $totalPages = (int) ceil($totalOffers / $limit);
 
         echo $this->twig->render('offers/index.html.twig', [
-            'offers'        => $offers,
-            'filters'       => $filters,
-            'page'          => $page,
-            'totalPages'    => $totalPages,
-            'isPrivileged'  => $this->isPrivileged(),
+            'offers' => $offers,
+            'filters' => $filters,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'isPrivileged' => $this->isPrivileged(),
             'sidebar_active' => 'offers',
         ]);
     }
 
     public function search(): void
     {
+        // Collect filters from query parameters
         $filters = [
-            'keyword'  => $_GET['keyword'] ?? null,
-            'city'     => $_GET['city']    ?? null,
+            'keyword' => $_GET['keyword'] ?? null,
+            'city' => $_GET['city'] ?? null,
             'duration' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-            'sort'     => $_GET['sort']    ?? 'recent',
+            'sort' => $_GET['sort'] ?? 'recent',
         ];
 
-        $limit  = 10;
-        $page   = max(1, (int) ($_GET['page'] ?? 1));
+        // Pagination
+        $limit = 10;
+        $page = max(1, (int) ($_GET['page'] ?? 1));
         $offset = ($page - 1) * $limit;
 
-        $results    = $this->offerRepository->advancedSearch($filters, $limit, $offset);
-        $offers     = $results['data']  ?? [];
+        // Fetch results
+        $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
+        $offers = $results['data'] ?? [];
         $totalCount = $results['total'] ?? 0;
         $totalPages = (int) ceil($totalCount / $limit);
 
+        // Render template
         echo $this->twig->render('offers/offer_search.html.twig', [
-            'offers'         => $offers,
-            'filters'        => $filters,
-            'count'          => $totalCount,
-            'page'           => $page,
-            'totalPages'     => $totalPages,
-            'isPrivileged'   => $this->isPrivileged(),
+            'offers' => $offers,
+            'filters' => $filters,
+            'count' => $totalCount,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'isPrivileged' => $this->isPrivileged(),
             'sidebar_active' => 'offers',
         ]);
     }
@@ -117,22 +122,22 @@ class OfferController extends BaseController
     public function searchJson(): void
     {
         $filters = [
-            'title_internship_offer'          => $_GET['keyword'] ?? null,
-            'city_company_site'               => $_GET['city']    ?? null,
+            'title_internship_offer' => $_GET['keyword'] ?? null,
+            'city_company_site' => $_GET['city'] ?? null,
             'duration_weeks_internship_offer' => !empty($_GET['duration']) ? (int) $_GET['duration'] : null,
-            'sort'                            => $_GET['sort']    ?? 'recent',
+            'sort' => $_GET['sort'] ?? 'recent',
         ];
 
-        $limit  = 10;
-        $page   = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
+        $limit = 10;
+        $page = isset($_GET['page']) ? max(1, (int) $_GET['page']) : 1;
         $offset = ($page - 1) * $limit;
 
         $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
 
         $this->jsonResponse([
-            'data'        => $results['data']  ?? [],
-            'total'       => $results['total'] ?? 0,
-            'page'        => $page,
+            'data' => $results['data'] ?? [],
+            'total' => $results['total'] ?? 0,
+            'page' => $page,
             'total_pages' => (int) ceil(($results['total'] ?? 0) / $limit),
         ]);
     }
@@ -145,24 +150,41 @@ class OfferController extends BaseController
             $this->abort(404, "L'offre d'internat introuvable.");
         }
 
+        if (!$this->isPrivileged()) {
+            $this->offerRepository->incrementViews((int) $offer->id);
+            $offer->views++;
+            $offer->views_internship_offer++;
+        }
+
         $isWishlisted = false;
 
         if (Util::getRole()?->value === 'student') {
-            $wishlistRepo = new WishlistRepository($this->pdo);
+            $wishlistRepo = new WishListRepository($this->pdo);
             $isWishlisted = $wishlistRepo->exists((int) Util::getUserId(), (int) $offer->id);
         }
 
         $skillsString = $this->offerRepository->getSkillsAsString((int) $offer->id);
-        $skills       = array_filter(array_map('trim', explode(',', $skillsString)));
-        $from         = $_GET['from'] ?? 'offers';
+        $skills = array_filter(array_map('trim', explode(',', $skillsString)));
+
+        // Navigation logic from 'main'
+        $from = $_GET['from'] ?? 'offers';
+
+        // Application and Analytics logic from 'HEAD'
+        $applicationRepo = new ApplicationRepository($this->pdo);
+
+        // Optional: Keep these if you still need the debug logs, otherwise they can be removed
+        error_log("views" . $this->offerRepository->countViews((int) $id));
+        error_log("applications" . $applicationRepo->countByOffer((int) $id));
 
         echo $this->twig->render('offers/show.html.twig', [
-            'offer'        => $offer,
+            'offer' => $offer,
             'isPrivileged' => $this->isPrivileged(),
-            'csrf_token'   => Util::getCSRFToken(),
+            'csrf_token' => Util::getCSRFToken(),
             'isWishlisted' => $isWishlisted,
-            'skills'       => $skills,
-            'from'         => $from,
+            'skills' => $skills,
+            'from' => $from,
+            'views' => (string) $this->offerRepository->countViews((int) $offer->id),
+            'applications' => (string) $applicationRepo->countByOffer((int) $id)
         ]);
     }
 
@@ -170,17 +192,17 @@ class OfferController extends BaseController
     {
         $this->abortIfNotPriv();
 
-        $rep       = new CompanyRepository($this->pdo);
+        $rep = new CompanyRepository($this->pdo);
         $companies = $rep->findAllActive();
 
         echo $this->twig->render('offers/offer_editor.html.twig', [
-            'mode'           => 'create',
-            'error'          => null,
-            'companies'      => $companies,
-            'sites'          => [],
-            'isPrivileged'   => $this->isPrivileged(),
-            'offer'          => new OfferModel(),
-            'csrf_token'     => Util::getCSRFToken(),
+            'mode' => 'create',
+            'error' => null,
+            'companies' => $companies,
+            'sites' => [],
+            'isPrivileged' => $this->isPrivileged(),
+            'offer' => new OfferModel(),
+            'csrf_token' => Util::getCSRFToken(),
             'sidebar_active' => 'offers',
         ]);
     }
@@ -205,13 +227,13 @@ class OfferController extends BaseController
         $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
 
         $data = [
-            'title_internship_offer'          => $_POST['title']          ?? '',
-            'description_internship_offer'    => $_POST['description']    ?? null,
-            'hourly_rate_internship_offer'    => !empty($_POST['hourly_rate'])     ? (float) $_POST['hourly_rate']     : null,
-            'start_date_internship_offer'     => $_POST['start_date']     ?? null,
-            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int)   $_POST['duration_weeks'] : null,
+            'title_internship_offer' => $_POST['title'] ?? '',
+            'description_internship_offer' => $_POST['description'] ?? null,
+            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : null,
+            'start_date_internship_offer' => $_POST['start_date'] ?? null,
+            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
             'company_site_id_internship_offer' => $siteId,
-            'required_skills'                 => $_POST['required_skills'] ?? null,
+            'required_skills' => $_POST['required_skills'] ?? null,
         ];
 
         if ($this->offerRepository->create($data)) {
@@ -230,14 +252,14 @@ class OfferController extends BaseController
         $siteId = $_POST['site_id'] ?? ($_POST['company_site_id_internship_offer'] ?? '');
 
         $data = [
-            'title_internship_offer'          => $_POST['title']          ?? '',
-            'description_internship_offer'    => $_POST['description']    ?? '',
-            'hourly_rate_internship_offer'    => !empty($_POST['hourly_rate'])     ? (float) $_POST['hourly_rate']     : 0.0,
-            'is_active_internship_offer'      => isset($_POST['is_active'])       ? (int)   $_POST['is_active']       : 1,
-            'start_date_internship_offer'     => $_POST['start_date']     ?? null,
-            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int)   $_POST['duration_weeks'] : null,
+            'title_internship_offer' => $_POST['title'] ?? '',
+            'description_internship_offer' => $_POST['description'] ?? '',
+            'hourly_rate_internship_offer' => !empty($_POST['hourly_rate']) ? (float) $_POST['hourly_rate'] : 0.0,
+            'is_active_internship_offer' => isset($_POST['is_active']) ? (int) $_POST['is_active'] : 1,
+            'start_date_internship_offer' => $_POST['start_date'] ?? null,
+            'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
             'company_site_id_internship_offer' => $siteId,
-            'required_skills'                 => $_POST['required_skills'] ?? null,
+            'required_skills' => $_POST['required_skills'] ?? null,
         ];
 
         if ($this->offerRepository->update((int) $id, $data)) {
