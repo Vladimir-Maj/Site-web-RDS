@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 namespace App\Controllers;
@@ -21,18 +22,15 @@ class OfferController extends BaseController
     ) {
         parent::__construct($twig);
 
-        // Ensure a CSRF token exists for form security
         if (Util::getCSRFToken() === null) {
             Util::setCSRFToken(bin2hex(random_bytes(32)));
         }
     }
 
-    /**
-     * Helper to verify token and abort if invalid
-     */
     private function validateCSRF(): void
     {
         $token = $_POST['csrf_token'] ?? '';
+
         if (empty($token) || $token !== Util::getCSRFToken()) {
             $this->abort(403, "Requête invalide (CSRF Token mismatch).");
         }
@@ -43,12 +41,12 @@ class OfferController extends BaseController
         $this->abortIfNotPriv();
 
         $offer = $this->offerRepository->findById((int) $id);
+
         if (!$offer) {
             $this->abort(404, "Offre introuvable.");
         }
 
         $siteRepo = new CompanyRepository($this->pdo);
-        // Supports both old and new schema naming during transition
         $companyId = $offer->company_id_company_site ?? $offer->company_id ?? null;
         $sites = $companyId ? $siteRepo->findSitesByCompany((int) $companyId) : [];
 
@@ -56,10 +54,10 @@ class OfferController extends BaseController
             'mode' => 'edit',
             'offer' => $offer,
             'sites' => $sites,
-            'error' => null,        // ← add this
-            'companies' => [],      // ← add this (edit mode doesn't need the full list, AJAX handles it)
+            'error' => null,
+            'companies' => [],
             'csrf_token' => Util::getCSRFToken(),
-            'sidebar_active' => 'offers'
+            'sidebar_active' => 'offers',
         ]);
     }
 
@@ -84,9 +82,8 @@ class OfferController extends BaseController
             'page' => $page,
             'totalPages' => $totalPages,
             'isPrivileged' => $this->isPrivileged(),
-            'sidebar_active' => 'offers'
+            'sidebar_active' => 'offers',
         ]);
-
     }
 
     public function search(): void
@@ -106,7 +103,6 @@ class OfferController extends BaseController
 
         // Fetch results
         $results = $this->offerRepository->advancedSearch($filters, $limit, $offset);
-
         $offers = $results['data'] ?? [];
         $totalCount = $results['total'] ?? 0;
         $totalPages = (int) ceil($totalCount / $limit);
@@ -160,8 +156,8 @@ class OfferController extends BaseController
             $offer->views_internship_offer++;
         }
 
-
         $isWishlisted = false;
+
         if (Util::getRole()?->value === 'student') {
             $wishlistRepo = new WishListRepository($this->pdo);
             $isWishlisted = $wishlistRepo->exists((int) Util::getUserId(), (int) $offer->id);
@@ -170,11 +166,15 @@ class OfferController extends BaseController
         $skillsString = $this->offerRepository->getSkillsAsString((int) $offer->id);
         $skills = array_filter(array_map('trim', explode(',', $skillsString)));
 
+        // Navigation logic from 'main'
+        $from = $_GET['from'] ?? 'offers';
+
+        // Application and Analytics logic from 'HEAD'
         $applicationRepo = new ApplicationRepository($this->pdo);
 
+        // Optional: Keep these if you still need the debug logs, otherwise they can be removed
         error_log("views" . $this->offerRepository->countViews((int) $id));
         error_log("applications" . $applicationRepo->countByOffer((int) $id));
-
 
         echo $this->twig->render('offers/show.html.twig', [
             'offer' => $offer,
@@ -182,6 +182,7 @@ class OfferController extends BaseController
             'csrf_token' => Util::getCSRFToken(),
             'isWishlisted' => $isWishlisted,
             'skills' => $skills,
+            'from' => $from,
             'views' => (string) $this->offerRepository->countViews((int) $offer->id),
             'applications' => (string) $applicationRepo->countByOffer((int) $id)
         ]);
@@ -202,13 +203,14 @@ class OfferController extends BaseController
             'isPrivileged' => $this->isPrivileged(),
             'offer' => new OfferModel(),
             'csrf_token' => Util::getCSRFToken(),
-            'sidebar_active' => 'offers'
+            'sidebar_active' => 'offers',
         ]);
     }
 
     public function destroy(int $id): void
     {
-        $this->abortIfNotPriv(); // Added security check from common logic
+        $this->abortIfNotPriv();
+
         if ($this->offerRepository->delete((int) $id)) {
             header('Location: /app/offers?deleted=1');
             exit;
@@ -231,7 +233,7 @@ class OfferController extends BaseController
             'start_date_internship_offer' => $_POST['start_date'] ?? null,
             'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
             'company_site_id_internship_offer' => $siteId,
-            'required_skills' => $_POST['required_skills'] ?? null, // <-- added
+            'required_skills' => $_POST['required_skills'] ?? null,
         ];
 
         if ($this->offerRepository->create($data)) {
@@ -257,7 +259,7 @@ class OfferController extends BaseController
             'start_date_internship_offer' => $_POST['start_date'] ?? null,
             'duration_weeks_internship_offer' => !empty($_POST['duration_weeks']) ? (int) $_POST['duration_weeks'] : null,
             'company_site_id_internship_offer' => $siteId,
-            'required_skills' => $_POST['required_skills'] ?? null, // <-- added
+            'required_skills' => $_POST['required_skills'] ?? null,
         ];
 
         if ($this->offerRepository->update((int) $id, $data)) {

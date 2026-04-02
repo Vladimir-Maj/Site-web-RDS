@@ -67,7 +67,7 @@
                         {% for application in recentApplications %}
                             <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem;">
                                 <div>
-                                    <a href="/app/offers/show/{{ application.id_internship_offer }}" style="text-decoration: none; color: inherit;">
+                                    <a href="/app/offers/show/{{ application.id_internship_offer }}?from=home" style="text-decoration: none; color: inherit;">
                                         <strong>{{ application.title_internship_offer }}</strong>
                                     </a><br>
                                     <span style="color: #666;">{{ application.name_company }}</span><br>
@@ -132,7 +132,7 @@
 
     <div class="offer-list" style="display: grid; gap: 1.5rem;">
         {% for offer in offers %}
-            {{ include('components/card_template.twig', { offer: offer }) }}
+            {{ include('components/card_template.twig', { offer: offer, from: 'home' }) }}
         {% else %}
             <div class="empty-state card" style="padding: 2rem; text-align: center;">
                 <p>Aucune offre disponible pour le moment.</p>

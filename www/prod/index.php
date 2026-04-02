@@ -1,5 +1,6 @@
 <?php
 // prod/index.php
+
 declare(strict_types=1);
 
 use App\Controllers\ApplicationController;
@@ -78,6 +79,7 @@ function defaultViewData(array $data = []): array
 
 $flashMessage = $_SESSION['flash_message'] ?? null;
 $flashType = $_SESSION['flash_type'] ?? 'info';
+
 unset($_SESSION['flash_message'], $_SESSION['flash_type']);
 
 $twig->addGlobal('isLoggedIn', Util::isLoggedIn());
@@ -93,6 +95,7 @@ $router = new Router($pdo, $twig);
 $staff = [RoleEnum::Admin->value, RoleEnum::Pilote->value];
 $everyone = [RoleEnum::Admin->value, RoleEnum::Pilote->value, RoleEnum::Student->value];
 $student = [RoleEnum::Student->value];
+
 $idPattern = '([a-fA-F0-9]{32}|[0-9]+)';
 
 // --- 5. CONTROLLER FACTORIES ---
@@ -103,7 +106,14 @@ $compHandler = fn($pdo, $twig) => new CompanyController(new CompanyRepository($p
 $offerHandler = fn($pdo, $twig) => new OfferController($twig, new OfferRepository($pdo), $pdo);
 $siteHandler = fn($pdo, $twig) => new SiteController(new CompanySiteRepository($pdo), new CompanyRepository($pdo), $twig);
 $skillHandler = fn($pdo, $twig) => new SkillController(new SkillRepository($pdo), $twig);
-$appHandler = fn($pdo, $twig) => new ApplicationController(new ApplicationRepository($pdo), new OfferRepository($pdo), new UserRepository($pdo), $twig);
+
+$appHandler = fn($pdo, $twig) => new ApplicationController(
+    new ApplicationRepository($pdo),
+    new OfferRepository($pdo),
+    new UserRepository($pdo),
+    $twig
+);
+
 $wishlistHandler = fn($pdo, $twig) => new WishlistController(new WishlistRepository($pdo), $twig);
 $pilotHandler = fn($pdo, $twig) => new PilotController(new UserRepository($pdo), $twig, $pdo);
 $studentHandler = fn($pdo, $twig) => new StudentController(new UserRepository($pdo), $twig, $pdo);
@@ -112,24 +122,23 @@ $promotionHandler = fn($pdo, $twig) => new PromotionController($twig, new Promot
 $legalsHandler = fn($pdo, $twig) => new LegalsController($twig);
 $complianceLogger = new ComplianceLogger($pdo);
 $dataExportHandler = fn($pdo, $twig) => new DataExportController($pdo, $twig, $complianceLogger);
-$dataDeletionManager = new DataDeletionManager($pdo, $complianceLogger, 'https://example.fr', 'legal@example.fr');
+//$dataDeletionManager = new DataDeletionManager($pdo, $complianceLogger, 'https://example.fr', 'legal@example.fr');
 $accountDeletionHandler = fn($pdo, $twig) => new AccountDeletionController($pdo, $twig, $complianceLogger, $dataDeletionManager);
 
+$promotionHandler = fn($pdo, $twig) => new PromotionController(
+    $twig,
+    new PromotionRepository($pdo),
+    new CampusRepository($pdo)
+);
 
 // --- 6. ROUTES ---
-
 // ════════════════════════════════════════════════════════════════════════════
 // AUTH & AUTHENTICATION
 // ════════════════════════════════════════════════════════════════════════════
-
-// Login
 $router->add('GET', '/login', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
 $router->add('POST', '/login', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->login());
-
-// Logout
 $router->add('GET', '/logout', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->logout());
 
-// Register
 $router->add('GET', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
 $router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
 
@@ -138,14 +147,37 @@ $router->add('GET', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)
 $router->add('POST', '/profile', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(), roles: $everyone);
 //$router->add('POST', '/profile/upload-cv', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(), roles: $everyone);
 
-// API — Profile Resources
-$router->add('GET', '/api/profile/get-cvs', fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()), roles: $student);
-$router->add('GET', '/api/profile/get-lms', fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAllLms(Util::getUserId()), roles: $student);
+$router->add(
+    'POST',
+    '/profile',
+    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->profile(),
+    roles: $everyone
+);
+
+$router->add(
+    'POST',
+    '/profile/upload-cv',
+    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->uploadCv(),
+    roles: $everyone
+);
+
+$router->add(
+    'GET',
+    '/api/profile/get-cvs',
+    fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAll(Util::getUserId()),
+    roles: $student
+);
+
+$router->add(
+    'GET',
+    '/api/profile/get-lms',
+    fn($p, $pdo, $twig) => $cvHandler($pdo, $twig)->ajaxGetAllLms(Util::getUserId()),
+    roles: $student
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // HOME PAGE
 // ════════════════════════════════════════════════════════════════════════════
-
 $router->add('GET', '/', function ($p, $pdo, $twig) {
     $offerRepo = new OfferRepository($pdo);
     $applicationRepo = new ApplicationRepository($pdo);
@@ -154,9 +186,15 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
     $page = (int) (filter_input(INPUT_GET, 'page', FILTER_VALIDATE_INT) ?: 1);
     $page = max(1, $page);
     $offset = ($page - 1) * $limit;
+
     $totalOffers = $offerRepo->countAll();
 
-    $studentProgress = ['pending' => 0, 'accepted' => 0, 'rejected' => 0];
+    $studentProgress = [
+        'pending' => 0,
+        'accepted' => 0,
+        'rejected' => 0,
+    ];
+
     $recentApplications = [];
 
     if (currentRoleValue() === RoleEnum::Student->value && Util::getUserId() !== null) {
@@ -178,116 +216,239 @@ $router->add('GET', '/', function ($p, $pdo, $twig) {
 // ════════════════════════════════════════════════════════════════════════════
 // DASHBOARDS
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/admin/dashboard',
+    fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(),
+    roles: [RoleEnum::Admin->value]
+);
 
-$router->add('GET', '/admin/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Admin->value]);
-$router->add('GET', '/pilote/dashboard', fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(), roles: [RoleEnum::Pilote->value]);
+$router->add(
+    'GET',
+    '/pilote/dashboard',
+    fn($p, $pdo, $twig) => $dashHandler($pdo, $twig)->index(),
+    roles: [RoleEnum::Pilote->value]
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // COMPANIES (Management & API)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/dashboard/companies',
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(),
+    roles: $staff
+);
 
-// GET — List companies
-$router->add('GET', '/dashboard/companies', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderList(), roles: $staff);
+$router->add(
+    'GET',
+    '/dashboard/companies/new',
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm('new'),
+    roles: $staff
+);
 
-// GET/POST — Create company
-$router->add('GET', '/dashboard/companies/new', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm('new'), roles: $staff);
-$router->add('POST', '/dashboard/companies/new', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave('new'), roles: $staff);
+$router->add(
+    'POST',
+    '/dashboard/companies/new',
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave('new'),
+    roles: $staff
+);
 
-// GET/POST — Edit company
-$router->add('GET', '/dashboard/companies/' . $idPattern, fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm((int) $p[0]), roles: $staff);
-$router->add('POST', '/dashboard/companies/' . $idPattern, fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave((int) $p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/dashboard/companies/' . $idPattern,
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->renderForm((int) $p[0]),
+    roles: $staff
+);
 
-// API — Get companies (JSON)
+$router->add(
+    'POST',
+    '/dashboard/companies/' . $idPattern,
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->handleFormSave((int) $p[0]),
+    roles: $staff
+);
+
 $router->add('GET', '/api/companies', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getCompaniesAjax());
 
-// API — Get sites for company
-$router->add('GET', '/api/companies/' . $idPattern . '/sites', fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getSitesByCompany($p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/api/companies/' . $idPattern . '/sites',
+    fn($p, $pdo, $twig) => $compHandler($pdo, $twig)->getSitesByCompany($p[0]),
+    roles: $staff
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // SITES (Management & API)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/dashboard/companies/' . $idPattern . '/sites',
+    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index((int) $p[0]),
+    roles: $staff
+);
 
-// GET — List sites for company
-$router->add('GET', '/dashboard/companies/' . $idPattern . '/sites', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->index((int) $p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/app/sites/new',
+    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(),
+    roles: $staff
+);
 
-// GET — Create site form
-$router->add('GET', '/app/sites/new', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->new(), roles: $staff);
+$router->add(
+    'POST',
+    '/app/sites/save',
+    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(),
+    roles: $staff
+);
 
-// POST — Save site
-$router->add('POST', '/app/sites/save', fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->handleSave(), roles: $staff);
+$router->add(
+    'GET',
+    '/app/sites/' . $idPattern,
+    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show((int) $p[0]),
+    roles: $staff
+);
 
-// GET — Show site details
-$router->add('GET', '/app/sites/' . $idPattern, fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->show((int) $p[0]), roles: $staff);
-
-// POST — Delete site
-$router->add('POST', '/app/sites/delete/' . $idPattern, fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete((int) $p[0]), roles: $staff);
+$router->add(
+    'POST',
+    '/app/sites/delete/' . $idPattern,
+    fn($p, $pdo, $twig) => $siteHandler($pdo, $twig)->delete((int) $p[0]),
+    roles: $staff
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // OFFERS (Management, Public Display & API)
 // ════════════════════════════════════════════════════════════════════════════
-
-// GET — List/Search offers (public)
 $router->add('GET', '/app/offers', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
 $router->add('GET', '/app/offers/search', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->search());
 
-// GET — Show offer details
-$router->add('GET', '/app/offers/show/' . $idPattern, fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show((int) $p[0]));
+$router->add(
+    'GET',
+    '/app/offers/show/' . $idPattern,
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->show((int) $p[0])
+);
 
-// GET/POST — Create offer
-$router->add('GET', '/dashboard/offers/new', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(), roles: $staff);
-$router->add('POST', '/dashboard/offers/new', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(), roles: $staff);
+$router->add(
+    'GET',
+    '/dashboard/offers/new',
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->create(),
+    roles: $staff
+);
 
-// GET/POST — Edit offer
-$router->add('GET', '/app/offers/edit/' . $idPattern, fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]), roles: $staff);
-$router->add('POST', '/app/offers/update/' . $idPattern, fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]), roles: $staff);
+$router->add(
+    'POST',
+    '/dashboard/offers/new',
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->store(),
+    roles: $staff
+);
 
-// POST — Delete offer
-$router->add('POST', '/app/offers/delete/' . $idPattern, fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy((int) $p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/app/offers/edit/' . $idPattern,
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->edit($p[0]),
+    roles: $staff
+);
 
-// GET — Dashboard offer list
-$router->add('GET', '/dashboard/offers', fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index());
+$router->add(
+    'POST',
+    '/app/offers/update/' . $idPattern,
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->update($p[0]),
+    roles: $staff
+);
+
+$router->add(
+    'POST',
+    '/app/offers/delete/' . $idPattern,
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->destroy((int) $p[0]),
+    roles: $staff
+);
+
+$router->add(
+    'GET',
+    '/dashboard/offers',
+    fn($p, $pdo, $twig) => $offerHandler($pdo, $twig)->index(),
+    roles: $staff
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // SKILLS (Management & API)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/app/skills',
+    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(),
+    roles: $staff
+);
 
-// GET — List skills
-$router->add('GET', '/app/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->index(), roles: $staff);
-
-// API — Get skills (JSON)
 $router->add('GET', '/api/skills', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->listJson());
 
-// API — Create skill
-$router->add('POST', '/api/skills/create', fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(), roles: $staff);
+$router->add(
+    'POST',
+    '/api/skills/create',
+    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->createAjax(),
+    roles: $staff
+);
 
-// API — Update skill
-$router->add('PATCH', '/api/skills/update/' . $idPattern, fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p), roles: $staff);
+$router->add(
+    'PATCH',
+    '/api/skills/update/' . $idPattern,
+    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->updateAjax($p),
+    roles: $staff
+);
 
-// API — Delete skill
-$router->add('DELETE', '/api/skills/delete/' . $idPattern, fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p), roles: $staff);
+$router->add(
+    'DELETE',
+    '/api/skills/delete/' . $idPattern,
+    fn($p, $pdo, $twig) => $skillHandler($pdo, $twig)->deleteAjax($p),
+    roles: $staff
+);
 
-$router->add('GET', '/api/campus/' . $idPattern . '/promotions', fn($p, $pdo, $twig) => $promotionHandler($pdo, $twig)->getAllAjax($p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/api/campus/' . $idPattern . '/promotions',
+    fn($p, $pdo, $twig) => $promotionHandler($pdo, $twig)->getAllAjax($p[0]),
+    roles: $staff
+);
+
 $router->add(
     'POST',
     '/api/campus/' . $idPattern . '/promotions',
     fn($p, $pdo, $twig) => $promotionHandler($pdo, $twig)->store(array_merge(
-    json_decode(file_get_contents('php://input'), true) ?? [],
-    ['campus_id_promotion' => $p[0]]   // URL param always wins over body
-)),
+        json_decode(file_get_contents('php://input'), true) ?? [],
+        ['campus_id_promotion' => $p[0]]
+    )),
     roles: $staff
 );
-$router->add('GET', '/api/campus', fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->getAllAjax(), roles: $staff);
+
+$router->add(
+    'GET',
+    '/api/campus',
+    fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->getAllAjax(),
+    roles: $staff
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // APPLICATIONS (Student & Staff Management)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/app/offers/' . $idPattern . '/apply',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]),
+    roles: $student
+);
 
-// GET/POST — Apply to offer
-$router->add('GET', '/app/offers/' . $idPattern . '/apply', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewApply($p[0]), roles: $student);
-$router->add('POST', '/app/offers/' . $idPattern . '/apply', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]), roles: $student);
+$router->add(
+    'POST',
+    '/app/offers/' . $idPattern . '/apply',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->doApply($p[0]),
+    roles: $student
+);
 
-// GET — My applications (student view)
-$router->add('GET', '/dashboard/applications', fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(), roles: $student);
+$router->add(
+    'GET',
+    '/dashboard/applications',
+    fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->myApplications(),
+    roles: $student
+);
 
 // GET — Student applications (staff view)
 $router->add('GET', '/dashboard/applications/' . $idPattern, fn($p, $pdo, $twig) => $appHandler($pdo, $twig)->viewStudentApplications($p[0]), roles: [RoleEnum::Pilote->value]);
@@ -297,55 +458,112 @@ $router->add('PATCH', '/api/applications/' . $idPattern . '/status', fn($p, $pdo
 // ════════════════════════════════════════════════════════════════════════════
 // WISHLIST (Student Management)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/app/wishlist',
+    fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->index(),
+    roles: $student
+);
 
-// GET — View wishlist
-$router->add('GET', '/dashboard/wishlist', fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->index(), roles: $student);
-
-// POST — Toggle offer in wishlist
-$router->add('POST', '/app/wishlist/toggle/' . $idPattern, fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->toggle($p[0]), roles: $student);
+$router->add(
+    'POST',
+    '/app/wishlist/toggle/' . $idPattern,
+    fn($p, $pdo, $twig) => $wishlistHandler($pdo, $twig)->toggle($p[0]),
+    roles: $student
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // PILOTS (Admin Management)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/dashboard/pilotes',
+    fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderList(),
+    roles: [RoleEnum::Admin->value]
+);
 
-// GET — List pilots
-$router->add('GET', '/dashboard/pilotes', fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderList(), roles: [RoleEnum::Admin->value]);
+$router->add(
+    'GET',
+    '/dashboard/pilotes/' . $idPattern,
+    fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderEditForm($p[0]),
+    roles: [RoleEnum::Admin->value]
+);
 
-// GET/POST — Edit pilot
-$router->add('GET', '/dashboard/pilotes/' . $idPattern, fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->renderEditForm($p[0]), roles: [RoleEnum::Admin->value]);
-$router->add('POST', '/dashboard/pilotes/' . $idPattern, fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->handleUpdate($p[0]), roles: [RoleEnum::Admin->value]);
+$router->add(
+    'POST',
+    '/dashboard/pilotes/' . $idPattern,
+    fn($p, $pdo, $twig) => $pilotHandler($pdo, $twig)->handleUpdate($p[0]),
+    roles: [RoleEnum::Admin->value]
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // STUDENTS (Admin & Pilot Management)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/dashboard/etudiants',
+    fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderList(),
+    roles: $staff
+);
 
-// GET — List students
-$router->add('GET', '/dashboard/etudiants', fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderList(), roles: $staff);
+$router->add(
+    'GET',
+    '/dashboard/etudiants/new',
+    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(),
+    roles: $staff
+);
 
-// GET/POST — Create student
-$router->add('GET', '/dashboard/etudiants/new', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(), roles: $staff);
-$router->add('POST', '/dashboard/etudiants/new', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(), roles: $staff);
+$router->add(
+    'POST',
+    '/dashboard/etudiants/new',
+    fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->registerStudent(),
+    roles: $staff
+);
 
-// GET/POST — Edit student
-$router->add('GET', '/dashboard/etudiants/' . $idPattern, fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderEditForm($p[0]), roles: $staff);
-$router->add('POST', '/dashboard/etudiants/' . $idPattern, fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->handleUpdate($p[0]), roles: $staff);
+$router->add(
+    'GET',
+    '/dashboard/etudiants/' . $idPattern,
+    fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->renderEditForm($p[0]),
+    roles: $staff
+);
 
-// PROMOTIONS (Admin & Pilot Management)
-$router->add('GET', '/dashboard/promotions', fn($p, $pdo, $twig) => $promotionHandler($pdo, $twig)->renderIndex(), roles: $staff, );
+$router->add(
+    'POST',
+    '/dashboard/etudiants/' . $idPattern,
+    fn($p, $pdo, $twig) => $studentHandler($pdo, $twig)->handleUpdate($p[0]),
+    roles: $staff
+);
+
+$router->add(
+    'GET',
+    '/dashboard/promotions',
+    fn($p, $pdo, $twig) => $promotionHandler($pdo, $twig)->renderIndex(),
+    roles: $staff
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // CAMPUSES (Admin Management)
 // ════════════════════════════════════════════════════════════════════════════
+$router->add(
+    'GET',
+    '/dashboard/campus',
+    fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->index(),
+    roles: [RoleEnum::Admin->value]
+);
 
-// GET — List campuses
-$router->add('GET', '/dashboard/campus', fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->index(), roles: [RoleEnum::Admin->value]);
+$router->add(
+    'GET',
+    '/dashboard/campus/edit/' . $idPattern,
+    fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->edit((int) $p[0]),
+    roles: [RoleEnum::Admin->value]
+);
 
-// GET/POST — Edit campus
-$router->add('GET', '/dashboard/campus/edit/' . $idPattern, fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->edit((int) $p[0]), roles: [RoleEnum::Admin->value]);
-$router->add('POST', '/dashboard/campus/edit/' . $idPattern, fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->edit((int) $p[0]), roles: [RoleEnum::Admin->value]);
-
-// POST — Delete campus
-$router->add('POST', '/dashboard/campus/delete/' . $idPattern, fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->delete((int) $p[0]), roles: $staff);
+$router->add(
+    'POST',
+    '/dashboard/campus/edit/' . $idPattern,
+    fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->edit((int) $p[0]),
+    roles: [RoleEnum::Admin->value]
+);
 
 // ════════════════════════════════════════════════════════════════════════════
 // LEGALS & GDPR (Public & Protected)
@@ -356,27 +574,12 @@ $router->add('GET', '/legals', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig
 $router->add('GET', '/mentions-legales', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
 $router->add('GET', '/privacy', fn($p, $pdo, $twig) => $legalsHandler($pdo, $twig)->index());
 
-// GET — GDPR data rights dashboard (protected)
-/*$router->add('GET', '/dashboard/account/data-rights', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->showDataRights(), roles: $everyone);
-
-// POST — Request GDPR data export (protected)
-$router->add('POST', '/dashboard/account/export-data', fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->requestExport(), roles: $everyone);
-
-// GET — Download GDPR data export (protected with file ID)
-$router->add('GET', '/dashboard/account/download-export/' . $idPattern, fn($p, $pdo, $twig) => $dataExportHandler($pdo, $twig)->downloadExport($p[0]), roles: $everyone);
-
-// GET — Account deletion page (protected)
-$router->add('GET', '/dashboard/account/delete-account', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->showDeletePage(), roles: $everyone);
-
-// POST — Request account deletion (protected)
-$router->add('POST', '/dashboard/account/request-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->requestDeletion(), roles: $everyone);
-
-// GET — Confirm account deletion via email token (public with token)
-$router->add('GET', '/dashboard/account/confirm-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->confirmDeletion());
-
-// POST — Cancel pending account deletion (protected)
-$router->add('POST', '/dashboard/account/cancel-deletion', fn($p, $pdo, $twig) => $accountDeletionHandler($pdo, $twig)->cancelDeletion(), roles: $everyone);
-*/
+$router->add(
+    'POST',
+    '/dashboard/campus/delete/' . $idPattern,
+    fn($p, $pdo, $twig) => $campusHandler($pdo, $twig)->delete((int) $p[0]),
+    roles: $staff
+);
 
 // --- 7. DISPATCH ---
 $router->run($_SERVER['REQUEST_URI'], $_SERVER['REQUEST_METHOD']);

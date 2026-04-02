@@ -6,6 +6,7 @@ namespace App\Controllers;
 use App\Repository\WishListRepository;
 use Twig\Environment;
 use App\Util;
+use Twig\Environment;
 
 class WishlistController extends BaseController
 {
@@ -28,7 +29,7 @@ class WishlistController extends BaseController
             'pageTitle' => 'Ma wishlist',
             'sidebar_active' => 'wishlist',
             'isPrivileged' => false,
-            'user' => Util::getUser()
+            'user' => Util::getUser(),
         ]);
     }
 
