@@ -26,8 +26,9 @@ class WishlistController extends BaseController
         echo $this->twig->render('wishlist/index.html.twig', [
             'offers' => $offers,
             'pageTitle' => 'Ma wishlist',
-            'currentPage' => 'wishlist',
+            'sidebar_active' => 'wishlist',
             'isPrivileged' => false,
+            'user' => Util::getUser()
         ]);
     }
 

@@ -58,7 +58,7 @@ class AuthController extends BaseController
                 // Path configuration
                 $baseDir = dirname(__DIR__, 2);
                 $uploadDir = $baseDir . '/cdn/uploads/cvs/';
-                
+
                 if (!is_dir($uploadDir)) {
                     mkdir($uploadDir, 0775, true);
                 }
@@ -215,11 +215,11 @@ class AuthController extends BaseController
 
             if ($user && password_verify($password, $user->password)) {
                 session_regenerate_id(true);
-                
-                $role = $user->role instanceof RoleEnum ? $user->role : RoleEnum::tryFrom((string)$user->role);
-                
+
+                $role = $user->role instanceof RoleEnum ? $user->role : RoleEnum::tryFrom((string) $user->role);
+
                 Util::setCSRFToken(bin2hex(random_bytes(32)));
-                Util::setUserId((string)$user->id);
+                Util::setUserId((string) $user->id);
                 Util::setRole($role);
                 Util::setUserData([
                     'id' => $user->id,
@@ -258,7 +258,7 @@ class AuthController extends BaseController
 
         echo $this->twig->render('auth/profile.html.twig', [
             'user' => $user,
-            'csrf_token' => Util::getCSRFToken()
+            'csrf_token' => Util::getCSRFToken(),
         ]);
     }
 
@@ -267,9 +267,14 @@ class AuthController extends BaseController
         $_SESSION = [];
         if (ini_get("session.use_cookies")) {
             $params = session_get_cookie_params();
-            setcookie(session_name(), '', time() - 42000,
-                $params["path"], $params["domain"],
-                $params["secure"], $params["httponly"]
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
             );
         }
         session_destroy();

@@ -57,7 +57,16 @@ class PilotController extends BaseController
 
         // 2. On récupère TOUTES les promotions pour le menu déroulant
         // (On utilise une requête directe simple ici pour éviter de modifier ton PromotionRepository)
-        $stmt = $this->pdo->query("SELECT HEX(id) as id, label, academic_year FROM promotion ORDER BY academic_year DESC");
+        
+        $stmt = $this->pdo->query("
+    SELECT 
+        id_promotion AS id, 
+        label_promotion AS label, 
+        academic_year_promotion AS academic_year 
+    FROM promotion 
+    ORDER BY academic_year_promotion DESC
+");
+
         $allPromotions = $stmt->fetchAll(\PDO::FETCH_ASSOC);
 
         echo $this->twig->render('pilots/pilot_editor.html.twig', [
