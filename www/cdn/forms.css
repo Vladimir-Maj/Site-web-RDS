@@ -108,3 +108,50 @@ input:invalid + .error-hint {
         align-items: flex-end;
     }
 }
+
+/* ===================================================
+   FILE DROPZONE (CV & MOTIVATION LETTER)
+   =================================================== */
+
+.file-dropzone {
+    display: block;
+    border: 2px dashed var(--clr-border);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: var(--clr-surface);
+}
+
+.file-dropzone:hover {
+    border-color: var(--clr-accent);
+    background: rgba(187, 134, 252, 0.05);
+}
+
+.file-dropzone-icon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 1rem;
+}
+
+.file-dropzone-title {
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+    color: var(--clr-text);
+}
+
+.file-dropzone-subtitle {
+    font-size: 0.85rem;
+    color: var(--clr-text-muted);
+}
+
+.file-input-hidden {
+    display: none;
+}
+
+/* Active state (when file selected via JS) */
+.file-dropzone.active {
+    border-color: var(--clr-accent);
+    background: rgba(187, 134, 252, 0.08);
+}

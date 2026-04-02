@@ -150,3 +150,45 @@
     border: 2px solid var(--clr-accent);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
+
+/**
+#########################
+AUTO COMPLETE
+#########################
+*/
+
+.skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 5px;
+    border: 1px solid #ccc;
+    padding: 5px;
+    border-radius: 5px;
+    min-height: 40px;
+}
+
+.skills-container input {
+    border: none;
+    flex: 1;
+    min-width: 150px;
+    outline: none;
+}
+
+.skill-tag {
+    background-color: #e0f0ff;
+    color: #004a99;
+    padding: 2px 8px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+}
+
+.skill-tag button {
+    background: none;
+    border: none;
+    margin-left: 5px;
+    cursor: pointer;
+    font-weight: bold;
+    color: #004a99;
+}
