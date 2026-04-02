@@ -407,4 +407,7 @@ class CompanyRepository
         $stmt = $this->pdo->prepare("DELETE FROM company_site WHERE company_id_company_site = ?");
         return $stmt->execute([(int) $companyId]);
     }
+
+
+    
 }
