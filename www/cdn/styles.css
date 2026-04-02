@@ -1,6 +1,6 @@
 /* 1. Core Foundations (Variables, Reset, Typography) */
 @import url('https://cdn.stageflow.fr/base.css');
-
+/*@import url('https://cdn.stageflow.fr/legals.css');*/
 /* 2. Structural Shell (Header, Footer, Main Grid) */
 @import url('https://cdn.stageflow.fr/layout.css');
 
@@ -253,6 +253,9 @@ nav a.active {
     text-decoration: none;
     color: var(--clr-text);
     background: transparent;
+    width: 100%;
+    text-align: left;
+    transition: all 0.2s ease;
 }
 
 .dashboard-menu-link:hover {
@@ -264,6 +267,61 @@ nav a.active {
     background: var(--clr-accent);
     color: var(--clr-accent-inv);
     border-color: var(--clr-accent);
+}
+
+/* Dashboard action buttons - consistent width */
+.dashboard-btn,
+.dashboard-action-btn {
+    display: block;
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--clr-border);
+    background: var(--clr-surface);
+    color: var(--clr-text);
+    text-decoration: none;
+    border-radius: var(--border-radius-btn);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.9rem;
+    text-align: center;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-btn:hover,
+.dashboard-action-btn:hover {
+    border-color: var(--clr-accent);
+    color: var(--clr-accent);
+    transform: translateY(-1px);
+}
+
+.dashboard-btn-primary,
+.dashboard-action-btn.primary {
+    background: var(--clr-accent);
+    color: var(--clr-accent-inv);
+    border-color: var(--clr-accent);
+}
+
+.dashboard-btn-primary:hover,
+.dashboard-action-btn.primary:hover {
+    filter: brightness(1.2);
+    color: var(--clr-accent-inv);
+}
+
+.dashboard-btn-danger,
+.dashboard-action-btn.danger {
+    background: var(--clr-danger);
+    color: white;
+    border-color: var(--clr-danger);
+}
+
+.dashboard-btn-danger:hover,
+.dashboard-action-btn.danger:hover {
+    filter: brightness(0.9);
+    color: white;
 }
 
 .dashboard-main {
