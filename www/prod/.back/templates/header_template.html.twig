@@ -1,10 +1,9 @@
 <header id="page-header">
 	<div class="header-inner">
 		<a href="/" class="logo">
-			<span></span>euh prosit 6-7
+			<span></span>StageFlow
 		</a>
 
-		{# Burger button — Now visible on ALL screens #}
 		<button class="burger" id="burger-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-nav">
 			<span></span>
 			<span></span>
@@ -12,25 +11,23 @@
 		</button>
 
 		<nav id="main-nav">
-			<div class="nav-content">
-				<a href="/dashboard/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Offres</a>
-
-				{% if user and (user.role == 'admin' or user.role == 'pilote') %}
-					<a href="/dashboard/offers/new" class="{{ currentPage|default('') == 'editor' ? 'active' : '' }}">Publier</a>
-					<a href="/dashboard/skills" class="{{ currentPage|default('') == 'skills' ? 'active' : '' }}">Compétences</a>
-					<a href="/app/companies" class="{{ currentPage|default('') == 'companies' ? 'active' : '' }}">Entreprises</a>
-				{% endif %}
-
-
+			<div
+				class="nav-content">
+				{# 1. Always visible #}
 
 				{% if user %}
+				<a href="/dashboard/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Mon Dashboard</a>
+					{# 2. Single button to return to the management area #}
+					<hr class="nav-divider">
+
 					<a href="/profile" class="{{ currentPage|default('') == 'profile' ? 'active' : '' }}">
-						Profil ({{ user.first_name|default('PRENOM') }})
+						Profil ({{ user.first_name|default('User') }})
 					</a>
 					<a href="/logout" class="logout-link">Logout</a>
 				{% else %}
+					{# 3. Guest links #}
 					<a href="/login" class="{{ currentPage|default('') == 'login' ? 'active' : '' }}">Connexion</a>
-					<a href="/register" class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>
+					{#<a href="/register" class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>#}
 				{% endif %}
 
 				<hr class="nav-divider">

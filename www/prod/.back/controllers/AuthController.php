@@ -290,9 +290,9 @@ class AuthController extends BaseController
     private function handleRoleRedirection(RoleEnum $role): void
     {
         $path = match ($role) {
-            RoleEnum::Admin => '/admin/dashboard',
-            RoleEnum::Pilote => '/pilote/dashboard',
-            RoleEnum::Student => '/profile',
+            RoleEnum::Admin => '/dashboard/offers',
+            RoleEnum::Pilote => '/dashboard/offers',
+            RoleEnum::Student => '/profile/offers',
             default => '/',
         };
 
