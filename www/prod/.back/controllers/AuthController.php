@@ -93,6 +93,8 @@ class AuthController extends BaseController
 
     public function register(): void
     {
+        $this->abortIfNotPriv();
+
         $error = null;
         $success = null;
         $old = $_POST;
@@ -147,15 +149,29 @@ class AuthController extends BaseController
     public function registerStudent(): void
     {
         if (!$this->isPrivileged()) {
-            $this->abort(403, "Accès refusé. Seuls les pilotes peuvent inscrire des étudiants.");
+            $this->abort(403, "Accès refusé. Seuls les administrateurs et pilotes peuvent inscrire des étudiants.");
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $pilotId = Util::getUserId();
-            $currentPromo = $this->userRepository->getPromoByPilote($pilotId);
+            $userId = (int) (Util::getUserId() ?? 0);
+            $allPromotions = [];
+
+            if ($this->isSuperUser()) {
+                $stmt = $this->pdo->query("\n                    SELECT\n                        id_promotion AS id,\n                        label_promotion AS label,\n                        academic_year_promotion AS academic_year\n                    FROM promotion\n                    ORDER BY academic_year_promotion DESC, label_promotion ASC\n                ");
+                $allPromotions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $stmt = $this->pdo->prepare("\n                    SELECT\n                        p.id_promotion AS id,\n                        p.label_promotion AS label,\n                        p.academic_year_promotion AS academic_year\n                    FROM promotion p\n                    INNER JOIN promotion_assignment pa ON p.id_promotion = pa.promotion_assignment_id\n                    WHERE pa.pilot_assignment_id = :pilotId\n                    ORDER BY pa.assigned_at DESC\n                ");
+                $stmt->execute(['pilotId' => $userId]);
+                $allPromotions = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            }
+
+            $currentPromo = $allPromotions[0] ?? null;
+            $cancelUrl = $this->isSuperUser() ? '/admin/dashboard' : '/pilote/dashboard';
 
             echo $this->twig->render('auth/register_student.html.twig', [
                 'current_promo' => $currentPromo,
+                'all_promotions' => $allPromotions,
+                'cancel_url' => $cancelUrl,
                 'csrf_token' => Util::getCSRFToken()
             ]);
             return;
@@ -170,13 +186,22 @@ class AuthController extends BaseController
             $firstName = $_POST['first_name'] ?? '';
             $lastName = $_POST['last_name'] ?? '';
             $promoId = $_POST['promotion_id'] ?? '';
+            $password = $_POST['password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
 
-            if (empty($email) || empty($firstName) || empty($lastName) || empty($promoId)) {
+            if (empty($email) || empty($firstName) || empty($lastName) || empty($promoId) || empty($password) || empty($confirmPassword)) {
                 $this->abort(400, "Tous les champs sont obligatoires.");
             }
 
-            $tempPassword = bin2hex(random_bytes(4));
-            $hashedPassword = password_hash($tempPassword, PASSWORD_ARGON2ID);
+            if ($password !== $confirmPassword) {
+                $this->abort(400, "Les mots de passe ne correspondent pas.");
+            }
+
+            if (strlen($password) < 8) {
+                $this->abort(400, "Le mot de passe doit contenir au moins 8 caractères.");
+            }
+
+            $hashedPassword = password_hash($password, PASSWORD_ARGON2ID);
 
             $user = new UserModel();
             $user->email = new Email($email);
@@ -193,14 +218,109 @@ class AuthController extends BaseController
                 $success = $this->userRepository->makeStudent($newUserId, $promoId, 'searching');
 
                 if ($success) {
-                    $_SESSION['temp_password_display'] = $tempPassword;
-                    $_SESSION['flash_success'] = "L'étudiant $firstName $lastName a été créé.";
+                    $_SESSION['flash_message'] = "L'étudiant $firstName $lastName a été créé.";
+                    $_SESSION['flash_type'] = 'success';
                     header("Location: /dashboard/etudiants");
                     exit;
                 }
             }
             $this->abort(500, "Une erreur est survenue lors de la création.");
         }
+    }
+
+    public function registerPilot(): void
+    {
+        if (!$this->isSuperUser()) {
+            $this->abort(403, "Accès refusé. Seuls les administrateurs peuvent créer un pilote.");
+        }
+
+        $this->handleScopedRegistration(
+            RoleEnum::Pilote,
+            'Créer un compte Pilote',
+            'Enregistrez un nouveau pilote pédagogique.',
+            '/dashboard/pilotes/new',
+            '/dashboard/pilotes'
+        );
+    }
+
+    public function registerAdmin(): void
+    {
+        if (!$this->isSuperUser()) {
+            $this->abort(403, "Accès refusé. Seuls les administrateurs peuvent créer un administrateur.");
+        }
+
+        $this->handleScopedRegistration(
+            RoleEnum::Admin,
+            'Créer un compte Administrateur',
+            'Création réservée aux comptes administrateurs.',
+            '/dashboard/admins/new',
+            '/admin/dashboard'
+        );
+    }
+
+    private function handleScopedRegistration(
+        RoleEnum $targetRole,
+        string $title,
+        string $subtitle,
+        string $action,
+        string $successRedirect
+    ): void {
+        $error = null;
+        $success = null;
+        $old = $_POST;
+
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            if (!Util::validateCSRFToken($_POST['csrf_token'] ?? '')) {
+                $this->abort(403, "Invalid CSRF token.");
+            }
+
+            $emailRaw = trim($_POST['email'] ?? '');
+            $password = $_POST['password'] ?? '';
+            $confirm = $_POST['confirm_password'] ?? '';
+            $firstName = trim($_POST['first_name'] ?? '');
+            $lastName = trim($_POST['last_name'] ?? '');
+
+            if ($password !== $confirm) {
+                $error = "Les mots de passe ne correspondent pas.";
+            } elseif (!filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
+                $error = "Format d'email invalide.";
+            } elseif (empty($firstName) || empty($lastName)) {
+                $error = "Le prénom et le nom sont requis.";
+            } elseif ($this->userRepository->findByEmail($emailRaw)) {
+                $error = "Cet email est déjà utilisé.";
+            } else {
+                try {
+                    $user = new UserModel();
+                    $user->email = new Email($emailRaw);
+                    $user->password = password_hash($password, PASSWORD_ARGON2ID);
+                    $user->role = $targetRole;
+                    $user->first_name = $firstName;
+                    $user->last_name = $lastName;
+                    $user->is_active = true;
+                    $user->created_at = date('Y-m-d H:i:s');
+
+                    $this->userRepository->push($user);
+                    $_SESSION['flash_message'] = "Compte créé avec succès.";
+                    $_SESSION['flash_type'] = 'success';
+                    header("Location: {$successRedirect}");
+                    exit;
+                } catch (\Throwable $e) {
+                    error_log("Scoped registration error: " . $e->getMessage());
+                    $error = "Une erreur technique est survenue.";
+                }
+            }
+        }
+
+        echo $this->twig->render('auth/register_scoped.html.twig', [
+            'title' => $title,
+            'subtitle' => $subtitle,
+            'action' => $action,
+            'role_label' => $targetRole->value,
+            'error' => $error,
+            'success' => $success,
+            'old' => $old,
+            'csrf_token' => Util::getCSRFToken(),
+        ]);
     }
 
     public function login(): void

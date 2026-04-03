@@ -1,0 +1,102 @@
+{% extends "base.html.twig" %}
+
+{% block title %}{{ title }} — StageFlow{% endblock %}
+
+{% block body %}
+<main class="container">
+    <div class="auth-container auth-container-lg mt-3" style="max-width: 800px;">
+        <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
+            <h1>{{ title }}</h1>
+            <p class="text-muted">{{ subtitle }}</p>
+        </div>
+
+        {% if error %}
+            <div class="alert alert-danger" role="alert" style="margin-bottom: 1rem;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <section class="card company-form" style="border: var(--border-width) solid var(--clr-border); border-radius: var(--border-radius); background: var(--clr-surface);">
+            <div class="card-body" style="padding: clamp(1.5rem, 5vw, 3rem);">
+                <form id="registerScopedForm" method="POST" action="{{ action }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+                    <span class="section-label">01. Identité</span>
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="first_name">Prénom</label>
+                            <input type="text" id="first_name" name="first_name" value="{{ old.first_name|default('') }}" required autofocus>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="last_name">Nom</label>
+                            <input type="text" id="last_name" name="last_name" value="{{ old.last_name|default('') }}" required>
+                        </div>
+
+                        <div class="form-group span-full">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" value="{{ old.email|default('') }}" required>
+                        </div>
+
+                        <div class="form-group span-full">
+                            <label>Rôle créé</label>
+                            <input type="text" value="{{ role_label|upper }}" disabled>
+                        </div>
+                    </div>
+
+                    <div class="info-section" style="margin-top: 2rem;">
+                        <span class="section-label">02. Sécurité</span>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" name="password" required minlength="8">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">Confirmation</label>
+                                <input type="password" id="confirm_password" name="confirm_password" required minlength="8">
+                            </div>
+                        </div>
+
+                        <div id="passwordError" style="display: none; color: var(--clr-danger); font-size: 0.9rem; margin-top: 0.4rem;">
+                            Les mots de passe ne correspondent pas.
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.8rem;">
+                        <button type="submit" class="btn btn-primary">Créer le compte</button>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const password = document.getElementById('password');
+        const confirmPassword = document.getElementById('confirm_password');
+        const passwordError = document.getElementById('passwordError');
+
+        function validatePasswords() {
+            if (confirmPassword.value === '') {
+                confirmPassword.setCustomValidity('');
+                passwordError.style.display = 'none';
+                return;
+            }
+
+            if (password.value !== confirmPassword.value) {
+                confirmPassword.setCustomValidity('Mismatch');
+                passwordError.style.display = 'block';
+            } else {
+                confirmPassword.setCustomValidity('');
+                passwordError.style.display = 'none';
+            }
+        }
+
+        password.addEventListener('input', validatePasswords);
+        confirmPassword.addEventListener('input', validatePasswords);
+    });
+</script>
+{% endblock %}

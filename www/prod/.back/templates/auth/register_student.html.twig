@@ -15,7 +15,7 @@
             <div class="card-body" style="padding: clamp(1.5rem, 5vw, 3rem);">
                 
                 {# Updated Action: Points to a specific student creation route #}
-                <form id="registerStudentForm" method="POST" action="/register">
+                <form id="registerStudentForm" method="POST" action="/dashboard/etudiants/new">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
                     
                     {# Hidden field to force the 'student' role in your controller #}
@@ -43,8 +43,10 @@
                         <div class="form-group span-full">
                             <label for="promotion_id">Assigner à la Promotion</label>
                             <select id="promotion_id" name="promotion_id" required>
-                                {% if current_promo %}
-                                    <option value="{{ current_promo.id }}" selected>{{ current_promo.label }} ({{ current_promo.academic_year }})</option>
+                                {% if all_promotions is defined and all_promotions|length > 0 %}
+                                    {% for promotion in all_promotions %}
+                                        <option value="{{ promotion.id }}" {{ loop.first ? 'selected' : '' }}>{{ promotion.label }} ({{ promotion.academic_year }})</option>
+                                    {% endfor %}
                                 {% else %}
                                     <option value="" disabled selected>-- Aucune promotion trouvée --</option>
                                 {% endif %}
@@ -55,15 +57,21 @@
 
                     <div class="info-section" style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(var(--clr-primary-rgb), 0.05); border-radius: var(--border-radius); border: 1px solid var(--clr-border);">
                         <span class="section-label" style="color: var(--clr-primary);">02. Accès & Sécurité</span>
-                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                            <strong>Note :</strong> Un mot de passe provisoire sera généré automatiquement. 
-                            L'étudiant pourra le modifier lors de sa première connexion.
-                        </p>
-                        {# We don't send a password, the Backend generates it #}
+                        <div class="form-grid" style="margin-top: 1rem;">
+                            <div class="form-group">
+                                <label for="password">Mot de passe</label>
+                                <input type="password" id="password" name="password" required minlength="8" placeholder="8+ caractères">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="confirm_password">Confirmer le mot de passe</label>
+                                <input type="password" id="confirm_password" name="confirm_password" required minlength="8" placeholder="Répétez le mot de passe">
+                            </div>
+                        </div>
                     </div>
 
                     <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--clr-border); display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
-                        <a href="/pilot/dashboard" class="btn btn-secondary" style="text-decoration: none;">Annuler</a>
+                        <a href="{{ cancel_url|default('/pilote/dashboard') }}" class="btn btn-secondary" style="text-decoration: none;">Annuler</a>
                         <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">
                             ✅ Valider l'inscription
                         </button>

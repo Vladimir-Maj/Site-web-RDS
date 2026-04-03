@@ -30,7 +30,6 @@
 					<a href="/logout" class="logout-link">Logout</a>
 				{% else %}
 					<a href="/login" class="{{ currentPage|default('') == 'login' ? 'active' : '' }}">Connexion</a>
-					<a href="/register" class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>
 				{% endif %}
 
 				<hr class="nav-divider">
