@@ -11,6 +11,16 @@ class PromotionModel extends BaseModel
     public ?string $academic_year_promotion = null;
     public int $campus_id_promotion = 0;
 
+    public function academic_year(): ?string
+    {
+        return $this->academic_year_promotion;
+    }
+
+    public function getId(): ?int
+    {
+        return $this->id_promotion;
+    }
+
     public static function fromArray(array $data): self
     {
         $inst = new self(null);

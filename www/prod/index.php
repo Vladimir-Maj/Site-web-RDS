@@ -208,6 +208,9 @@ $router->add(
     roles: $pilote
 );
 
+$router->add('GET', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
+$router->add('POST', '/register', fn($p, $pdo, $twig) => $authHandler($pdo, $twig)->register());
+
 // ════════════════════════════════════════════════════════════════════════════
 // COMPANIES (Management & API)
 // ════════════════════════════════════════════════════════════════════════════

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Repository\PromotionRepository;
 use App\Repository\UserRepository;
 use App\Models\UserModel;
 use App\Models\RoleEnum;
@@ -23,78 +24,15 @@ class AuthController extends BaseController
         $this->pdo = $pdo;
     }
 
-    /**
-     * @deprecated MARKED FOR REMOVAL
-     * 
-     * Handles CV Uploads. 
-     * Uses CVFast to support multiple CVs if applicable.
-     */
-    public function uploadCv(): void
-    {
-        if (!Util::isLoggedIn()) {
-            header('Location: /login');
-            exit;
-        }
-
-        $cvFast = new CVFast($this->userRepository, $this->twig, $this->pdo);
-        $error = null;
-        $success = null;
-        $userId = Util::getUserId();
-
-        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            if (!Util::validateCsrfToken($_POST['csrf_token'] ?? '')) {
-                $this->abort(403, "Jeton CSRF invalide.");
-            }
-
-            $file = $_FILES['cv_file'] ?? null;
-            $isPrimary = isset($_POST['is_primary']) && $_POST['is_primary'] === '1';
-            if (!$file || $file['error'] !== UPLOAD_ERR_OK) {
-                $error = ($file && $file['error'] === UPLOAD_ERR_INI_SIZE)
-                    ? "Le fichier dépasse la limite autorisée."
-                    : "Erreur lors de l'envoi du fichier.";
-            } elseif (mime_content_type($file['tmp_name']) !== 'application/pdf') {
-                $error = "Seuls les fichiers PDF sont autorisés.";
-            } elseif ($file['size'] > 2 * 1024 * 1024) {
-                $error = "Le fichier est trop lourd (max 2 Mo).";
-            } else {
-                // Path configuration
-                $baseDir = dirname(__DIR__, 2);
-                $uploadDir = $baseDir . '/cdn/uploads/cvs/';
-
-                if (!is_dir($uploadDir)) {
-                    mkdir($uploadDir, 0775, true);
-                }
-
-                $originalName = basename($file['name']);
-                $fileName = 'cv_' . bin2hex(random_bytes(8)) . '.pdf';
-                $destPath = $uploadDir . $fileName;
-
-                if (move_uploaded_file($file['tmp_name'], $destPath)) {
-                    $publicPath = '/cdn/uploads/cvs/' . $fileName;
-
-                    // Delegate to repository/service for DB persistence
-                    if ($cvFast->store($userId, $originalName, $publicPath, $isPrimary)) {
-                        $success = "Votre CV a été ajouté avec succès.";
-                    } else {
-                        unlink($destPath);
-                        $error = "Erreur lors de l'enregistrement en base de données.";
-                    }
-                } else {
-                    $error = "Erreur système lors du déplacement du fichier.";
-                }
-            }
-        }
-
-        echo $this->twig->render('auth/upload_cv.html.twig', [
-            'error' => $error,
-            'success' => $success,
-            'csrf_token' => Util::getCSRFToken(),
-        ]);
-    }
-
 
     public function register(): void
     {
+        // 1. Check if the user is even allowed to be here
+        $currentRole = Util::getRole(); // returns 'pilote', 'admin', etc.
+        if ($currentRole !== 'admin' && $currentRole !== 'pilote') {
+            $this->abort(403, "Accès refusé. Vous n'avez pas les droits requis.");
+        }
+
         $error = null;
         $success = null;
         $old = $_POST;
@@ -105,104 +43,182 @@ class AuthController extends BaseController
             }
 
             $emailRaw = trim($_POST['email'] ?? '');
-            $password = $_POST['password'] ?? '';
-            $confirm = $_POST['confirm_password'] ?? '';
             $firstName = trim($_POST['first_name'] ?? '');
-            $roleRaw = $_POST['role'] ?? 'student';
+            $lastName = trim($_POST['last_name'] ?? '');
+            $promoId = $_POST['promotion_id'] ?? null;
 
-            if ($password !== $confirm) {
-                $error = "Les mots de passe ne correspondent pas.";
-            } elseif (!filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
+            // 2. Role Enforcement
+            $requestedRole = $_POST['role'] ?? 'student';
+
+            // Safety check: Pilots can ONLY create students. 
+            // If a Pilot tries to send role=admin via Postman/Inspect Element, force it back to student.
+            if ($currentRole === 'pilote' && $requestedRole !== 'student') {
+                $requestedRole = 'student';
+            }
+
+            // Validation...
+            if (!filter_var($emailRaw, FILTER_VALIDATE_EMAIL)) {
                 $error = "Format d'email invalide.";
-            } elseif (empty($firstName)) {
-                $error = "Le prénom est requis.";
+            } elseif (empty($firstName) || empty($lastName)) {
+                $error = "Le nom et le prénom sont requis.";
+            } elseif (empty($promoId)) {
+                $error = "La promotion est obligatoire.";
             } elseif ($this->userRepository->findByEmail($emailRaw)) {
                 $error = "Cet email est déjà utilisé.";
             } else {
                 try {
                     $user = new UserModel();
                     $user->email = new Email($emailRaw);
-                    $user->password = password_hash($password, PASSWORD_ARGON2ID);
-                    $user->role = RoleEnum::tryFrom($roleRaw) ?? RoleEnum::Student;
                     $user->first_name = $firstName;
+                    $user->last_name = $lastName;
+                    // Use the null coalescing operator to provide a default (true/1)
+                    $user->is_active_user = $row['is_active'] ?? true;
+
+                    // Map string role to Enum safely
+                    $user->role = RoleEnum::tryFrom($requestedRole) ?? RoleEnum::Student;
                     $user->is_active = true;
                     $user->created_at = date('Y-m-d H:i:s');
 
-                    $this->userRepository->push($user);
-                    $success = "Votre compte a été créé !";
+                    // Generate temp password
+                    $tempPassword = bin2hex(random_bytes(4));
+                    $user->password = password_hash($tempPassword, PASSWORD_ARGON2ID);
+
+                    $newUserId = $this->userRepository->push($user);
+
+                    // 3. Link Student to Promotion
+                    if ($user->role === RoleEnum::Student) {
+
+                        $this->userRepository->makeStudent($newUserId, $promoId, 'searching');
+                    }
+                    $success = "Compte créé avec succès ! Mot de passe provisoire : <strong>$tempPassword</strong>";
                     $old = [];
+
                 } catch (\Throwable $e) {
                     error_log("Registration Error: " . $e->getMessage());
-                    $error = "Une erreur technique est survenue.";
+                    $error = "Erreur technique lors de la création.";
                 }
             }
         }
 
-        echo $this->twig->render('auth/register.html.twig', [
+        echo $this->twig->render('auth/register_student.html.twig', [
             'error' => $error,
             'success' => $success,
             'old' => $old,
-            'csrf_token' => Util::getCSRFToken()
+            'csrf_token' => Util::getCSRFToken(),
+            'user_role' => $currentRole // Pass this to show/hide UI elements if needed
         ]);
     }
 
+
     public function registerStudent(): void
     {
-        if (!$this->isPrivileged()) {
-            $this->abort(403, "Accès refusé. Seuls les pilotes peuvent inscrire des étudiants.");
+        $currentRole = Util::getRole();
+        $currentUserId = Util::getUserId();
+
+        // 1. Authorization: Only Admin and Pilote can access this page
+        if ($currentRole !== 'admin' && $currentRole !== 'pilote') {
+            $this->abort(403, "Accès refusé.");
         }
 
         if ($_SERVER['REQUEST_METHOD'] === 'GET') {
-            $pilotId = Util::getUserId();
-            $currentPromo = $this->userRepository->getPromoByPilote($pilotId);
+            $currentUserId = Util::getUserId();
+            $currentPromo = $this->userRepository->getPromoByPilote($currentUserId);
 
             echo $this->twig->render('auth/register_student.html.twig', [
                 'current_promo' => $currentPromo,
-                'csrf_token' => Util::getCSRFToken()
+                'csrf_token' => Util::getCSRFToken(),
+                'user_role' => Util::getRole(), // Ensure this matches 'admin' or 'pilote'
+                'error' => null,
+                'success' => null,
+                'old' => [] // <--- CRITICAL: Must be an empty array
             ]);
             return;
         }
-
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if (!Util::validateCsrfToken($_POST['csrf_token'] ?? '')) {
                 $this->abort(403, "CSRF token invalid.");
             }
 
-            $email = $_POST['email'] ?? '';
-            $firstName = $_POST['first_name'] ?? '';
-            $lastName = $_POST['last_name'] ?? '';
-            $promoId = $_POST['promotion_id'] ?? '';
+            // 2. Data Extraction
+            $email = trim($_POST['email'] ?? '');
+            $firstName = trim($_POST['first_name'] ?? '');
+            $lastName = trim($_POST['last_name'] ?? '');
+            $promoId = $_POST['promotion_id'] ?? null;
 
-            if (empty($email) || empty($firstName) || empty($lastName) || empty($promoId)) {
-                $this->abort(400, "Tous les champs sont obligatoires.");
+            // 3. Role Logic
+            // Admin picks from POST, Pilote is forced to 'student'
+            $requestedRoleStr = $_POST['role'] ?? 'student';
+            if ($currentRole === 'pilote') {
+                $requestedRoleStr = 'student';
             }
 
-            $tempPassword = bin2hex(random_bytes(4));
-            $hashedPassword = password_hash($tempPassword, PASSWORD_ARGON2ID);
+            // Map string to Enum (assuming RoleEnum has 'pilote' and 'student' cases)
+            $roleEnum = RoleEnum::tryFrom($requestedRoleStr) ?? RoleEnum::Student;
 
-            $user = new UserModel();
-            $user->email = new Email($email);
-            $user->password = $hashedPassword;
-            $user->first_name = $firstName;
-            $user->last_name = $lastName;
-            $user->role = RoleEnum::Student;
-            $user->is_active = true;
+            // 4. Validation
+            if (empty($email) || empty($firstName) || empty($lastName)) {
+                $this->renderWithError("Informations d'identité manquantes.");
+                return;
+            }
 
-            $newUserId = $this->userRepository->push($user);
+            // Students MUST have a promotion selected
+            if ($roleEnum === RoleEnum::Student && empty($promoId)) {
+                $this->renderWithError("Une promotion est requise pour inscrire un étudiant.");
+                return;
+            }
 
-            if ($newUserId) {
-                // makeStudent handles student-specific tables and enrollment
-                $success = $this->userRepository->makeStudent($newUserId, $promoId, 'searching');
+            try {
+                // 5. User Creation
+                $tempPassword = bin2hex(random_bytes(4));
 
-                if ($success) {
+                $user = new UserModel();
+                $user->email = new Email($email);
+                $user->password = password_hash($tempPassword, PASSWORD_ARGON2ID);
+                $user->first_name = $firstName;
+                $user->last_name = $lastName;
+                $user->role = $roleEnum;
+                $user->is_active = true;
+
+                $newUserId = $this->userRepository->push($user);
+
+                if ($newUserId) {
+                    // 6. Role-Specific Logic
+                    if ($roleEnum === RoleEnum::Student) {
+                        // Link user to student table and promo
+                        $this->userRepository->makeStudent($newUserId, (int) $promoId, 'searching');
+                    }
+                    // Note: If RoleEnum::Pilote, no extra 'make' method was provided, 
+                    // but you can add $this->userRepository->makePilote(...) here if needed.
+
                     $_SESSION['temp_password_display'] = $tempPassword;
-                    $_SESSION['flash_success'] = "L'étudiant $firstName $lastName a été créé.";
-                    header("Location: /dashboard/etudiants");
+                    $_SESSION['flash_success'] = "Le compte <strong>$requestedRoleStr</strong> pour $firstName $lastName a été créé.";
+
+                    // 7. Contextual Redirect
+                    $redirectPath = ($roleEnum === RoleEnum::Student) ? "/dashboard/etudiants" : "/dashboard/equipe";
+                    header("Location: $redirectPath");
                     exit;
                 }
+            } catch (\Exception $e) {
+                error_log("Registration Error: " . $e->getMessage());
+                $this->renderWithError("Erreur : cet email est peut-être déjà utilisé.");
+                return;
             }
-            $this->abort(500, "Une erreur est survenue lors de la création.");
         }
+    }
+
+    /**
+     * Helper to re-render the form with an error message without crashing Twig
+     */
+    private function renderWithError(string $message): void
+    {
+        echo $this->twig->render('auth/register_student.html.twig', [
+            'error' => $message,
+            'success' => null,
+            'user_role' => Util::getRole(),
+            'csrf_token' => Util::getCSRFToken(),
+            'current_promo' => $this->userRepository->getPromoByPilote(Util::getUserId()),
+            'old' => []
+        ]);
     }
 
     public function login(): void

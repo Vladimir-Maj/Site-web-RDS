@@ -1,69 +1,90 @@
 {% extends "base.html.twig" %}
 
-{% block title %}Inscrire un Étudiant — StageFlow{% endblock %}
+{% block title %}Nouvelle Inscription — StageFlow
+{% endblock %}
 
 {% block body %}
 <main class="container">
     <div class="auth-container auth-container-lg mt-3" style="max-width: 800px;">
-        
+
         <div class="page-header" style="text-align: center; margin-bottom: 2rem;">
             <h1>Nouvelle Inscription</h1>
-            <p class="text-muted">Enregistrez un nouvel étudiant dans votre promotion.</p>
+            <p class="text-muted">Créez un compte pour un nouvel utilisateur de la plateforme.</p>
         </div>
+
+        {# Error & Success Alerts #}
+        {% if error is defined and error %}
+            <div class="alert alert-danger">{{ error|raw }}</div>
+        {% endif %}
+        {% if success is defined and success %}
+            <div class="alert alert-success">{{ success|raw }}</div>
+        {% endif %}
 
         <section class="card company-form" style="border: var(--border-width) solid var(--clr-border); border-radius: var(--border-radius); background: var(--clr-surface);">
             <div class="card-body" style="padding: clamp(1.5rem, 5vw, 3rem);">
-                
-                {# Updated Action: Points to a specific student creation route #}
-                <form id="registerStudentForm" method="POST" action="/register">
+
+                <form method="POST" action="/dashboard/etudiants/new">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    
-                    {# Hidden field to force the 'student' role in your controller #}
-                    <input type="hidden" name="role" value="student">
 
-                    <span class="section-label">01. Informations de l'Étudiant</span>
-
+                    <span class="section-label">01. Type de Compte & Identité</span>
                     <div class="form-grid">
+                        
+                        {# Role Selection Logic #}
+                        <div class="form-group span-full">
+                            <label for="role_selector">Rôle de l'utilisateur</label>
+                            {% if user_role|lower == 'admin' %}
+                                <select name="role" id="role_selector" class="form-control" required>
+                                    <option value="student" {{ (old.role ?? '') == 'student' ? 'selected' : '' }}>Étudiant</option>
+                                    <option value="pilote" {{ (old.role ?? '') == 'pilote' ? 'selected' : '' }}>Pilote</option>
+                                    <option value="admin" {{ (old.role ?? '') == 'admin' ? 'selected' : '' }}>Administrateur</option>
+                                </select>
+                            {% else %}
+                                <input type="text" value="Étudiant" disabled class="form-control">
+                                <input type="hidden" name="role" id="role_selector" value="student">
+                                <small class="text-muted">Les pilotes ne peuvent inscrire que des étudiants.</small>
+                            {% endif %}
+                        </div>
+
+                        {# Identity Fields #}
                         <div class="form-group">
                             <label for="first_name">Prénom</label>
-                            <input type="text" id="first_name" name="first_name" placeholder="ex: Jean" required autofocus>
+                            <input type="text" id="first_name" name="first_name" required value="{{ old.first_name ?? '' }}" placeholder="ex: Jean">
                         </div>
-
                         <div class="form-group">
                             <label for="last_name">Nom</label>
-                            <input type="text" id="last_name" name="last_name" placeholder="ex: Dupont" required>
+                            <input type="text" id="last_name" name="last_name" required value="{{ old.last_name ?? '' }}" placeholder="ex: Dupont">
                         </div>
-
                         <div class="form-group span-full">
-                            <label for="email">Email Étudiant</label>
-                            <input type="email" id="email" name="email" placeholder="ex: jean.dupont@viacesi.fr" required>
-                        </div>
-
-                        {# Promotion Selection: Pre-filled with the Pilot's current promo if available #}
-                        <div class="form-group span-full">
-                            <label for="promotion_id">Assigner à la Promotion</label>
-                            <select id="promotion_id" name="promotion_id" required>
-                                {% if current_promo %}
-                                    <option value="{{ current_promo.id }}" selected>{{ current_promo.label }} ({{ current_promo.academic_year }})</option>
-                                {% else %}
-                                    <option value="" disabled selected>-- Aucune promotion trouvée --</option>
-                                {% endif %}
-                            </select>
-                            <small class="text-muted">L'étudiant sera automatiquement inscrit dans cette promotion.</small>
+                            <label for="email">Email professionnel</label>
+                            <input type="email" id="email" name="email" required value="{{ old.email ?? '' }}" placeholder="nom.prenom@viacesi.fr">
                         </div>
                     </div>
 
-                    <div class="info-section" style="margin-top: 2.5rem; padding: 1.5rem; background: rgba(var(--clr-primary-rgb), 0.05); border-radius: var(--border-radius); border: 1px solid var(--clr-border);">
-                        <span class="section-label" style="color: var(--clr-primary);">02. Accès & Sécurité</span>
-                        <p style="margin-top: 0.5rem; font-size: 0.9rem;">
-                            <strong>Note :</strong> Un mot de passe provisoire sera généré automatiquement. 
-                            L'étudiant pourra le modifier lors de sa première connexion.
-                        </p>
-                        {# We don't send a password, the Backend generates it #}
+                    {# Section 02: Only for Students #}
+                    <div id="student_fields" style="margin-top: 2rem; {{ (old.role ?? 'student') != 'student' ? 'display: none;' : '' }}">
+                        <span class="section-label">02. Centre & Promotion</span>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="campus_id">Centre (Campus)</label>
+                                <select id="campus_id" name="campus_id">
+                                    <option value="" disabled selected>Choisir un centre...</option>
+                                    {# Options loaded via JS #}
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="promotion_id">Promotion</label>
+                                <select id="promotion_id" name="promotion_id" disabled>
+                                    <option value="" disabled selected>Veuillez d'abord choisir un centre</option>
+                                    {# Options loaded via JS #}
+                                </select>
+                            </div>
+                        </div>
                     </div>
 
+                    {# Submit Button #}
                     <div style="margin-top: 3rem; padding-top: 1.5rem; border-top: 1px dashed var(--clr-border); display: flex; justify-content: flex-end; align-items: center; gap: 1rem;">
-                        <a href="/pilot/dashboard" class="btn btn-secondary" style="text-decoration: none;">Annuler</a>
+                        <a href="/dashboard/etudiants" class="btn btn-secondary" style="text-decoration: none;">Annuler</a>
                         <button type="submit" class="btn btn-primary" style="padding: 0.8rem 2rem;">
                             ✅ Valider l'inscription
                         </button>
@@ -73,4 +94,88 @@
         </section>
     </div>
 </main>
+	 <script>
+
+     document.addEventListener('DOMContentLoaded', () => {
+    const roleSelector = document.getElementById('role_selector');
+    const studentFields = document.getElementById('student_fields');
+
+    if (roleSelector && studentFields) {
+        // This function handles the visibility toggle
+        const toggleFields = (val) => {
+            studentFields.style.display = (val === 'student') ? 'block' : 'none';
+        };
+
+        // Run once on load (for 'old' values or defaults)
+        toggleFields(roleSelector.value);
+
+        // Run on change (if it's a select menu)
+        if (roleSelector.tagName === 'SELECT') {
+            roleSelector.addEventListener('change', (e) => toggleFields(e.target.value));
+        }
+    }
+});
+		document.addEventListener('DOMContentLoaded', () => {
+		    const roleSelector = document.getElementById('role_selector');
+		    const studentFields = document.getElementById('student_fields');
+		    const campusSelect = document.getElementById('campus_id');
+		    const promoSelect = document.getElementById('promotion_id');
+		
+		    // --- 1. Handle Role UI Toggles ---
+		    if (roleSelector && studentFields) {
+		        roleSelector.addEventListener('change', (e) => {
+		            const isStudent = e.target.value === 'student';
+		            studentFields.style.display = isStudent ? 'block' : 'none';
+		            
+		            // Toggle 'required' so the form can submit if hidden
+		            if (campusSelect) campusSelect.required = isStudent;
+		            if (promoSelect) promoSelect.required = isStudent;
+		        });
+		    }
+		
+		    // --- 2. Load Campuses from API ---
+		    if (campusSelect) {
+		        fetch('/api/campus')
+		            .then(res => res.json())
+		            .then(data => {
+		                data.forEach(campus => {
+		                    // Mapping API keys: id_campus and name_campus
+		                    const opt = new Option(campus.name_campus, campus.id_campus);
+		                    campusSelect.add(opt);
+		                });
+		            })
+		            .catch(err => console.error("Erreur Campus:", err));
+		
+		        // --- 3. Load Promotions based on Campus Selection ---
+		        campusSelect.addEventListener('change', function() {
+		            const campusId = this.value;
+		            
+		            promoSelect.innerHTML = '<option value="" disabled selected>Chargement...</option>';
+		            promoSelect.disabled = true;
+		
+		            fetch(`/api/campus/${campusId}/promotions`)
+		                .then(res => res.json())
+		                .then(data => {
+		                    promoSelect.innerHTML = '<option value="" disabled selected>Choisir une promotion...</option>';
+		                    
+		                    if (data.length > 0) {
+		                        data.forEach(promo => {
+		                            // Mapping API keys: id_promotion and label_promotion
+		                            const label = `${promo.label_promotion} (${promo.academic_year_promotion})`;
+		                            const opt = new Option(label, promo.id_promotion);
+		                            promoSelect.add(opt);
+		                        });
+		                        promoSelect.disabled = false;
+		                    } else {
+		                        promoSelect.innerHTML = '<option value="" disabled>Aucune promotion disponible</option>';
+		                    }
+		                })
+		                .catch(err => {
+		                    promoSelect.innerHTML = '<option value="" disabled>Erreur de chargement</option>';
+		                });
+		        });
+		    }
+		});
+		</script>
+
 {% endblock %}

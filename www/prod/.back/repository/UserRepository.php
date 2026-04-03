@@ -339,16 +339,20 @@ class UserRepository
     public function updateUser(int|string $id, array $data): bool
     {
         $sql = "UPDATE user 
-                SET first_name_user = :first_name, 
-                    last_name_user = :last_name, 
-                    is_active_user = :is_active 
-                WHERE id_user = :id";
+            SET first_name_user = :first_name, 
+                last_name_user = :last_name, 
+                is_active_user = :is_active 
+            WHERE id_user = :id";
 
         $stmt = $this->pdo->prepare($sql);
+
+        // We use ?? to provide defaults if the controller forgot to send a key
+        // This prevents the "Undefined array key" Warning
         return $stmt->execute([
-            ':first_name' => $data['first_name'],
-            ':last_name' => $data['last_name'],
-            ':is_active' => $data['is_active'],
+            ':first_name' => $data['first_name'] ?? '',
+            ':last_name' => $data['last_name'] ?? '',
+            // Cast to int (1 or 0) for the database bit/tinyint field
+            ':is_active' => isset($data['is_active']) ? (int) $data['is_active'] : 1,
             ':id' => (int) $id
         ]);
     }
