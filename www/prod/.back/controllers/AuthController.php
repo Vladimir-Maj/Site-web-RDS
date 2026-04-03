@@ -292,7 +292,7 @@ class AuthController extends BaseController
         $path = match ($role) {
             RoleEnum::Admin => '/dashboard/offers',
             RoleEnum::Pilote => '/dashboard/offers',
-            RoleEnum::Student => '/profile/offers',
+            RoleEnum::Student => '/dashboard/offers',
             default => '/',
         };
 
