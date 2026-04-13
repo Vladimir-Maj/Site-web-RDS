@@ -222,7 +222,6 @@ docker exec -it lamp-db mysql -u website-local -p1234 -e \
 ```bash
 docker compose down -v --remove-orphans
 docker compose up -d --build
-# Optionnel : réimporter le seed
 docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p1234 sql_db < seed.sql
 ```
 
