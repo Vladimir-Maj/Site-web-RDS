@@ -23,14 +23,14 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 
 - Git
 - Docker + Docker Compose v2
-- Composer
+- Composer (pour l'installation locale des dépendances PHP)
 
-> **Ports requis :** `80` (HTTP) et `443` (HTTPS)  
+> **Ports requis :** `80` (HTTP) et `443` (HTTPS).  
 > Si Apache tourne déjà sur votre machine, libérez les ports avant de lancer le projet :
->
+> 
 > ```bash
 > sudo systemctl stop apache2
-> sudo systemctl disable apache2
+> sudo systemctl disable apache2  # Empêche le redémarrage automatique au boot
 > ```
 
 ---
@@ -44,9 +44,9 @@ git clone git@github.com:Vladimir-Maj/Site-web-RDS.git
 cd Site-web-RDS
 ```
 
-#### 2. Installer les dépendances PHP
+### 2. Installer les dépendances PHP (obligatoire)
 
-Cette étape est obligatoire. Sans elle, PHPUnit et certaines dépendances PHP ne seront pas disponibles.
+> Sans cette étape, le conteneur `phpunit` échoue au démarrage avec l'erreur `vendor/bin/phpunit: no such file or directory`.
 
 ```bash
 cd www/prod
@@ -54,22 +54,22 @@ composer install
 cd ../..
 ```
 
-#### 3. Configurer les domaines locaux
+### 3. Configurer les domaines locaux
 
 ```bash
 echo "127.0.0.1 prod.stageflow.fr" | sudo tee -a /etc/hosts
 echo "127.0.0.1 cdn.stageflow.fr" | sudo tee -a /etc/hosts
 ```
 
-#### 4. Construire et démarrer les conteneurs
+### 4. Construire et démarrer les conteneurs
 
 ```bash
 docker compose up -d --build
 ```
 
-Docker démarre automatiquement Apache, PHP et MySQL avec le schéma de base.
+C'est tout. Docker monte automatiquement Apache, PHP et MySQL avec la base de données initialisée.
 
-#### 5. Vérifier que tout tourne
+### 5. Vérifier que tout tourne
 
 ```bash
 docker compose ps
