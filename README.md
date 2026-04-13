@@ -85,7 +85,17 @@ newgrp docker
 docker run hello-world
 ```
 
-### 4. Installer Composer
+### 4. Installer les extensions PHP requises
+
+```bash
+sudo apt update
+sudo apt install -y php-xml
+php -m | grep -i dom
+```
+
+> L'extension `dom` doit apparaître dans la liste — elle est requise par PHPUnit.
+
+### 5. Installer Composer
 
 ```bash
 cd ~
