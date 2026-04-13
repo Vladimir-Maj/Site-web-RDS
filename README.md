@@ -34,6 +34,70 @@ Le projet est développé sans framework backend ni frontend, conformément aux 
 
 ---
 
+## ⚙️ Installation de l'environnement
+
+> Cette section couvre l'installation complète sur **Linux Mint / Ubuntu** depuis un système vierge.  
+> Si Git, Docker et Composer sont déjà installés, passez directement au [Démarrage rapide](#-démarrage-rapide).
+
+### 1. Mettre le système à jour
+
+```bash
+sudo apt update && sudo apt upgrade -y
+```
+
+### 2. Installer Git et les dépendances
+
+```bash
+sudo apt install -y git ca-certificates curl gnupg lsb-release software-properties-common unzip php-cli
+git --version
+```
+
+### 3. Installer Docker + Docker Compose
+
+**Ajouter la clé et le dépôt Docker :**
+
+```bash
+sudo install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+sudo chmod a+r /etc/apt/keyrings/docker.gpg
+
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] \
+  https://download.docker.com/linux/ubuntu \
+  $(. /etc/os-release && echo ${UBUNTU_CODENAME:-$VERSION_CODENAME}) stable" | \
+  sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+```
+
+**Installer Docker :**
+
+```bash
+sudo apt update
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+docker --version
+docker compose version
+```
+
+**Autoriser Docker sans `sudo` :**
+
+```bash
+sudo usermod -aG docker $USER
+newgrp docker
+docker run hello-world
+```
+
+### 4. Installer Composer
+
+```bash
+cd ~
+php -r "copy('https://getcomposer.org/installer', 'composer-setup.php');"
+php composer-setup.php
+sudo mv composer.phar /usr/local/bin/composer
+rm composer-setup.php
+composer --version
+```
+
+---
+
 ## 🚀 Démarrage rapide
 
 ### Prérequis
@@ -88,6 +152,8 @@ Docker démarre automatiquement Apache, PHP et MySQL avec le schéma de base.
 
 ```bash
 docker compose ps
+docker compose logs --tail=50 web
+docker compose logs --tail=50 db
 ```
 
 ---
