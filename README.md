@@ -25,12 +25,12 @@ StageFlow centralise les offres de stages, les entreprises partenaires et les ca
 - Docker + Docker Compose v2
 - Composer (pour l'installation locale des dépendances PHP)
 
-> **Ports requis :** `80` (HTTP) et `443` (HTTPS).  
+> **Ports requis :** `80` (HTTP) et `443` (HTTPS)  
 > Si Apache tourne déjà sur votre machine, libérez les ports avant de lancer le projet :
-> 
+>
 > ```bash
 > sudo systemctl stop apache2
-> sudo systemctl disable apache2  # Empêche le redémarrage automatique au boot
+> sudo systemctl disable apache2
 > ```
 
 ---
@@ -46,7 +46,7 @@ cd Site-web-RDS
 
 ### 2. Installer les dépendances PHP (obligatoire)
 
-> Sans cette étape, le conteneur `phpunit` échoue au démarrage avec l'erreur `vendor/bin/phpunit: no such file or directory`.
+> Sans cette étape, PHPUnit et certaines dépendances PHP ne seront pas disponibles. Le conteneur ou service de test peut échouer avec l'erreur vendor/bin/phpunit: no such file or directory.
 
 ```bash
 cd www/prod
@@ -144,6 +144,13 @@ docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p
 ```
 
 > Si MySQL n'est pas encore prêt juste après le démarrage des conteneurs, attendez quelques secondes puis relancez simplement la commande.
+>
+> docker compose exec -T db mysql -u website-local -p1234 -e \
+  "USE sql_db; \
+   SELECT COUNT(*) AS users_count FROM user; \
+   SELECT COUNT(*) AS offers_count FROM internship_offer; \
+   SELECT COUNT(*) AS applications_count FROM application; \
+   SELECT COUNT(*) AS wishlist_count FROM wishlist;"
 
 ### Réinitialiser puis réimporter le seed
 
