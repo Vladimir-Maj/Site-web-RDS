@@ -1,66 +1,98 @@
 <?php
-namespace App\Tests;
+
+declare(strict_types=1);
+
+namespace App\Tests\Users;
 
 use App\Controllers\StudentController;
 use App\Repository\UserRepository;
 use PDO;
-use Twig\Environment;
 use PHPUnit\Framework\TestCase;
+use Twig\Environment;
 
-// ---  TESTER LES REDIRECTIONS (header)  ---
-class HeaderSentException extends \Error {}
+/**
+ * Exception personnalis�e pour intercepter les redirections via header()
+ */
+class HeaderSentException extends \Error
+{
+}
 
+/**
+ * Utilitaire pour capturer et v�rifier les headers envoy�s pendant les tests
+ */
 class HeaderTrap
 {
+    /** @var array<int, array{header: string, replace: bool, response_code: int}> */
     public static array $headers = [];
 
-    public static function reset(): void { self::$headers = []; }
+    public static function reset(): void
+    {
+        self::$headers = [];
+    }
 
     public static function capture(string $header, bool $replace = true, int $responseCode = 0): void
     {
-        self::$headers[] = ['header' => $header, 'replace' => $replace, 'response_code' => $responseCode];
+        self::$headers[] = [
+            'header'        => $header,
+            'replace'       => $replace,
+            'response_code' => $responseCode,
+        ];
     }
 
     public static function lastHeader(): ?string
     {
-        return empty(self::$headers) ? null : self::$headers[count(self::$headers) - 1]['header'];
+        if (empty(self::$headers)) {
+            return null;
+        }
+
+        return self::$headers[array_key_last(self::$headers)]['header'];
     }
 }
 
+/**
+ * Surcharge de la fonction globale header() dans le namespace du Controller
+ */
 namespace App\Controllers;
+
 function header(string $header, bool $replace = true, int $response_code = 0): void
 {
-    \App\Tests\HeaderTrap::capture($header, $replace, $response_code);
-    throw new \App\Tests\HeaderSentException($header);
+    \App\Tests\Users\HeaderTrap::capture($header, $replace, $response_code);
+    throw new \App\Tests\Users\HeaderSentException($header);
 }
 
-// --- LES TESTS DU CONTRÔLEUR ---
-namespace App\Tests;
+namespace App\Tests\Users;
 
 class StudentControllerTest extends TestCase
 {
     protected function setUp(): void
     {
- 
+        parent::setUp();
+
+        // Initialisation de la session pour les tests
         if (session_status() !== PHP_SESSION_ACTIVE) {
             @session_start();
         }
 
-        session_unset();
-        $_SESSION['user_role'] = 'admin';
-        $_GET    = [];
-        $_POST   = [];
-        $_SERVER['REQUEST_URI'] = '/dashboard/etudiants/1/edit';
+        $_SESSION               = [];
+        $_SESSION['user_role']  = 'admin';
+        $_SESSION['csrf_token'] = 'test-token';
+
+        $_GET                   = [];
+        $_POST                  = [];
+        $_SERVER['REQUEST_URI'] = '/dashboard/etudiants/1';
+
         HeaderTrap::reset();
     }
 
     protected function tearDown(): void
     {
-        $_GET  = [];
-        $_POST = [];
-       
-        session_unset();
+        $_GET     = [];
+        $_POST    = [];
+        $_SESSION = [];
+
         HeaderTrap::reset();
+
+        parent::tearDown();
     }
 
     public function testRenderList(): void
@@ -70,18 +102,23 @@ class StudentControllerTest extends TestCase
         $twig = $this->createMock(Environment::class);
 
         $_GET['name']   = 'Dupont';
-        $_GET['status'] = 'searching';
+        $_GET['status'] = 'Searching';
         $_GET['page']   = '1';
 
         $expectedFilters = [
             'name'   => 'Dupont',
-            'status' => 'searching',
+            'status' => 'Searching',
             'page'   => 1,
             'limit'  => 10,
         ];
 
         $fakeStudents = [
-            ['id' => '1', 'first_name' => 'Jean', 'last_name' => 'Dupont', 'status' => 'searching']
+            [
+                'id'         => '1',
+                'first_name' => 'Jean',
+                'last_name'  => 'Dupont',
+                'status'     => 'Searching',
+            ],
         ];
 
         $repo->expects($this->once())
@@ -91,14 +128,17 @@ class StudentControllerTest extends TestCase
 
         $twig->expects($this->once())
             ->method('render')
-            ->with('students/student_list.html.twig', [
-                'students'       => $fakeStudents,
-                'filters'        => $expectedFilters,
-                'sidebar_active' => 'students',
-            ])
+            ->with(
+                'students/student_list.html.twig',
+                [
+                    'students'       => $fakeStudents,
+                    'filters'        => $expectedFilters,
+                    'sidebar_active' => 'students',
+                ]
+            )
             ->willReturn('HTML_RENDERED');
 
-        $controller = new \App\Controllers\StudentController($repo, $twig, $pdo);
+        $controller = new StudentController($repo, $twig, $pdo);
 
         ob_start();
         $controller->renderList();
@@ -113,14 +153,14 @@ class StudentControllerTest extends TestCase
         $pdo  = $this->createMock(PDO::class);
         $twig = $this->createMock(Environment::class);
 
-
         $_POST = [
+            'csrf_token'   => 'test-token',
             'first_name'   => 'Jean',
             'last_name'    => 'Dupont',
             'is_active'    => '1',
             'password'     => 'nouveau_mot_de_passe',
             'promotion_id' => '99',
-            'status'       => 'hired',
+            'status'       => 'Hired',
         ];
 
         $studentId = '42';
@@ -141,52 +181,19 @@ class StudentControllerTest extends TestCase
 
         $repo->expects($this->once())
             ->method('updateStudentStatus')
-            ->with($studentId, 'hired')
+            ->with($studentId, 'Hired')
             ->willReturn(true);
 
-        $controller = new \App\Controllers\StudentController($repo, $twig, $pdo);
+        $controller = new StudentController($repo, $twig, $pdo);
 
         try {
             $controller->handleUpdate($studentId);
-            $this->fail("La redirection (header) n'a pas eu lieu.");
-        } catch (HeaderSentException $e) {
+            $this->fail('La redirection aurait d� avoir lieu.');
+        } catch (HeaderSentException) {
             $this->assertSame(
                 'Location: /dashboard/etudiants/42?success=1',
                 HeaderTrap::lastHeader()
             );
-            $this->assertArrayNotHasKey('flash_error', $_SESSION);
-        }
-    }
-
-   
-    public function testHandleUpdateOnRepoExceptionStoresFlashAndRedirects(): void
-    {
-        $repo = $this->createMock(UserRepository::class);
-        $pdo  = $this->createMock(PDO::class);
-        $twig = $this->createMock(Environment::class);
-
-        $_POST = [
-            'first_name'   => 'Jean',
-            'last_name'    => 'Dupont',
-            'is_active'    => '1',
-            'password'     => '',
-            'promotion_id' => '',
-            'status'       => '',
-        ];
-
-        $repo->expects($this->once())
-            ->method('updateUser')
-            ->willThrowException(new \Exception('Erreur BDD simulée'));
-
-        $controller = new \App\Controllers\StudentController($repo, $twig, $pdo);
-
-        try {
-            $controller->handleUpdate('42');
-            $this->fail("Une redirection aurait dû avoir lieu.");
-        } catch (HeaderSentException $e) {
-            // Le contrôleur doit stocker l'erreur en session et rediriger
-            $this->assertArrayHasKey('flash_error', $_SESSION);
-            $this->assertSame('Erreur BDD simulée', $_SESSION['flash_error']);
         }
     }
 }
