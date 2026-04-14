@@ -1,279 +1,437 @@
-{# .back/views/offers/offer_editor.html.twig #}
 {% extends "dashboard/layout.html.twig" %}
 
 {% block title %}
-	{{ mode == 'edit' ? 'Modifier' : 'Publier' }}
-	une offre — StageFlow
+    {{ mode == 'edit' ? 'Modifier' : 'Publier' }} une offre ? StageFlow
 {% endblock %}
 
 {% block dashboard_content %}
-<div class="page-header">
-	<div>
-		<h1>{{ mode == 'edit' ? 'Édition de l\'offre' : 'Nouvelle Publication' }}</h1>
-        <p>Diffusez vos opportunités de stage au sein du réseau CESI.</p>
-    </div>
-</div>
-
-{% if error %}
-    <div class="notice notice-error">
-        <div class="notice-icon">⚠️</div>
-        <p><strong>Erreur :</strong> {{ error }}</p>
-    </div>
-{% endif %}
-
-<div class="company-form card">
-    <form action="{{ mode == 'edit' ? '/dashboard/offers/update/' ~ offer.id : '/dashboard/offers/new' }}" method="POST" class="card-body">
-        
-        {# CSRF Security #}
-        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-        <div class="info-section">
-            <span class="section-label">Poste & Entreprise</span>
-            <div class="form-grid">
-                <div class="form-group span-full">
-                    <label for="title">Titre de l'offre</label>
-                    <input type="text" name="title" id="title" value="{{ offer.title }}" placeholder="ex: Développeur PHP Fullstack (H/F)" required>
-                </div>
-
-                {# 1. Company Selection (Triggers AJAX) #}
-                <div class="form-group">
-                    <label for="company_id">Entreprise</label>
-                    <select name="company_id" id="company_id" required>
-                        <option value="">— Choisir une entreprise —</option>
-                        {% for company in companies %}
-                            <option value="{{ company.id }}" {{ (offer.company_id == company.id) ? 'selected' : '' }}>
-			{{ company.name }}
-		</option>
-	{% endfor %}
-</select></div>{# 2. Dependent Site Selection #}<div class="form-group">
-<label for="site_id">Site d'affectation</label>
-<select name="site_id" id="site_id" required {{ mode != 'edit' ? 'disabled' : '' }}>
-	{% if mode == 'edit' and sites is not empty %}
-		<option value="">— Choisir un site —</option>
-		{% for site in sites %}
-			{# Using id_company_site and city_company_site as per your PHP Model #}
-			<option value="{{ site.id_company_site }}" {{ offer.site_id == site.id_company_site ? 'selected' : '' }}>
-				{{ site.city_company_site }}
-				({{ site.address_company_site }})
-			</option>
-		{% endfor %}
-	{% else %}
-		<option value="">— Sélectionnez d'abord une entreprise —</option>
-	{% endif %}
-</select></div><div class="form-group">
-<label for="hourly_rate">Gratification (€/h)</label>
-<input type="number" step="0.01" name="hourly_rate" id="hourly_rate" value="{{ offer.hourly_rate }}" placeholder="ex: 4.35"></div></div></div><div class="info-section"><span class="section-label">Missions & Compétences</span><div class="form-grid"><div class="form-group span-full">
-<label for="description">Description détaillée</label>
-<textarea name="description" id="description" rows="8" placeholder="Décrivez les missions, l'équipe et l'environnement technique...">{{ offer.description }}</textarea></div><div class="form-group">
-<label for="start_date">Date de début prévue</label>
-<input type="date" name="start_date" id="start_date" value="{{ offer.start_date }}"></div><div class="form-group">
-<label for="duration_weeks">Durée (en semaines)</label>
-<input type="number" name="duration_weeks" id="duration_weeks" value="{{ offer.duration_weeks }}" placeholder="ex: 16"></div></div><div class="info-section"><span class="section-label">Compétences requises</span><div class="form-grid">
-<div class="form-group span-full">
-	<label for="required_skills_container">Skills</label>
-	<div
-		id="required_skills_container" class="skills-container">
-		<!-- tags will appear here -->
-		<input type="text" id="skills_input" placeholder="Tapez et sélectionnez des compétences...">
-	</div>
-	<input type="hidden" name="required_skills" id="required_skills_hidden" value="{{ offer.required_skills ?? '' }}">
-	<small class="form-help">
-		Séparez chaque compétence par une virgule ou sélectionnez dans la liste.
-	</small>
-</div></div></div><div class="info-section"><span class="section-label">Paramètres de publication</span><div class="form-grid">
-<div class="form-group">
-	<label for="is_active">Visibilité</label>
-	<select name="is_active" id="is_active">
-		<option value="1" {{ offer.is_active ? 'selected' : '' }}>Publiée (Visible par tous)</option>
-		<option value="0" {{ not offer.is_active ? 'selected' : '' }}>Brouillon (Masquée)</option>
-	</select>
-</div></div></div><div class="form-actions"><a href="/dashboard/offers" class="btn btn-ghost">Annuler</a><button type="submit" class="btn btn-primary">
-{{ mode == 'edit' ? 'Mettre à jour' : 'Publier l\'offre' }}
-            </button>
+    <div class="page-header">
+        <div>
+            <h1>{{ mode == 'edit' ? "�dition de l'offre" : 'Nouvelle publication' }}</h1>
+            <p>Diffusez vos opportunit�s de stage au sein du r�seau CESI.</p>
         </div>
-    </form>
-</div>
+    </div>
 
+    {% if error %}
+        <div class="notice notice-error">
+            <div class="notice-icon">??</div>
+            <p><strong>Erreur :</strong> {{ error }}</p>
+        </div>
+    {% endif %}
 
-<script>
-document.addEventListener('DOMContentLoaded', async () => {
-    // --- SKILLS TAGGING LOGIC ---
-    const container = document.getElementById('required_skills_container');
-    const input = document.getElementById('skills_input');
-    const hiddenInput = document.getElementById('required_skills_hidden');
+    <div class="company-form card">
+        <form
+                action="{{ mode == 'edit' ? '/app/offers/update/' ~ offer.id : '/dashboard/offers/new' }}"
+                method="POST"
+                class="card-body"
+        >
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-    let skillsCache = [];
-    let tags = [];
+            <div class="info-section">
+                <span class="section-label">Poste & entreprise</span>
 
-    if (hiddenInput.value) {
-        tags = hiddenInput.value.split(',').map(s => s.trim()).filter(Boolean);
-        renderTags();
-    }
+                <div class="form-grid">
+                    <div class="form-group span-full">
+                        <label for="title">Titre de l'offre</label>
+                        <input
+                                type="text"
+                                name="title"
+                                id="title"
+                                value="{{ offer.title|default('') }}"
+                                placeholder="ex: D�veloppeur PHP Fullstack (H/F)"
+                                required
+                        >
+                    </div>
 
-    async function fetchSkills() {
-        try {
-            const res = await fetch('/api/skills');
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const data = await res.json();
-            skillsCache = data.map(s => s.label_skill);
-        } catch (err) {
-            console.error('Skills fetch error:', err);
-        }
-    }
-    fetchSkills();
+                    <div class="form-group">
+                        <label for="company_id">Entreprise</label>
+                        <select name="company_id" id="company_id" required>
+                            <option value="">? Choisir une entreprise ?</option>
+                            {% for company in companies %}
+                                <option
+                                        value="{{ company.id }}"
+                                        {{
+                                        (
+                                        offer.company_id|default(
+                                            offer.company_id_company_site|default('')
+                                        )
+                                        ) == company.id ? 'selected' : ''
+                                        }}
+                                >
+                                    {{ company.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
 
-    function renderTags() {
-        container.querySelectorAll('.skill-tag').forEach(el => el.remove());
-        tags.forEach((tag, i) => {
-            const tagEl = document.createElement('span');
-            tagEl.className = 'skill-tag';
-            tagEl.textContent = tag;
+                    <div class="form-group">
+                        <label for="site_id">Site d'affectation</label>
+                        <select name="site_id" id="site_id" required {{ mode != 'edit' ? 'disabled' : '' }}>
+                            {% if mode == 'edit' and sites is not empty %}
+                                <option value="">? Choisir un site ?</option>
+                                {% for site in sites %}
+                                    <option
+                                            value="{{ site.id_company_site }}"
+                                            {{
+                                            (
+                                            offer.site_id|default(
+                                                offer.company_site_id_internship_offer|default(
+                                                    offer.id_company_site|default('')
+                                                )
+                                            )
+                                            ) == site.id_company_site ? 'selected' : ''
+                                            }}
+                                    >
+                                        {{ site.city_company_site }}
+                                        ({{ site.address_company_site }})
+                                    </option>
+                                {% endfor %}
+                            {% else %}
+                                <option value="">? S�lectionnez d'abord une entreprise ?</option>
+                            {% endif %}
+                        </select>
+                    </div>
 
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = '×';
-            btn.addEventListener('click', () => {
-                tags.splice(i, 1);
-                updateHiddenInput();
+                    <div class="form-group">
+                        <label for="hourly_rate">Gratification (?/h)</label>
+                        <input
+                                type="number"
+                                step="0.01"
+                                name="hourly_rate"
+                                id="hourly_rate"
+                                value="{{ offer.hourly_rate|default('') }}"
+                                placeholder="ex: 4.35"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <span class="section-label">Missions & comp�tences</span>
+
+                <div class="form-grid">
+                    <div class="form-group span-full">
+                        <label for="description">Description d�taill�e</label>
+                        <textarea
+                                name="description"
+                                id="description"
+                                rows="8"
+                                placeholder="D�crivez les missions, l'�quipe et l'environnement technique..."
+                        >{{ offer.description|default('') }}</textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="start_date">Date de d�but pr�vue</label>
+                        <input
+                                type="date"
+                                name="start_date"
+                                id="start_date"
+                                value="{{ offer.start_date|default('') }}"
+                        >
+                    </div>
+
+                    <div class="form-group">
+                        <label for="duration_weeks">Dur�e (en semaines)</label>
+                        <input
+                                type="number"
+                                name="duration_weeks"
+                                id="duration_weeks"
+                                value="{{ offer.duration_weeks|default('') }}"
+                                placeholder="ex: 16"
+                        >
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <span class="section-label">Comp�tences requises</span>
+
+                <div class="form-grid">
+                    <div class="form-group span-full">
+                        <label for="required_skills_container">Comp�tences</label>
+
+                        <div id="required_skills_container" class="skills-container">
+                            <input type="text" id="skills_input" placeholder="Tapez et s�lectionnez des comp�tences...">
+                        </div>
+
+                        <input
+                                type="hidden"
+                                name="required_skills"
+                                id="required_skills_hidden"
+                                value="{{ offer.required_skills|default('') }}"
+                        >
+
+                        <small class="form-help">
+                            S�parez chaque comp�tence par une virgule ou s�lectionnez dans la liste.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <span class="section-label">Param�tres de publication</span>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="is_active">Visibilit�</label>
+                        <select name="is_active" id="is_active">
+                            <option value="1" {{ offer.is_active|default(true) ? 'selected' : '' }}>
+                                Publi�e (visible)
+                            </option>
+                            <option value="0" {{ offer.is_active is defined and not offer.is_active ? 'selected' : '' }}>
+                                Brouillon (masqu�e)
+                            </option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="/dashboard/offers" class="btn btn-ghost">Annuler</a>
+                <button type="submit" class="btn btn-primary">
+                    {{ mode == 'edit' ? 'Mettre � jour' : "Publier l'offre" }}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // -----------------------------------------------------------------
+            // Skills tagging logic
+            // -----------------------------------------------------------------
+            const container = document.getElementById('required_skills_container');
+            const input = document.getElementById('skills_input');
+            const hiddenInput = document.getElementById('required_skills_hidden');
+
+            let skillsCache = [];
+            let tags = [];
+
+            if (hiddenInput.value) {
+                tags = hiddenInput.value
+                    .split(',')
+                    .map(s => s.trim())
+                    .filter(Boolean);
                 renderTags();
-            });
-            tagEl.appendChild(btn);
-
-            container.insertBefore(tagEl, input);
-        });
-        updateHiddenInput();
-    }
-
-    function updateHiddenInput() {
-        hiddenInput.value = tags.join(', ');
-    }
-
-    function addTag(value) {
-        const cleaned = value.split(/[;,.\n\t]/).map(s => s.trim()).filter(Boolean);
-        cleaned.forEach(tag => {
-            if (!tags.includes(tag)) tags.push(tag);
-        });
-        renderTags();
-        input.value = '';
-    }
-
-    // Autocomplete
-    const datalist = document.createElement('datalist');
-    datalist.id = 'skills-datalist';
-    document.body.appendChild(datalist);
-    input.setAttribute('list', 'skills-datalist');
-
-    input.addEventListener('input', () => {
-        const fragment = input.value.trim().toLowerCase();
-        datalist.innerHTML = '';
-        if (!fragment) return;
-
-        const suggestions = skillsCache
-            .filter(skill => skill.toLowerCase().startsWith(fragment) && !tags.includes(skill))
-            .slice(0, 5);
-
-        suggestions.forEach(skill => {
-            const option = document.createElement('option');
-            option.value = skill;
-            datalist.appendChild(option);
-        });
-    });
-
-    input.addEventListener('keydown', (e) => {
-        if (['Enter', ',', ';', '.'].includes(e.key)) {
-            e.preventDefault();
-            if (input.value.trim()) addTag(input.value);
-        } else if (e.key === 'Backspace' && !input.value && tags.length) {
-            tags.pop();
-            renderTags();
-        }
-    });
-
-    input.addEventListener('blur', () => {
-        if (input.value.trim()) addTag(input.value);
-    });
-
-    input.form?.addEventListener('submit', () => {
-        if (input.value.trim()) addTag(input.value);
-        updateHiddenInput();
-    });
-
-    // --- COMPANIES & SITES LOGIC ---
-    const companySelect = document.getElementById('company_id');
-    const siteSelect = document.getElementById('site_id');
-
-    let companies = [];
-
-    async function loadCompanies() {
-        companySelect.innerHTML = '<option value="">— Chargement des entreprises... —</option>';
-        try {
-            const res = await fetch('/api/companies');
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            companies = await res.json();
-
-            companySelect.innerHTML = '<option value="">— Choisir une entreprise —</option>';
-            companies.forEach(company => {
-                const option = document.createElement('option');
-                option.value = company.id;
-                option.textContent = company.name;
-                {% if mode == 'edit' %}
-                if (company.id == {{ offer.company_id|json_encode }}) {
-                    option.selected = true;
-                }
-                {% endif %}
-                companySelect.appendChild(option);
-            });
-
-            {% if mode == 'edit' and offer.company_id %}
-            await loadSites({{ offer.company_id|json_encode }}, {{ offer.site_id|json_encode }});
-            {% endif %}
-
-        } catch (err) {
-            console.error('Error fetching companies:', err);
-            companySelect.innerHTML = '<option value="">Erreur lors du chargement</option>';
-        }
-    }
-
-    async function loadSites(companyId, preselectedSite = null) {
-        siteSelect.innerHTML = '<option value="">Chargement...</option>';
-        siteSelect.disabled = true;
-
-        if (!companyId) {
-            siteSelect.innerHTML = '<option value="">— Sélectionnez d\'abord une entreprise —</option>';
-            return;
-        }
-
-        try {
-            const res = await fetch(`/api/companies/${companyId}/sites`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const sites = await res.json();
-
-            if (sites.length === 0) {
-                siteSelect.innerHTML = '<option value="">Aucun site trouvé pour cette entreprise</option>';
-            } else {
-                siteSelect.innerHTML = '<option value="">— Choisir un site —</option>';
-                sites.forEach(site => {
-                    const option = document.createElement('option');
-                    option.value = site.id_company_site;
-                    option.textContent = `${site.city_company_site || 'Ville inconnue'} (${site.address_company_site})`;
-                    if (preselectedSite && site.id_company_site == preselectedSite) {
-                        option.selected = true;
-                    }
-                    siteSelect.appendChild(option);
-                });
-                siteSelect.disabled = false;
             }
-        } catch (err) {
-            console.error('Error fetching sites:', err);
-            siteSelect.innerHTML = '<option value="">Erreur lors du chargement des sites</option>';
-        }
-    }
 
-    companySelect.addEventListener('change', () => loadSites(companySelect.value));
+            async function fetchSkills() {
+                try {
+                    const res = await fetch('/api/skills', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
 
-    // Initialize companies on load
-    await loadCompanies();
-});
-</script>
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
 
+                    const data = await res.json();
+                    skillsCache = data.map(skill => skill.label_skill);
+                } catch (err) {
+                    console.error('Skills fetch error:', err);
+                }
+            }
+
+            function updateHiddenInput() {
+                hiddenInput.value = tags.join(', ');
+            }
+
+            function renderTags() {
+                container.querySelectorAll('.skill-tag').forEach(el => el.remove());
+
+                tags.forEach((tag, index) => {
+                    const tagEl = document.createElement('span');
+                    tagEl.className = 'skill-tag';
+                    tagEl.textContent = tag;
+
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = '�';
+                    btn.addEventListener('click', () => {
+                        tags.splice(index, 1);
+                        updateHiddenInput();
+                        renderTags();
+                    });
+
+                    tagEl.appendChild(btn);
+                    container.insertBefore(tagEl, input);
+                });
+
+                updateHiddenInput();
+            }
+
+            function addTag(value) {
+                const cleaned = value
+                    .split(/[;,.\n\t]/)
+                    .map(s => s.trim())
+                    .filter(Boolean);
+
+                cleaned.forEach(tag => {
+                    if (!tags.includes(tag)) {
+                        tags.push(tag);
+                    }
+                });
+
+                renderTags();
+                input.value = '';
+            }
+
+            const datalist = document.createElement('datalist');
+            datalist.id = 'skills-datalist';
+            document.body.appendChild(datalist);
+            input.setAttribute('list', 'skills-datalist');
+
+            input.addEventListener('input', () => {
+                const fragment = input.value.trim().toLowerCase();
+                datalist.innerHTML = '';
+
+                if (!fragment) {
+                    return;
+                }
+
+                const suggestions = skillsCache
+                    .filter(skill => skill.toLowerCase().startsWith(fragment) && !tags.includes(skill))
+                    .slice(0, 5);
+
+                suggestions.forEach(skill => {
+                    const option = document.createElement('option');
+                    option.value = skill;
+                    datalist.appendChild(option);
+                });
+            });
+
+            input.addEventListener('keydown', (e) => {
+                if (['Enter', ',', ';', '.'].includes(e.key)) {
+                    e.preventDefault();
+                    if (input.value.trim()) {
+                        addTag(input.value);
+                    }
+                } else if (e.key === 'Backspace' && !input.value && tags.length) {
+                    tags.pop();
+                    renderTags();
+                }
+            });
+
+            input.addEventListener('blur', () => {
+                if (input.value.trim()) {
+                    addTag(input.value);
+                }
+            });
+
+            input.form?.addEventListener('submit', () => {
+                if (input.value.trim()) {
+                    addTag(input.value);
+                }
+                updateHiddenInput();
+            });
+
+            await fetchSkills();
+
+            // -----------------------------------------------------------------
+            // Companies & sites logic
+            // -----------------------------------------------------------------
+            const companySelect = document.getElementById('company_id');
+            const siteSelect = document.getElementById('site_id');
+
+            async function loadCompanies() {
+                companySelect.innerHTML = '<option value="">? Chargement des entreprises... ?</option>';
+
+                try {
+                    const res = await fetch('/api/companies', {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+
+                    const companiesData = await res.json();
+
+                    companySelect.innerHTML = '<option value="">? Choisir une entreprise ?</option>';
+
+                    companiesData.forEach(company => {
+                        const option = document.createElement('option');
+                        option.value = company.id;
+                        option.textContent = company.name;
+
+                        {% if mode == 'edit' %}
+                        if (company.id == {{ (offer.company_id|default(offer.company_id_company_site|default(null)))|json_encode }}) {
+                            option.selected = true;
+                        }
+                        {% endif %}
+
+                        companySelect.appendChild(option);
+                    });
+
+                    {% if mode == 'edit' and (offer.company_id is defined or offer.company_id_company_site is defined) %}
+                    await loadSites(
+                            {{ (offer.company_id|default(offer.company_id_company_site|default(null)))|json_encode }},
+                            {{ (offer.site_id|default(offer.company_site_id_internship_offer|default(offer.id_company_site|default(null))))|json_encode }}
+                    );
+                    {% endif %}
+                } catch (err) {
+                    console.error('Error fetching companies:', err);
+                    companySelect.innerHTML = '<option value="">Erreur lors du chargement</option>';
+                }
+            }
+
+            async function loadSites(companyId, preselectedSite = null) {
+                siteSelect.innerHTML = '<option value="">Chargement...</option>';
+                siteSelect.disabled = true;
+
+                if (!companyId) {
+                    siteSelect.innerHTML = '<option value="">? S�lectionnez d\'abord une entreprise ?</option>';
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/companies/${companyId}/sites`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    });
+
+                    if (!res.ok) {
+                        throw new Error(`HTTP ${res.status}`);
+                    }
+
+                    const sites = await res.json();
+
+                    if (!sites.length) {
+                        siteSelect.innerHTML = '<option value="">Aucun site trouv� pour cette entreprise</option>';
+                        return;
+                    }
+
+                    siteSelect.innerHTML = '<option value="">? Choisir un site ?</option>';
+
+                    sites.forEach(site => {
+                        const option = document.createElement('option');
+                        option.value = site.id_company_site;
+                        option.textContent = `${site.city_company_site || 'Ville inconnue'} (${site.address_company_site})`;
+
+                        if (preselectedSite && site.id_company_site == preselectedSite) {
+                            option.selected = true;
+                        }
+
+                        siteSelect.appendChild(option);
+                    });
+
+                    siteSelect.disabled = false;
+                } catch (err) {
+                    console.error('Error fetching sites:', err);
+                    siteSelect.innerHTML = '<option value="">Erreur lors du chargement des sites</option>';
+                }
+            }
+
+            companySelect.addEventListener('change', () => {
+                loadSites(companySelect.value);
+            });
+
+            await loadCompanies();
+        });
+    </script>
 {% endblock %}
