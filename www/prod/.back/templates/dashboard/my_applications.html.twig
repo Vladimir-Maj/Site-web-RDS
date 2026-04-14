@@ -1,88 +1,169 @@
-{# .back/views/applications/index.html.twig #}
 {% extends "dashboard/layout.html.twig" %}
 
 {% block title %}
-    {% if is_student %}Mes Candidatures{% else %}Candidatures de {{ student.first_name }} {{ student.last_name }}{% endif %}
-    — StageFlow
+    {% if is_student %}
+        Mes candidatures ? StageFlow
+    {% else %}
+        Candidatures de {{ student.first_name|default('') }} {{ student.last_name|default('') }} ? StageFlow
+    {% endif %}
 {% endblock %}
 
 {% block dashboard_content %}
     <div class="page-header">
         <div>
             {% if is_student %}
-                <h1>Mes Candidatures</h1>
-                <p>Suivi en temps réel de vos demandes de stage.</p>
+                <h1>Mes candidatures</h1>
+                <p>Suivi en temps r�el de vos demandes de stage.</p>
             {% else %}
-                <h1>Candidatures de {{ student.first_name }} {{ student.last_name }}</h1>
-                <p>Administration — Étudiant <span class="text-xs text-muted" style="font-family: monospace;">#{{ student.id }}</span></p>
+                <h1>
+                    Candidatures de
+                    {{ student.first_name|default('�tudiant') }}
+                    {{ student.last_name|default('') }}
+                </h1>
+                <p>
+                    Administration ? �tudiant
+                    <span class="text-xs text-muted" style="font-family: monospace;">
+                        #{{ student.id|default(student.id_user|default('N/A')) }}
+                    </span>
+                </p>
             {% endif %}
         </div>
     </div>
 
-    {# --- SUMMARY NOTICE --- #}
     <div class="notice notice-info">
-        <div class="notice-icon">ℹ️</div>
+        <div class="notice-icon">?</div>
         <p>
-            Il y a actuellement <strong>{{ applications|length }} candidature{{ applications|length > 1 ? 's' : '' }}</strong> enregistrée{{ applications|length > 1 ? 's' : '' }}.
+            Il y a actuellement
+            <strong>{{ applications|length }} candidature{{ applications|length > 1 ? 's' : '' }}</strong>
+            enregistr�e{{ applications|length > 1 ? 's' : '' }}.
         </p>
     </div>
 
-    {# --- DATA TABLE (Strictly matching Student/Skills layout) --- #}
     <div class="card p-0 overflow-hidden">
         <table class="table">
             <thead>
-                <tr>
-                    <th>Offre Concernée</th>
-                    <th>ID Candidature</th>
-                    <th class="text-right">Statut</th>
-                </tr>
+            <tr>
+                <th>Offre concern�e</th>
+                <th>Entreprise</th>
+                <th>Date</th>
+                <th>ID candidature</th>
+                <th class="text-right">Statut</th>
+            </tr>
             </thead>
             <tbody>
-                {% for app in applications %}
-                    <tr>
-                        <td>
-                            <div style="display: flex; flex-direction: column;">
-                                <span style="font-weight: bold; color: var(--text-main);">Offre #{{ app.offer_id }}</span>
-                                <span class="text-xs text-muted">Postulé le {{ app.created_at|default('N/A') }}</span>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="text-xs text-muted" style="font-family: monospace;">#{{ app.id }}</span>
-                        </td>
-                        <td class="text-right">
-                            {# Status Logic Mapping #}
-                            {% set status_map = {
-                                'pending':  {'label': 'En attente', 'color': 'var(--warning-color, #f1c40f)'},
-                                'accepted': {'label': 'Acceptée',  'color': 'var(--success-color, #2ecc71)'},
-                                'rejected': {'label': 'Refusée',   'color': 'var(--error-color, #e74c3c)'}
-                            } %}
-                            {% set current = status_map[app.status] | default({'label': app.status, 'color': 'var(--text-muted)'}) %}
+            {% for app in applications %}
+                {# --- Calcul des variables avec fallbacks --- #}
+                {% set offerId = app.offer_id
+                    |default(app.id_internship_offer
+                    |default(app.offer_id_application
+                        |default(null)))
+                %}
 
-                            <span class="badge" style="background: var(--bg-secondary); border: 1px solid {{ current.color }}; color: var(--text-main); font-weight: bold;">
+                {% set offerTitle = app.title_internship_offer
+                    |default(app.offer_title
+                    |default(app.title
+                        |default(offerId ? 'Offre #' ~ offerId : 'Offre non renseign�e')))
+                %}
+
+                {% set companyName = app.company_name
+                    |default(app.name_company
+                    |default(app.company
+                        |default('Entreprise non renseign�e')))
+                %}
+
+                {% set appliedAt = app.applied_at_application
+                    |default(app.created_at
+                    |default(app.applied_at
+                        |default(null)))
+                %}
+
+                {% set rawStatus = app.status_application
+                    |default(app.status
+                    |default('pending'))
+                %}
+
+                {# --- Mapping des statuts --- #}
+                {% set status_map = {
+                    'pending':  {'label': 'En attente', 'color': 'var(--warning-color, #f1c40f)'},
+                    'accepted': {'label': 'Accept�e',   'color': 'var(--success-color, #2ecc71)'},
+                    'rejected': {'label': 'Refus�e',    'color': 'var(--error-color, #e74c3c)'}
+                } %}
+
+                {% set current = status_map[rawStatus]|default({
+                    'label': rawStatus,
+                    'color': 'var(--text-muted, #6b7280)'
+                }) %}
+
+                <tr>
+                    <td>
+                        <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+                            {% if offerId %}
+                                <a href="/app/offers/show/{{ offerId }}" style="font-weight: bold; color: var(--text-main); text-decoration: none;">
+                                    {{ offerTitle }}
+                                </a>
+                            {% else %}
+                                <span style="font-weight: bold; color: var(--text-main);">
+                                        {{ offerTitle }}
+                                    </span>
+                            {% endif %}
+
+                            {% if offerId %}
+                                <span class="text-xs text-muted" style="font-family: monospace;">
+                                        Offre #{{ offerId }}
+                                    </span>
+                            {% endif %}
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="text-sm">{{ companyName }}</span>
+                    </td>
+
+                    <td>
+                            <span class="text-sm text-muted">
+                                {% if appliedAt %}
+                                    {{ appliedAt|date('d/m/Y') }}
+                                {% else %}
+                                    N/A
+                                {% endif %}
+                            </span>
+                    </td>
+
+                    <td>
+                            <span class="text-xs text-muted" style="font-family: monospace;">
+                                #{{ app.id|default(app.id_application|default('N/A')) }}
+                            </span>
+                    </td>
+
+                    <td class="text-right">
+                            <span class="badge" style="background: var(--bg-secondary, #f8fafc); border: 1px solid {{ current.color }}; color: var(--text-main, #111827); font-weight: bold;">
                                 {{ current.label|upper }}
                             </span>
-                        </td>
-                    </tr>
-                {% else %}
-                    <tr>
-                        <td colspan="3" class="text-center p-4 text-muted">
-                            Aucune candidature trouvée dans la base.
-                        </td>
-                    </tr>
-                {% endfor %}
+                    </td>
+                </tr>
+            {% else %}
+                <tr>
+                    <td colspan="5" class="text-center p-4 text-muted">
+                        Aucune candidature trouv�e.
+                    </td>
+                </tr>
+            {% endfor %}
             </tbody>
         </table>
     </div>
 
-    {# --- PAGINATION (Strictly matching Offers layout) --- #}
     {% if totalPages is defined and totalPages > 1 %}
         <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center;">
             {% if page > 1 %}
-                <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
+                <a href="?page={{ page - 1 }}" class="btn btn-ghost">? Pr�c�dent</a>
             {% endif %}
-            <span class="text-sm">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+
+            <span class="text-sm">
+                Page <strong>{{ page }}</strong> sur {{ totalPages }}
+            </span>
+
             {% if page < totalPages %}
-                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
+                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant ?</a>
             {% endif %}
         </div>
     {% endif %}
