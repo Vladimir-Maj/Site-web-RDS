@@ -1,40 +1,68 @@
+{% set role = currentRole
+	|default(currentUser.role.value
+	|default(currentUser.role
+		|default(user.role.value
+			|default(user.role
+				|default('guest')))))
+%}
+
 <header id="page-header">
 	<div class="header-inner">
-		<a href="/" class="logo">
-			<span></span>StageFlow
-		</a>
+		<a href="/" class="logo" aria-label="Retour � l'accueil StageFlow">StageFlow</a>
 
-		<button class="burger" id="burger-toggle" aria-label="Ouvrir le menu" aria-expanded="false" aria-controls="main-nav">
+		<button
+				class="burger"
+				id="burger-toggle"
+				type="button"
+				aria-label="Ouvrir le menu"
+				aria-expanded="false"
+				aria-controls="main-nav"
+		>
 			<span></span>
 			<span></span>
 			<span></span>
 		</button>
 
-		<nav id="main-nav">
-			<div
-				class="nav-content">
-				{# 1. Always visible #}
+		<nav id="main-nav" aria-label="Navigation principale">
+			<div class="nav-content">
+				<a href="/app/offers">Offres</a>
+				<a href="/legals">Mentions l�gales</a>
 
-				{% if user %}
-				<a href="/dashboard/offers" class="{{ currentPage|default('') == 'search' ? 'active' : '' }}">Mon Dashboard</a>
-					{# 2. Single button to return to the management area #}
+				{% if isLoggedIn %}
 					<hr class="nav-divider">
 
-					<a href="/profile" class="{{ currentPage|default('') == 'profile' ? 'active' : '' }}">
-						Profil ({{ user.first_name|default('User') }})
+					{% if role in ['admin', 'pilote'] %}
+						<a href="/dashboard/offers">Tableau de bord</a>
+					{% elseif role == 'student' %}
+						<a href="/">Accueil</a>
+					{% endif %}
+
+					<a href="/profile">
+						Profil
+						{% if currentUser and currentUser.first_name is defined %}
+							({{ currentUser.first_name }})
+						{% elseif user and user.first_name is defined %}
+							({{ user.first_name }})
+						{% endif %}
 					</a>
-					<a href="/logout" class="logout-link">Logout</a>
+
+					{% if role == 'student' %}
+						<a href="/dashboard/wishlist">Ma wishlist</a>
+						<a href="/dashboard/applications">Mes candidatures</a>
+					{% endif %}
+
+					<a href="/logout" class="logout-link">D�connexion</a>
 				{% else %}
-					{# 3. Guest links #}
-					<a href="/login" class="{{ currentPage|default('') == 'login' ? 'active' : '' }}">Connexion</a>
-					{#<a href="/register" class="{{ currentPage|default('') == 'register' ? 'active' : '' }}">S'inscrire</a>#}
+					<hr class="nav-divider">
+					<a href="/login">Connexion</a>
+					<a href="/register">Inscription</a>
 				{% endif %}
 
 				<hr class="nav-divider">
 
 				<div class="nav-footer">
-					<span>Theme:</span>
-					<button id="theme-toggle" class="btn btn-theme">Light / Dark</button>
+					<span>Th�me</span>
+					<button id="theme-toggle" class="btn btn-theme" type="button">? Dark</button>
 				</div>
 			</div>
 		</nav>
@@ -42,11 +70,10 @@
 </header>
 
 <style>
-	/* ── Header Structure ── */
-	header {
+	#page-header {
 		position: sticky;
 		top: 0;
-		z-index: 1000;
+		z-index: 5000;
 		background: var(--clr-accent);
 		color: var(--clr-accent-inv);
 		border-bottom: 2px solid var(--clr-border);
@@ -61,18 +88,21 @@
 		justify-content: space-between;
 	}
 
-	/* ── Burger Button (Always Visible) ── */
+	.logo {
+		color: inherit;
+		text-decoration: none;
+		font-weight: 700;
+	}
+
 	.burger {
-		display: flex; /* Forced display */
+		display: flex;
 		flex-direction: column;
-		justify-content: center;
 		gap: 5px;
 		background: none;
 		border: none;
 		cursor: pointer;
 		padding: 8px;
-		color: var(--clr-accent-inv);
-		z-index: 1100;
+		color: currentColor;
 	}
 
 	.burger span {
@@ -81,35 +111,32 @@
 		height: 2px;
 		background: currentColor;
 		border-radius: 2px;
-		transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		transition: 0.3s ease;
 	}
 
-	/* Burger Animation X */
 	.burger[aria-expanded="true"] span:nth-child(1) {
 		transform: translateY(7px) rotate(45deg);
 	}
+
 	.burger[aria-expanded="true"] span:nth-child(2) {
 		opacity: 0;
-		transform: scaleX(0);
 	}
+
 	.burger[aria-expanded="true"] span:nth-child(3) {
 		transform: translateY(-7px) rotate(-45deg);
 	}
 
-	/* ── The Menu (Overlay Style) ── */
 	#main-nav {
-		display: none; /* Hidden state */
+		display: none;
 		position: absolute;
 		top: 100%;
 		right: 0;
 		width: 100%;
-		max-width: 320px; /* Limits width on Desktop for a sidebar look */
+		max-width: 320px;
 		background: var(--clr-surface);
 		border: 1px solid var(--clr-border);
 		border-top: none;
 		box-shadow: -10px 10px 30px rgba(0, 0, 0, 0.1);
-		z-index: 1050;
-		animation: slideIn 0.25s ease-out;
 	}
 
 	#main-nav.is-open {
@@ -124,26 +151,19 @@
 
 	#main-nav a {
 		display: block;
-		padding: 1rem;
+		padding: 0.9rem 1rem;
 		color: var(--clr-text);
 		text-decoration: none;
 		font-weight: 500;
 		border-radius: var(--border-radius-btn);
-		transition: background 0.2s;
 	}
 
 	#main-nav a:hover {
 		background: var(--clr-bg);
 	}
 
-	#main-nav a.active {
-		background: var(--clr-accent);
-		color: var(--clr-accent-inv);
-	}
-
 	.logout-link {
 		color: var(--clr-danger) !important;
-		margin-top: 0.5rem;
 	}
 
 	.nav-divider {
@@ -153,94 +173,74 @@
 	}
 
 	.nav-footer {
-		padding: 0.5rem 1rem;
 		display: flex;
-		align-items: center;
 		justify-content: space-between;
-		font-size: 0.85rem;
-		color: var(--clr-text-muted);
+		align-items: center;
+		gap: 0.5rem;
 	}
 
-	/* ── Desktop Tweaks ── */
-	@media(min-width: 769px) {
+	@media (min-width: 769px) {
 		#main-nav {
-			/* On desktop, make it look like a floating panel */
 			right: 1.2rem;
 			border-radius: 0 0 var(--border-radius) var(--border-radius);
 		}
 	}
-
-	@keyframes slideIn {
-		from {
-			opacity: 0;
-			transform: translateY(-10px);
-		}
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
 </style>
 
- <script>
-  (function () {
-    const burger = document.getElementById('burger-toggle');
-    const nav    = document.getElementById('main-nav');
+<script>
+	(function () {
+		const burger = document.getElementById('burger-toggle');
+		const nav = document.getElementById('main-nav');
+		const themeToggle = document.getElementById('theme-toggle');
 
-    burger.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const isOpen = nav.classList.toggle('is-open');
-      burger.setAttribute('aria-expanded', isOpen);
-    });
+		if (!burger || !nav || !themeToggle) return;
 
-    // Close on outside click
-    document.addEventListener('click', (e) => {
-      if (!nav.contains(e.target) && !burger.contains(e.target)) {
-        nav.classList.remove('is-open');
-        burger.setAttribute('aria-expanded', 'false');
-      }
-    });
+		// Gestion du menu mobile
+		burger.addEventListener('click', function (event) {
+			event.stopPropagation();
+			const isOpen = nav.classList.toggle('is-open');
+			burger.setAttribute('aria-expanded', String(isOpen));
+		});
 
-    // Esc key to close
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') {
-        nav.classList.remove('is-open');
-        burger.setAttribute('aria-expanded', 'false');
-      }
-    });
-  })();
+		// Fermeture au clic � l'ext�rieur
+		document.addEventListener('click', function (event) {
+			if (!nav.contains(event.target) && !burger.contains(event.target)) {
+				nav.classList.remove('is-open');
+				burger.setAttribute('aria-expanded', 'false');
+			}
+		});
 
-  (function () {
-    const themeToggle = document.getElementById('theme-toggle');
-    const htmlElement = document.documentElement;
-    
-    // 1. Function to set the theme
-    const setTheme = (theme) => {
-        htmlElement.setAttribute('data-theme', theme);
-        localStorage.setItem('stageflow-theme', theme);
-        
-        // Update button text or icon based on theme
-        themeToggle.innerText = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
-    };
+		// Fermeture avec la touche �chap
+		document.addEventListener('keydown', function (event) {
+			if (event.key === 'Escape') {
+				nav.classList.remove('is-open');
+				burger.setAttribute('aria-expanded', 'false');
+			}
+		});
 
-    // 2. Determine initial theme
-    const savedTheme = localStorage.getItem('stageflow-theme');
-    const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+		// Logique du th�me
+		const setTheme = function (theme) {
+			if (theme === 'dark') {
+				document.documentElement.setAttribute('data-theme', 'dark');
+				themeToggle.textContent = '?? Light';
+			} else {
+				document.documentElement.removeAttribute('data-theme');
+				themeToggle.textContent = '? Dark';
+			}
 
-    if (savedTheme) {
-        setTheme(savedTheme);
-    } else if (systemPrefersDark) {
-        setTheme('dark');
-    } else {
-        setTheme('light');
-    }
+			try {
+				localStorage.setItem('stageflow-theme', theme);
+			} catch (error) {
+				// Ignore silent errors
+			}
+		};
 
-    // 3. Toggle event listener
-    themeToggle.addEventListener('click', () => {
-        const currentTheme = htmlElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        setTheme(newTheme);
-    });
-})();
+		const currentTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+		setTheme(currentTheme);
 
+		themeToggle.addEventListener('click', function () {
+			const activeTheme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+			setTheme(activeTheme === 'dark' ? 'light' : 'dark');
+		});
+	})();
 </script>
