@@ -319,8 +319,13 @@ Chaque filtre est optionnel. Les valeurs sont injectées via des **requêtes pr�
 ## 🧪 Tests
 
 ```bash
-# Via le service Docker dédié
+# Via le script du projet
+bash scripts/units.sh
+
+# Ou directement avec le service dédié
 docker compose run --rm phpunit
+```
+
 
 ## 🔀 Workflow Git
 
