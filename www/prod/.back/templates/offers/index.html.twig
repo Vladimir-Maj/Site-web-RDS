@@ -1,14 +1,15 @@
 {# .back/views/offers/index.html.twig #}
 {% extends "dashboard/layout.html.twig" %}
 
-{% block title %}Catalogue des Offres — StageFlow{% endblock %}
+{% block title %}Catalogue des offres - StageFlow{% endblock %}
 
 {% block dashboard_content %}
     <div class="page-header">
         <div>
-            <h1>Catalogue des Offres</h1>
-            <p>Gestion centrale des opportunités de stage et d'emploi.</p>
+            <h1>Catalogue des offres</h1>
+            <p>Gestion centrale des opportunit�s de stage et d'emploi.</p>
         </div>
+
         {% if isPrivileged %}
             <div style="display: flex; gap: 10px;">
                 <a href="/dashboard/offers/new" class="btn btn-primary">+ Publier</a>
@@ -16,48 +17,49 @@
         {% endif %}
     </div>
 
-    {# Search Bar #}
-    <form method="GET" action="/app/offers" class="search-bar">
+    <form method="GET" action="/app/offers" class="search-bar offer-search-form">
         <div class="form-group">
-            <label>Mots-clés</label>
-            <input type="text" name="keyword" placeholder="Titre, entreprise..." value="{{ filters.keyword|default('') }}">
+            <label for="keyword">Mots-cl�s</label>
+            <input id="keyword" type="text" name="keyword" placeholder="Titre, entreprise..." value="{{ filters.keyword|default('') }}">
         </div>
+
         <div class="form-group">
-            <label>Localisation</label>
-            <input type="text" name="city" placeholder="Ville (ex: Nancy)" value="{{ filters.city|default('') }}">
+            <label for="city">Localisation</label>
+            <input id="city" type="text" name="city" placeholder="Ville (ex : Nancy)" value="{{ filters.city|default('') }}">
         </div>
-        <button type="submit" class="btn btn-primary">🔍 Filtrer</button>
-        <a href="/app/offers" class="btn btn-ghost">Réinitialiser</a>
+
+        <button type="submit" class="btn btn-primary">Filtrer</button>
+        <a href="/app/offers" class="btn btn-ghost">R�initialiser</a>
     </form>
 
     <div class="notice notice-info">
-        <div class="notice-icon">ℹ️</div>
+        <div class="notice-icon">i</div>
         <p>
             Il y a actuellement <strong>{{ offers|length }} offre{{ offers|length > 1 ? 's' : '' }}</strong>
-            correspondant à vos critères.
+            correspondant � vos crit�res.
         </p>
     </div>
 
     <div class="offer-list">
         {% for offer in offers %}
-            {# Include the reusable offer card component #}
-            {{ include('components/card_template.twig', {'offer': offer}) }}
+            {{ include('components/card_template.twig', {'offer': offer, 'isPrivileged': isPrivileged}) }}
         {% else %}
             <div class="card" style="padding: 2rem; text-align: center;">
-                <p class="text-muted">Aucune offre ne correspond à votre recherche.</p>
+                <p class="text-muted">Aucune offre ne correspond � votre recherche.</p>
             </div>
         {% endfor %}
     </div>
 
-    {# Pagination #}
     {% if totalPages > 1 %}
-        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center;">
+        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center; flex-wrap: wrap;">
             {% if page > 1 %}
-                <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
+                <a href="?page={{ page - 1 }}" class="btn btn-ghost">Pr�c�dent</a>
             {% endif %}
+
             <span class="text-sm">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+
             {% if page < totalPages %}
-                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
+                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant</a>
             {% endif %}
         </div>
     {% endif %}
