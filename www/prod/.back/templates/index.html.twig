@@ -15,7 +15,7 @@
                         Retrouvez ici l?avancement de vos candidatures, votre wishlist et les derni�res offres disponibles.
                     </p>
 
-                    {# Am�lioration UX 1 : actions rapides #}
+                    {# UX 1 : actions rapides #}
                     <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;">
                         <a href="#student-progress" class="btn btn-outline">Mes candidatures</a>
                         <a href="#offers-catalogue" class="btn btn-ghost">Voir les offres</a>
@@ -58,7 +58,7 @@
                 </div>
             </div>
 
-            {# Am�lioration UX 2 : KPI plus lisibles, grands et centr�s #}
+            {# UX 2 : KPI plus lisibles #}
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
                 <div class="card" style="padding: 1.5rem; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                     <p style="margin: 0 0 0.5rem 0; color: var(--clr-text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem;">
@@ -111,7 +111,7 @@
                                     {% if application.status_application == 'accepted' %}
                                         tag-green
                                     {% elseif application.status_application == 'rejected' %}
-                                        tag-amber
+                                        tag-red
                                     {% else %}
                                         tag-slate
                                     {% endif %}
@@ -128,7 +128,7 @@
                         {% endfor %}
                     </div>
                 {% else %}
-                    {# Am�lioration UX 3 : �tat vide plus utile avec CTA #}
+                    {# UX 3 : �tat vide plus utile #}
                     <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.85rem;">
                         <p style="margin: 0; color: var(--clr-text-muted);">
                             Vous n'avez encore postul� � aucune offre.
