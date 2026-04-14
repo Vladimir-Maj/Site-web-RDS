@@ -1,118 +1,205 @@
 /* ===================================================
-   STAGEFLOW — RESPONSIVE BASE.CSS
+   STAGEFLOW ? BASE.CSS
+   Foundations: reset, variables, typography, utilities
    =================================================== */
 
-/* ---------- RESET & BOX MODEL ---------- */
 *,
 *::before,
 *::after {
     box-sizing: border-box;
+}
+
+html {
+    font-size: clamp(15px, 0.8rem + 0.3vw, 18px);
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+}
+
+body {
     margin: 0;
-    padding: 0;
+    min-height: 100vh;
+    font-family: var(--font);
+    line-height: 1.6;
+    color: var(--clr-text);
+    background: var(--clr-bg);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
 :root {
     color-scheme: light dark;
 
-    /* Colors (Unchanged from your original) */
-    --clr-bg: light-dark(#f0f0f0, #121212);
-    --clr-surface: light-dark(#fafafa, #1e1e1e);
-    --clr-border: light-dark(#aaaaaa, #444444);
-    --clr-border-light: light-dark(#cccccc, #666666);
-    --clr-text: light-dark(#1a1a1a, #e0e0e0);
-    --clr-text-muted: light-dark(#666666, #999999);
-    --clr-accent: light-dark(#1a1a1a, #bb86fc);
-    --clr-accent-inv: light-dark(#f0f0f0, #121212);
-    --clr-danger : light-dark(#d32f2f, #cf6679);
+    --font: 'Noto Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 
-    /* Spacing & Layout Units (Responsive) */
+    --clr-bg: light-dark(#f3f4f6, #15171b);
+    --clr-surface: light-dark(#ffffff, #20242b);
+    --clr-surface-soft: light-dark(#f8fafc, #252a33);
+    --clr-text: light-dark(#1f2937, #eceef3);
+    --clr-text-muted: light-dark(#6b7280, #a3aab7);
+    --clr-border: light-dark(#d1d5db, #3b4450);
+    --clr-border-light: light-dark(#e5e7eb, #4a5462);
+
+    --clr-accent: light-dark(#2563eb, #74c0fc);
+    --clr-accent-inv: light-dark(#ffffff, #0f172a);
+    --clr-accent-rgb: 37, 99, 235;
+
+    --clr-success: light-dark(#15803d, #81c784);
+    --clr-warning: light-dark(#b45309, #ffb74d);
+    --clr-danger: light-dark(#b91c1c, #ef9a9a);
+
+    --clr-tag-green: light-dark(#dcfce7, #1d4d2c);
+    --clr-tag-green-t: light-dark(#166534, #d1fadf);
+    --clr-tag-amber: light-dark(#fef3c7, #5c3f12);
+    --clr-tag-amber-t: light-dark(#92400e, #ffe7b3);
+    --clr-tag-slate: light-dark(#e5e7eb, #3a4350);
+    --clr-tag-slate-t: light-dark(#374151, #e5e7eb);
+    --clr-tag-red: light-dark(#fee2e2, #5a2222);
+    --clr-tag-red-t: light-dark(#991b1b, #ffd2d2);
+
+    --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+    --shadow-md: 0 8px 24px rgba(15, 23, 42, 0.08);
+
+    --gap-xs: 0.5rem;
+    --gap-sm: 0.75rem;
     --gap-base: 1rem;
-    --container-max-width: 1200px;
-    --section-padding: clamp(2rem, 5vw, 5rem);
-    
-    /* Borders */
-    --border-width: 0.125rem;
-    --border-radius: 8px;
-    --border-radius-btn: 6px;
+    --gap-lg: 1.5rem;
+    --gap-xl: 2rem;
 
-    --font: 'Noto Sans', system-ui, -apple-system, sans-serif;
+    --container-max-width: 1200px;
+    --border-width: 1px;
+    --border-radius: 12px;
+    --border-radius-btn: 10px;
 }
 
-/* ---------- THEME OVERRIDES ---------- */
-
-/* Force Light Mode */
 [data-theme="light"] {
     color-scheme: light;
-    --clr-bg: #f0f0f0;
-    --clr-surface: #fafafa;
-    --clr-text: #1a1a1a;
-    --clr-text-muted: #666666;
-    --clr-accent: #1a1a1a;
-    --clr-border: #aaaaaa;
 }
 
-/* Force Dark Mode - Refined & Less Tacky */
 [data-theme="dark"] {
     color-scheme: dark;
-    
-    /* A deep charcoal with a hint of blue/slate for depth */
-    --clr-bg: #1a1b1e; 
-    
-    /* Subtle elevation: slightly lighter than the background */
-    --clr-surface: #25262b; 
-    
-    /* Text: Use an off-white to reduce "glow" and eye strain */
-    --clr-text: #ececee;
-    --clr-text-muted: #909296;
-    
-    /* Accent: A sophisticated Slate Blue instead of neon purple */
-    --clr-accent: #74c0fc; 
-    
-    /* Borders: Softened so they don't box everything in too harshly */
-    --clr-border: #373a40;
+    --clr-bg: #161a20;
+    --clr-surface: #20252d;
+    --clr-surface-soft: #252c36;
+    --clr-text: #edf2f7;
+    --clr-text-muted: #9aa4b2;
+    --clr-border: #374151;
+    --clr-border-light: #4b5563;
+    --clr-accent: #74c0fc;
+    --clr-accent-rgb: 116, 192, 252;
+    --clr-accent-inv: #0b1320;
 }
 
-/* ---------- RESPONSIVE TYPOGRAPHY ---------- */
-html {
-    /* Fluid typography: grows between 15px and 18px based on viewport */
-    font-size: clamp(15px, 0.8rem + 0.5vw, 18px);
-}
-
-body {
-    font-family: var(--font);
-    background: var(--clr-bg);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin: 0 0 0.75rem;
+    line-height: 1.25;
     color: var(--clr-text);
-    line-height: 1.6; /* Slightly increased for better mobile readability */
-    min-height: 100vh;
-    -webkit-font-smoothing: antialiased;
 }
 
-/* Fluid Headings using clamp() */
-h1 { font-size: clamp(1.4rem, 5vw, 2.5rem); }
-h2 { font-size: clamp(1.2rem, 4vw, 2rem); }
-h3 { font-size: clamp(1.1rem, 3vw, 1.5rem); }
+h1 { font-size: clamp(1.5rem, 2.5vw, 2.4rem); }
+h2 { font-size: clamp(1.25rem, 2vw, 1.8rem); }
+h3 { font-size: clamp(1.05rem, 1.5vw, 1.3rem); }
 h4 { font-size: 1rem; }
 
-/* ---------- RESPONSIVE LAYOUT UTILITIES ---------- */
+p,
+ul,
+ol,
+dl,
+blockquote {
+    margin: 0 0 1rem;
+}
 
-/* The 'Wrapper' - keeps content centered and padded on mobile */
+small,
+.text-xs {
+    font-size: 0.8rem;
+}
+
+.text-sm {
+    font-size: 0.92rem;
+}
+
+.text-muted {
+    color: var(--clr-text-muted);
+}
+
+.text-right {
+    text-align: right;
+}
+
+.text-center {
+    text-align: center;
+}
+
+strong {
+    color: var(--clr-text);
+}
+
+a {
+    color: var(--clr-accent);
+    text-decoration: underline;
+    text-underline-offset: 0.12em;
+    transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+a:hover {
+    color: color-mix(in srgb, var(--clr-accent) 75%, var(--clr-text) 25%);
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+button,
+input,
+select,
+textarea {
+    font: inherit;
+}
+
+button,
+.btn,
+a.btn,
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+    min-height: 44px;
+}
+
+code,
+pre,
+kbd,
+samp {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+hr {
+    border: 0;
+    border-top: 1px solid var(--clr-border-light);
+}
+
 .container {
     width: 100%;
     max-width: var(--container-max-width);
-    margin-right: auto;
-    margin-left: auto;
-    padding-right: var(--gap-base);
-    padding-left: var(--gap-base);
+    margin-inline: auto;
+    padding-inline: clamp(0.9rem, 3vw, 1.5rem);
 }
 
-/* Responsive Grid System */
 .grid {
     display: grid;
     gap: var(--gap-base);
-    grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
 }
 
-/* Flex utilities for mobile-first stacking */
 .flex-stack {
     display: flex;
     flex-direction: column;
@@ -126,165 +213,43 @@ h4 { font-size: 1rem; }
     }
 }
 
-/* ---------- ELEMENTS ---------- */
-img, video, canvas, svg {
-    display: block;
-    max-width: 100%; /* Prevents images from breaking layouts */
-    height: auto;
-}
+.mt-1 { margin-top: 0.5rem; }
+.mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 2rem; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 2rem; }
+.p-0 { padding: 0 !important; }
+.p-4 { padding: 1rem !important; }
+.overflow-hidden { overflow: hidden; }
+.overflow-x-auto { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.span-full { grid-column: 1 / -1; }
+.hide-mobile { display: none !important; }
 
-a {
-    color: var(--clr-accent);
-    text-decoration: underline;
-    transition: color 0.2s ease;
-}
-
-/* ---------- MARGINS (Responsive) ---------- */
-.mt-1 { margin-top: calc(var(--gap-base) * 0.5); }
-.mt-2 { margin-top: var(--gap-base); }
-.mt-3 { margin-top: calc(var(--gap-base) * 2); }
-
-/* ---------- RESPONSIVE BREAKPOINTS & UTILITIES ---------- */
-
-/* Mobile-first: text sizes on small screens */
-@media (max-width: 480px) {
-    h1 { font-size: 1.4rem; }
-    h2 { font-size: 1.2rem; }
-    h3 { font-size: 1rem; }
-    
-    .hide-mobile {
-        display: none !important;
-    }
-    
-    .container {
-        padding-right: clamp(0.75rem, 3vw, 1rem);
-        padding-left: clamp(0.75rem, 3vw, 1rem);
-    }
-}
-
-/* Tablet screens */
-@media (min-width: 481px) and (max-width: 768px) {
-    .show-tablet-up {
-        display: block !important;
-    }
-    
-    .hide-tablet {
-        display: none !important;
-    }
-}
-
-/* Desktop screens */
 @media (min-width: 769px) {
-    .hide-desktop {
-        display: none !important;
-    }
-    
-    .show-desktop-up {
-        display: block !important;
-    }
+    .hide-mobile { display: initial !important; }
+    .hide-desktop { display: none !important; }
 }
 
-/* Large desktop */
-@media (min-width: 1200px) {
+@media (max-width: 480px) {
     .container {
-        padding-right: 2rem;
-        padding-left: 2rem;
+        padding-inline: 0.85rem;
     }
 }
 
-/* ---------- TOUCH-FRIENDLY TARGETS ---------- */
-/* Ensure all interactive elements have minimum 44x44px touch target */
-button,
-a,
-input[type="button"],
-input[type="submit"],
-input[type="reset"],
-.btn,
-label {
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-}
-
-/* ---------- RESPONSIVE IMAGE CONTAINERS ---------- */
-.img-responsive {
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-.img-container {
-    position: relative;
-    width: 100%;
-    overflow: hidden;
-    border-radius: var(--border-radius);
-}
-
-.img-container img {
-    width: 100%;
-    height: auto;
-    object-fit: cover;
-}
-
-/* 16:9 aspect ratio container */
-.aspect-16-9 {
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-}
-
-.aspect-16-9 img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-/* ---------- OVERFLOW & SCROLLING ---------- */
-.overflow-x-auto {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-}
-
-.overflow-x-auto::-webkit-scrollbar {
-    height: 8px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-track {
-    background: var(--clr-border);
-    border-radius: 10px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb {
-    background: var(--clr-text-muted);
-    border-radius: 10px;
-}
-
-.overflow-x-auto::-webkit-scrollbar-thumb:hover {
-    background: var(--clr-text);
-}
-
-/* ---------- PRINT STYLES ---------- */
 @media print {
     .no-print {
         display: none !important;
     }
-    
+
     body {
-        background: white;
-        color: black;
+        background: #fff;
+        color: #000;
         font-size: 12pt;
-        line-height: 1.5;
     }
-    
-    h1, h2, h3 {
-        page-break-after: avoid;
-    }
-    
-    .page-wrapper {
-        padding: 0;
-    }
-    
+
     a {
+        color: #000;
         text-decoration: none;
-        color: black;
     }
 }
