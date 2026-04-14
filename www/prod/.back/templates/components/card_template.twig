@@ -1,29 +1,32 @@
 {# .back/views/components/card_template.twig #}
 <div class="card offer-card">
-    <div class="card-header">
-        <div>
-            <h3 class="mb-1">{{ offer.title }}</h3>
+    <div class="card-header offer-card-header">
+        <div class="offer-card-main">
+            <h3 class="mb-1 offer-card-title">{{ offer.title }}</h3>
+
             <div class="card-meta">
+    <span>
+        <span class="meta-icon" aria-hidden="true">&#127970;</span>
+        {{ offer.company_name|default('Entreprise inconnue') }}
+    </span>
                 <span>
-                    <i class="icon">🏢</i> {{ offer.company_name|default('Entreprise inconnue') }}
-                </span>
-                <span>
-                    <i class="icon">📍</i> {{ offer.location|default('Non localisé') }}
-                </span>
+        <span class="meta-icon" aria-hidden="true">&#128205;</span>
+        {{ offer.location|default('Non localis�') }}
+    </span>
             </div>
         </div>
 
         <span class="tag {{ offer.is_active ? 'tag-green' : 'tag-slate' }}">
-            {{ offer.is_active ? 'OUVERT' : 'ARCHIVÉ' }}
+            {{ offer.is_active ? 'OUVERT' : 'ARCHIV�' }}
         </span>
     </div>
 
-    <div class="card-body">
-        <p>
+    <div class="card-body offer-card-body">
+        <p class="offer-card-description">
             {{ offer.description|length > 130 ? offer.description|slice(0, 130) ~ '...' : offer.description }}
         </p>
 
-        <div class="card-actions">
+        <div class="card-actions offer-card-actions">
             <a href="/app/offers/show/{{ offer.id }}{% if from is defined %}?from={{ from }}{% endif %}" class="btn btn-primary">
                 Voir l'offre
             </a>
@@ -32,7 +35,7 @@
                 <a href="/app/offers/edit/{{ offer.id }}" class="btn btn-outline">
                     Modifier
                 </a>
-                <form action="/app/offers/delete/{{ offer.id }}" method="POST" style="display:inline;" onsubmit="return confirm('Supprimer cette offre ?');">
+                <form action="/app/offers/delete/{{ offer.id }}" method="POST" onsubmit="return confirm('Supprimer cette offre ?');">
                     <button type="submit" class="btn btn-danger">
                         Supprimer
                     </button>
