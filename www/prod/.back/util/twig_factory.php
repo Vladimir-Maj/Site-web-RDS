@@ -33,12 +33,12 @@ class TwigFactory
 
             self::$twig->addExtension(new DebugExtension());
 
-            // ✅ Each global registered exactly once, using constants from config.php
+            // ? Each global registered exactly once, using constants from config.php
             self::$twig->addGlobal('cdn_url', CDN_URL);
             self::$twig->addGlobal('site_url', defined('SITE_URL') ? SITE_URL : 'https://prod.stageflow.fr');
             self::$twig->addGlobal('session', $_SESSION);
 
-            // ✅ Single source of truth for user — always from Util, not raw $_SESSION
+            // ? Single source of truth for user ? always from Util, not raw $_SESSION
             self::$twig->addGlobal('user', Util::getUser() ?? null);
         }
 
