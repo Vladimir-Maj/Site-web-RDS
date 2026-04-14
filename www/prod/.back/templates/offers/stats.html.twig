@@ -1,0 +1,213 @@
+{% extends "base.html.twig" %}
+
+{% block title %}Statistiques des offres ? StageFlow{% endblock %}
+
+{% block meta_description %}
+    Consultez les statistiques principales de StageFlow : r�partition des offres par dur�e, top des offres ajout�es en wishlist et volume global des candidatures.
+{% endblock %}
+
+{% block body %}
+    <div class="page-header">
+        <div>
+            <h1>Statistiques des offres</h1>
+            <p>Vue synth�tique des indicateurs cl�s de la plateforme.</p>
+        </div>
+
+        <a href="/app/offers" class="btn btn-ghost">? Retour aux offres</a>
+    </div>
+
+    <section class="card stats-carousel" data-carousel tabindex="0" aria-label="Carrousel des statistiques">
+        <div class="stats-carousel-track" data-carousel-track>
+            <article class="stats-slide is-active" aria-live="polite">
+                <h2>R�partition par dur�e</h2>
+
+                <ul class="stats-list">
+                    {% for item in duration_breakdown|default([]) %}
+                        <li>
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.value }}</span>
+                        </li>
+                    {% else %}
+                        <li>Aucune donn�e disponible.</li>
+                    {% endfor %}
+                </ul>
+            </article>
+
+            <article class="stats-slide" aria-live="polite">
+                <h2>Top des offres les plus ajout�es en wishlist</h2>
+
+                <ol class="stats-list">
+                    {% for item in top_wishlist|default([]) %}
+                        <li>
+                            <strong>{{ item.label }}</strong>
+                            <span>{{ item.value }}</span>
+                        </li>
+                    {% else %}
+                        <li>Aucune donn�e disponible.</li>
+                    {% endfor %}
+                </ol>
+            </article>
+
+            <article class="stats-slide" aria-live="polite">
+                <h2>Volume global</h2>
+
+                <div class="stats-kpis">
+                    <div class="stats-kpi">
+                        <span class="stats-kpi-label">Offres disponibles</span>
+                        <strong class="stats-kpi-value">
+                            {{ total_offers|default(0) }}
+                        </strong>
+                    </div>
+
+                    <div class="stats-kpi">
+                        <span class="stats-kpi-label">Moyenne de candidatures par offre</span>
+                        <strong class="stats-kpi-value">
+                            {{ average_applications|default(0)|number_format(1, ',', ' ') }}
+                        </strong>
+                    </div>
+                </div>
+
+                <p class="text-sm text-muted" style="margin-top: 1rem;">
+                    Ces indicateurs permettent d?identifier rapidement les offres les plus attractives et les tendances de la plateforme.
+                </p>
+            </article>
+        </div>
+
+        <div class="stats-carousel-controls">
+            <button
+                    type="button"
+                    class="btn btn-ghost"
+                    data-carousel-prev
+                    aria-label="Carte pr�c�dente"
+            >
+                ? Pr�c�dent
+            </button>
+
+            <div class="stats-carousel-dots" data-carousel-dots></div>
+
+            <button
+                    type="button"
+                    class="btn btn-ghost"
+                    data-carousel-next
+                    aria-label="Carte suivante"
+            >
+                Suivant ?
+            </button>
+        </div>
+    </section>
+
+    <style>
+        .stats-carousel {
+            padding: 1.5rem;
+        }
+
+        .stats-carousel-track {
+            position: relative;
+            min-height: 260px;
+        }
+
+        .stats-slide {
+            display: none;
+        }
+
+        .stats-slide.is-active {
+            display: block;
+        }
+
+        .stats-slide h2 {
+            margin-top: 0;
+            margin-bottom: 1rem;
+        }
+
+        .stats-list {
+            margin: 0;
+            padding-left: 1.25rem;
+        }
+
+        .stats-list li {
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.5;
+        }
+
+        .stats-kpis {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+        }
+
+        .stats-kpi {
+            padding: 1rem;
+            border: 1px solid var(--clr-border, #e5e7eb);
+            border-radius: 12px;
+            background: var(--clr-surface, #fff);
+        }
+
+        .stats-kpi-label {
+            display: block;
+            font-size: 0.95rem;
+            color: var(--clr-text-muted, #6b7280);
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-kpi-value {
+            font-size: 1.6rem;
+            line-height: 1.2;
+        }
+
+        .stats-carousel-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            margin-top: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .stats-carousel-dots {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex: 1;
+        }
+
+        .stats-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 999px;
+            border: none;
+            cursor: pointer;
+            background: #cbd5e1;
+        }
+
+        .stats-dot.is-active {
+            background: #2563eb;
+        }
+
+        @media (max-width: 768px) {
+            .stats-carousel-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .stats-list li {
+                flex-direction: column;
+                gap: 0.2rem;
+            }
+        }
+    </style>
+{% endblock %}
+
+{% block scripts %}
+    <script src="{{ cdn_url }}/stats-carousel.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            if (window.StageFlowStatsCarousel) {
+                window.StageFlowStatsCarousel.init();
+            }
+        });
+    </script>
+{% endblock %}
