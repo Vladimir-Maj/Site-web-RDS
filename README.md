@@ -319,12 +319,8 @@ Chaque filtre est optionnel. Les valeurs sont injectées via des **requêtes pr�
 ## 🧪 Tests
 
 ```bash
-# Via le script du projet
-bash scripts/units.sh
-
-# Directement via Docker
+# Via le service Docker dédié
 docker compose run --rm phpunit
-```
 
 ## 🔀 Workflow Git
 
@@ -361,11 +357,16 @@ bash scripts/wipe_volumes_clean.sh  # Réinitialise les volumes Docker (BDD comp
 
 ## 🐳 Services Docker
 
-| Service | Rôle |
-|---|---|
-| `web` | Serveur Apache + exécution PHP pour l'application et le vhost CDN |
-| `db` | Base de données MySQL |
-| `phpunit` | Service dédié à l'exécution des tests unitaires |
+| Service | Conteneur | Rôle |
+|---|---|---|
+| `web` | `lamp-web` | Apache + PHP, sert à la fois `prod.stageflow.fr` et `cdn.stageflow.fr` |
+| `db` | `lamp-db` | Base de données MySQL |
+| `phpunit` | `lamp-tests` | Exécution des tests automatisés |
+
+
+#### Note légale
+```md
+> Le contenu juridique source est préparé dans `LEGAL_CONTENT.md`, mais il doit être adapté au contexte réel du projet StageFlow avant toute publication hors cadre pédagogique.
 
 ## 📄 Licence
 
