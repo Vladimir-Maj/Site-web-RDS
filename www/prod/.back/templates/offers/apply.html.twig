@@ -1,6 +1,6 @@
 {#
 ================================================================================
-  apply.html.twig — Student Job Application Form
+  apply.html.twig ? Student Job Application Form
 ================================================================================
 
 PURPOSE:
@@ -11,76 +11,46 @@ FEATURE: SFx20 - Student Application Submission
 ACCESS: Students only (authenticated)
 ROUTE: GET /app/offers/{id}/apply | POST /app/offers/{id}/apply
 
-REQUIRED CONTEXT VARIABLES:
-  - offer.id          (int)     - Job offer unique identifier
-  - offer.title       (string)  - Job title
-  - offer.company_name (string) - Employer name
-  - offer.location    (string)  - Job location
-  - offer.hourly_rate (float)   - Gratification in €/h (optional)
-  - offer.duration_weeks (int)  - Stage duration in weeks (optional)
-  - user.first_name   (string)  - Student's first name
-  - user.email        (string)  - Student's email
-  - csrf_token        (string)  - CSRF protection token
-  - error             (string)  - Error message if submission failed (optional)
-
-FORM SUBMISSION:
-  - Method: POST /app/offers/{id}/apply
-  - Enctype: multipart/form-data
-  - Fields: csrf_token, cv_path (or cv_file), cover_letter_path (or cover_letter_file)
-
 ================================================================================
 #}
 
 {% extends "base.html.twig" %}
 
-{% block title %}Postuler —
-	{{ offer.title }}
-	— StageFlow
-{% endblock %}
+{% block title %}Postuler ? {{ offer.title }} ? StageFlow{% endblock %}
 
 {% block body %}
 
-	{# ============================================================================
-			   PAGE HEADER — Title, back link, and breadcrumb
-			   ============================================================================ #}
+	{# --- PAGE HEADER --- #}
 	<div class="page-header">
 		<div>
-			{# Back button returns to offer detail page #}
-			<a href="/app/offers/show/{{ offer.id }}" class="btn btn-ghost" style="border: none; padding-left: 0;">← Retour à l'offre</a>
-			<h1 class="mt-1">Postuler à cette offre</h1>
-			<p>{{ offer.title }}
-				—
+			<a href="/app/offers/show/{{ offer.id }}" class="btn btn-ghost" style="border: none; padding-left: 0;">
+				? Retour � l'offre
+			</a>
+			<h1 class="mt-1">Postuler � cette offre</h1>
+			<p>
+				{{ offer.title }}
+				?
 				<strong>{{ offer.company_name }}</strong>
-				·
-				{{ offer.location }}</p>
+				�
+				{{ offer.location }}
+			</p>
 		</div>
 	</div>
 
-	{# ============================================================================
-			   ERROR NOTIFICATION — Displays error messages if any
-			   ============================================================================ #}
+	{# --- ERROR NOTIFICATION --- #}
 	{% if error %}
 		<div class="notice notice-error mb-2">
-			<div class="notice-icon">⚠️</div>
-			<p>
-				<strong>Erreur :</strong>
-				{{ error }}</p>
+			<div class="notice-icon">??</div>
+			<p><strong>Erreur :</strong> {{ error }}</p>
 		</div>
 	{% endif %}
 
-	{# ============================================================================
-			   TWO-COLUMN LAYOUT — Left sidebar (offer/candidate info) + main form
-			   ============================================================================ #}
-	<div
-		class="profile-layout">
-
-		{# ========================================================================
-						   LEFT SIDEBAR — Offer summary + candidate information (read-only)
-						   ======================================================================== #}
+	<div class="profile-layout">
+		{# --- SIDEBAR (OFFER & CANDIDATE INFO) --- #}
 		<aside>
-			{# Offer Card: Company name, location, job title, rate, duration #}
+			{# Offer Summary #}
 			<div class="card user-card">
-				<div class="avatar-circle">🏢</div>
+				<div class="avatar-circle">?</div>
 				<h3>{{ offer.company_name }}</h3>
 				<p class="text-sm text-muted">{{ offer.location }}</p>
 
@@ -91,435 +61,279 @@ FORM SUBMISSION:
 					</div>
 					<div class="data-item">
 						<span class="data-label">Gratification</span>
-						<span class="data-value">{{ offer.hourly_rate|default('N/C') }}
-							€/h</span>
+						<span class="data-value">{{ offer.hourly_rate|default('N/C') }} ?/h</span>
 					</div>
 					<div class="data-item">
-						<span class="data-label">Durée</span>
-						<span class="data-value">{{ offer.duration_weeks|default('?') }}
-							semaines</span>
+						<span class="data-label">Dur�e</span>
+						<span class="data-value">{{ offer.duration_weeks|default('?') }} semaines</span>
 					</div>
 				</div>
 			</div>
 
-			{# Candidate Card: Pre-filled from logged-in user session #}
+			{# Candidate Summary #}
 			<div class="card mt-2" style="padding: 1.25rem;">
-				<p class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color); margin-bottom: 0.75rem;">Candidat</p>
+				<p class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color); margin-bottom: 0.75rem;">
+					Candidat
+				</p>
+
 				<div class="data-grid">
 					<div class="data-item">
-						<span class="data-label">Prénom</span>
-						<span class="data-value">{{ user.first_name }}</span>
+						<span class="data-label">Pr�nom</span>
+						<span class="data-value">{{ currentUser.first_name|default(user.first_name|default('')) }}</span>
 					</div>
 					<div class="data-item">
 						<span class="data-label">Email</span>
-						<span class="data-value" style="word-break: break-all;">{{ user.email }}</span>
+						<span class="data-value" style="word-break: break-all;">
+                            {{ currentUser.email|default(user.email|default('')) }}
+                        </span>
 					</div>
 				</div>
-				{# Link to profile editor for updating contact information #}
-				<a href="/app/profile" class="text-sm text-muted" style="display: inline-block; margin-top: 0.75rem;">✏️ Modifier mon profil</a>
+
+				<a href="/profile" class="text-sm text-muted" style="display: inline-block; margin-top: 0.75rem;">
+					?? Modifier mon profil
+				</a>
 			</div>
 
-			{# ========================================================================
-			   STATISTICS CARD — Displays view count and application count
-			   ======================================================================== #}
+			{# Offer Stats #}
 			<div class="card mt-2" style="padding: 1.25rem; background-color: rgba(var(--primary-rgb), 0.03);">
 				<p class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color); margin-bottom: 0.75rem;">
 					Statistiques de l'offre
 				</p>
+
 				<div class="data-grid">
 					<div class="data-item">
-						<span class="data-label">👀 Vues</span>
-						<span class="data-value">{{ views }}</span>
+						<span class="data-label">?? Vues</span>
+						<span class="data-value">{{ views|default(0) }}</span>
 					</div>
 					<div class="data-item">
-						<span class="data-label">📩 Candidatures</span>
-						<span class="data-value">{{ applications }}</span>
+						<span class="data-label">? Candidatures</span>
+						<span class="data-value">{{ applications|default(0) }}</span>
 					</div>
 				</div>
 
-				{# Optional: Add a small social proof progress bar #}
-				{% if applications > 10 %}
-					<p class="text-xs text-muted mt-2">🔥 Offre très demandée !</p>
+				{% if applications|default(0) > 10 %}
+					<p class="text-xs text-muted mt-2">? Offre tr�s demand�e !</p>
 				{% endif %}
 			</div>
 		</aside>
 
-		{# ========================================================================
-						   MAIN CONTENT — Application form with file uploads
-						   ======================================================================== #}
+		{# --- MAIN FORM SECTION --- #}
 		<section>
-			{# Form posts to /app/offers/{id}/apply endpoint #}
 			<form id="applyForm" action="/app/offers/{{ offer.id }}/apply" method="POST" enctype="multipart/form-data">
+				<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
-				<input
-				type="hidden" name="csrf_token" value="{{ csrf_token }}">
-
-				{# ====================================================================
-												   SECTION 1: CV (Curriculum Vitæ)
-												   - Dropdown: Select from previously uploaded CVs
-												   - Drop zone: Upload new CV file (PDF, max 2 MB)
-												   ==================================================================== #}
+				{# SECTION 1: CV #}
 				<div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
 					<h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">
-						01. Curriculum Vitæ
+						01. Curriculum Vit�
 					</h3>
 				</div>
 
-				{# Existing CVs: Fetched via /api/profile/get-cvs #}
 				<div class="form-group mb-3">
-					<label for="cv_id">Choisir un CV déjà utilisé</label>
+					<label for="cv_id">Choisir un CV d�j� utilis�</label>
 					<select name="cv_path" id="cv_id">
-						<option value="" selected>— Chargement de vos CVs… —</option>
+						<option value="" selected>? Chargement de vos CVs? ?</option>
 					</select>
 				</div>
 
 				<p class="text-sm text-muted" style="text-align: center; margin: 1rem 0;">
-					— ou déposez un nouveau fichier —
+					? ou d�posez un nouveau fichier ?
 				</p>
 
-				{# New CV Upload: Drag & drop or click to browse #}
 				<div class="form-group mb-3">
 					<label id="cv-drop-zone" class="file-dropzone">
-						<span id="drop-icon" class="file-dropzone-icon">📄</span>
-
-						<p id="drop-label" class="file-dropzone-title">
-							Déposez votre CV ici
-						</p>
-
-						<p class="file-dropzone-subtitle">
-							ou cliquez pour parcourir (PDF max 2 Mo)
-						</p>
-
+						<span id="cv-drop-icon" class="file-dropzone-icon">?</span>
+						<p id="cv-drop-label" class="file-dropzone-title">D�posez votre CV ici</p>
+						<p class="file-dropzone-subtitle">ou cliquez pour parcourir (PDF max 2 Mo)</p>
 						<input type="file" name="cv_file" id="cv_file_input" accept=".pdf" class="file-input-hidden">
 					</label>
 				</div>
 
-				{# ====================================================================
-												   SECTION 2: Motivation Letter (Lettre de Motivation)
-												   - Dropdown: Select from previously uploaded letters
-												   - Drop zone: Upload new letter file (PDF, max 2 MB)
-												   ==================================================================== #}
+				{# SECTION 2: Motivation Letter #}
 				<div class="form-section-header" style="margin-bottom: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-top: 2rem;">
 					<h3 class="text-sm" style="text-transform: uppercase; letter-spacing: 1px; color: var(--primary-color);">
 						02. Lettre de motivation
 					</h3>
 				</div>
 
-				{# Existing Motivation Letters: Fetched via /api/profile/get-lms #}
 				<div class="form-group mb-3">
 					<label for="motivation_id">Choisir une lettre existante</label>
 					<select name="cover_letter_path" id="motivation_id">
-						<option value="" selected>— Chargement… —</option>
+						<option value="" selected>? Chargement de vos lettres? ?</option>
 					</select>
 				</div>
 
 				<p class="text-sm text-muted" style="text-align: center; margin: 1rem 0;">
-					— ou déposez un nouveau fichier —
+					? ou d�posez un nouveau fichier ?
 				</p>
 
-				{# New Motivation Letter Upload: Drag & drop or click to browse #}
 				<div class="form-group mb-3">
 					<label id="motivation-drop-zone" class="file-dropzone">
-						<span id="motivation-drop-icon" class="file-dropzone-icon">📄</span>
-
-						<p id="motivation-drop-label" class="file-dropzone-title">
-							Déposez votre lettre ici
-						</p>
-
-						<p class="file-dropzone-subtitle">
-							ou cliquez pour parcourir (PDF max 2 Mo)
-						</p>
-
+						<span id="motivation-drop-icon" class="file-dropzone-icon">?</span>
+						<p id="motivation-drop-label" class="file-dropzone-title">D�posez votre lettre ici</p>
+						<p class="file-dropzone-subtitle">ou cliquez pour parcourir (PDF max 2 Mo)</p>
 						<input type="file" name="cover_letter_file" id="motivation_file_input" accept=".pdf" class="file-input-hidden">
 					</label>
 				</div>
 
-				{# ====================================================================
-												   FORM ACTIONS — Cancel or Submit application
-												   ==================================================================== #}
+				{# FORM ACTIONS #}
 				<div style="margin-top: 2.5rem; padding-top: 1.5rem; border-top: 1px dashed var(--border-color); display: flex; justify-content: space-between; align-items: center;">
-					<a href="/app/offers/show/{{ offer.id }}" class="text-sm text-muted">✕ Annuler</a>
-					<button type="submit" class="btn btn-primary" id="submitBtn">🚀 Envoyer ma candidature</button>
+					<a href="/app/offers/show/{{ offer.id }}" class="text-sm text-muted">? Annuler</a>
+					<button type="submit" class="btn btn-primary" id="submitBtn">? Envoyer ma candidature</button>
 				</div>
 			</form>
 		</section>
 	</div>
 
-	{# ============================================================================
-			   JAVASCRIPT — Form behavior, file validation, and API integration
-			   ============================================================================ #}
-	 <script>
-						{#
-						OVERVIEW:
-						Handles:
-						  1. Loading existing CVs and motivation letters from API
-						  2. Validating PDF files (type, size)
-						  3. Managing drag & drop behavior for both upload zones
-						  4. Ensuring mutual exclusivity: dropdown OR file input (not both)
-						  5. Final form validation before submission
-						  
-						API CALLS:
-						  - GET /api/profile/get-cvs → Load existing CVs
-						  - GET /api/profile/get-lms → Load existing motivation letters
-						#}
-	document.addEventListener('DOMContentLoaded', function () {
-								
-								    /* ============================================================
-								       DOM ELEMENTS
-								    ============================================================ */
-								
-								    const form = document.getElementById('applyForm');
-								    const submitBtn = document.getElementById('submitBtn');
-								
-		// CV elements
-								    const cvSelect   = document.getElementById('cv_id');
-								    const cvDropZone = document.getElementById('cv-drop-zone');
-								    const cvInput    = document.getElementById('cv_file_input');
-								    const cvLabel    = document.getElementById('drop-label');
-								    const cvIcon     = document.getElementById('drop-icon');
-								
-								    // Motivation Letter elements
-								    const lmSelect   = document.getElementById('motivation_id');
-								    const lmDropZone = document.getElementById('motivation-drop-zone');
-								    const lmInput    = document.getElementById('motivation_file_input');
-								    const lmLabel    = document.getElementById('motivation-drop-label');
-								    const lmIcon     = document.getElementById('motivation-drop-icon');
-								
-								
-								    /* ============================================================
-								       HELPER FUNCTIONS
-								    ============================================================ */
-								
-								    /* 
-								       validatePDF(file)
-								       - Checks if file is PDF format (MIME type or extension)
-								       - Verifies file size does not exceed 2 MB
-								       - Shows user alert on validation failure
-								       - Returns: true if valid, false otherwise
-								    */
-								    const validatePDF = (file) => {
-								        if (!file) return false;
-								
-								        const isPDF = file.type === 'application/pdf' ||
-								            (file.name && file.name.toLowerCase().endsWith('.pdf'));
-								
-								        if (!isPDF) {
-								            alert('Seuls les fichiers PDF sont acceptés.');
-								            return false;
-								        }
-								
-								        if (file.size > 2 * 1024 * 1024) {
-								            alert('Le fichier dépasse la limite de 2 Mo.');
-								            return false;
-								        }
-								
-								        return true;
-								    };
-								
-								    /* 
-								       resetDropZone(icon, label, zone, defaultText)
-								       - Resets drop zone to default state
-								       - Changes icon to 📄 and label to defaultText
-								       - Removes 'active' class styling
-								    */
-								    const resetDropZone = (icon, label, zone, defaultText) => {
-								        icon.textContent = '📄';
-								        label.textContent = defaultText;
-								        zone.classList.remove('active');
-								    };
-								
-								    /* 
-								       setDropZoneSuccess(icon, label, zone, fileName)
-								       - Updates drop zone to show successful file selection
-								       - Changes icon to ✅ and label to fileName
-								       - Adds 'active' class for highlight styling
-								    */
-								    const setDropZoneSuccess = (icon, label, zone, fileName) => {
-								        icon.textContent = '✅';
-								        label.textContent = fileName;
-								        zone.classList.add('active');
-								    };
-								
-								    /* ============================================================
-								       API: Load Existing CVs
-								       GET /api/profile/get-cvs
-								       Response: [{file_path: "path/to/cv.pdf"}, ...]
-								    ============================================================ */
-								
-								    fetch('/api/profile/get-cvs')
-								        .then(res => res.json())
-								        .then(cvs => {
-								            cvSelect.innerHTML = '';
-								
-								            if (!cvs || cvs.length === 0) {
-								                cvSelect.innerHTML =
-								                    '<option value="" disabled selected>— Aucun CV enregistré —</option>';
-										                return;
-										            }
-										
-										            const placeholder = document.createElement('option');
-										            placeholder.value = '';
-										            placeholder.disabled = true;
-										            placeholder.selected = true;
-										            placeholder.textContent = '— Sélectionner un CV —';
-										            cvSelect.appendChild(placeholder);
-										
-										            cvs.forEach(cv => {
-										                const opt = document.createElement('option');
-										                opt.value = cv.file_path;
-										                opt.textContent = cv.file_path.split('/').pop();
-										                cvSelect.appendChild(opt);
-										            });
-										        })
-										        .catch(() => {
-										            cvSelect.innerHTML =
-										                '<option value="" disabled selected>— Erreur —</option>';
-										        });
-										
-										
-										    /* ============================================================
-										       API: Load Existing Motivation Letters
-										       GET /api/profile/get-lms
-										       Response: [{file_path: "path/to/letter.pdf"}, ...]
-										    ============================================================ */
-										
-										    /* ============================================================
-										       CV DROPZONE — Drag & Drop + File Input Handling
-										    ============================================================ */
-										
-										    /* When user selects file via input dialog or completes drag-drop */
-										    cvInput.addEventListener('change', (e) => {
-										        const file = e.target.files[0];
-										        if (!validatePDF(file)) {
-										            cvInput.value = '';
-										            resetDropZone(cvIcon, cvLabel, cvDropZone, 'Déposez votre CV ici');
-										            return;
-										        }
-										
-										        /* Clear dropdown when file is selected (mutual exclusivity) */
-										        cvSelect.value = '';
-										        setDropZoneSuccess(cvIcon, cvLabel, cvDropZone, file.name);
-										    });
-										
-										    /* When user selects from existing CVs dropdown */
-										    cvSelect.addEventListener('change', () => {
-										        if (cvSelect.value !== '') {
-										            /* Clear file input when dropdown is selected (mutual exclusivity) */
-										            cvInput.value = '';
-										            resetDropZone(cvIcon, cvLabel, cvDropZone, 'Déposez votre CV ici');
-										        }
-										    });
-										
-										    /* Hover effect: Change border & background during drag over */
-										    cvDropZone.addEventListener('dragover', (e) => {
-										        e.preventDefault();
-										        cvDropZone.style.borderColor = '#6366f1';
-										        cvDropZone.style.background = '#f1f5f9';
-										    });
-										
-										    /* Reset styling when drag leaves the zone */
-										    cvDropZone.addEventListener('dragleave', (e) => {
-										        e.preventDefault();
-										        resetDropZone(cvIcon, cvLabel, cvDropZone, 'Déposez votre CV ici');
-										    });
-										
-										    /* Handle dropped file */
-										    cvDropZone.addEventListener('drop', (e) => {
-										        e.preventDefault();
-										
-										        if (e.dataTransfer.files.length > 0) {
-										            const file = e.dataTransfer.files[0];
-										
-										            if (!validatePDF(file)) return;
-										
-										            cvInput.files = e.dataTransfer.files;
-										            cvSelect.value = '';
-										            setDropZoneSuccess(cvIcon, cvLabel, cvDropZone, file.name);
-										        }
-										    });
-										
-										
-										    /* ============================================================
-										       MOTIVATION LETTER DROPZONE — Drag & Drop + File Input
-										    ============================================================ */
-										
-										    /* When user selects file via input dialog or completes drag-drop */
-										    lmInput.addEventListener('change', (e) => {
-										        const file = e.target.files[0];
-										        if (!validatePDF(file)) {
-										            lmInput.value = '';
-										            resetDropZone(lmIcon, lmLabel, lmDropZone, 'Déposez votre lettre ici');
-										            return;
-										        }
-										
-										        /* Clear dropdown when file is selected (mutual exclusivity) */
-										        lmSelect.value = '';
-										        setDropZoneSuccess(lmIcon, lmLabel, lmDropZone, file.name);
-										    });
-										
-										    /* When user selects from existing motivation letters dropdown */
-										    lmSelect.addEventListener('change', () => {
-										        if (lmSelect.value !== '') {
-										            /* Clear file input when dropdown is selected (mutual exclusivity) */
-										            lmInput.value = '';
-										            resetDropZone(lmIcon, lmLabel, lmDropZone, 'Déposez votre lettre ici');
-										        }
-										    });
-										
-										    /* Hover effect: Change border & background during drag over */
-										    lmDropZone.addEventListener('dragover', (e) => {
-										        e.preventDefault();
-										        lmDropZone.style.borderColor = '#6366f1';
-										        lmDropZone.style.background = '#f1f5f9';
-										    });
-										
-										    /* Reset styling when drag leaves the zone */
-										    lmDropZone.addEventListener('dragleave', (e) => {
-										        e.preventDefault();
-										        resetDropZone(lmIcon, lmLabel, lmDropZone, 'Déposez votre lettre ici');
-										    });
-										
-										    /* Handle dropped file */
-										    lmDropZone.addEventListener('drop', (e) => {
-										        e.preventDefault();
-										
-										        if (e.dataTransfer.files.length > 0) {
-										            const file = e.dataTransfer.files[0];
-										
-										            if (!validatePDF(file)) return;
-										
-										            lmInput.files = e.dataTransfer.files;
-										            lmSelect.value = '';
-										            setDropZoneSuccess(lmIcon, lmLabel, lmDropZone, file.name);
-										        }
-										    });
-										
-										
-										    /* ============================================================
-										       FORM SUBMISSION VALIDATION
-										       - Ensure at least one CV is provided (from dropdown OR input)
-										       - Ensure at least one motivation letter is provided
-										       - Disable submit button to prevent duplicate submissions
-										    ============================================================ */
-										
-										    form.addEventListener('submit', (e) => {
-										
-										        if (cvSelect.value === '' && cvInput.files.length === 0) {
-										            e.preventDefault();
-										            alert('Veuillez fournir un CV.');
-										            return;
-										        }
-										
-										        if (lmSelect.value === '' && lmInput.files.length === 0) {
-										            e.preventDefault();
-										            alert('Veuillez fournir une lettre de motivation.');
-										            return;
-										        }
-										
-										        submitBtn.disabled = true;
-										    });
-										
-										});
-</script>
---!#}
---!#}{% endblock %}
+	{# --- JAVASCRIPT LOGIC --- #}
+	<script>
+		document.addEventListener('DOMContentLoaded', function () {
+			const form      = document.getElementById('applyForm');
+			const submitBtn = document.getElementById('submitBtn');
+
+			const cvSelect   = document.getElementById('cv_id');
+			const cvDropZone = document.getElementById('cv-drop-zone');
+			const cvInput    = document.getElementById('cv_file_input');
+			const cvLabel    = document.getElementById('cv-drop-label');
+			const cvIcon     = document.getElementById('cv-drop-icon');
+
+			const lmSelect   = document.getElementById('motivation_id');
+			const lmDropZone = document.getElementById('motivation-drop-zone');
+			const lmInput    = document.getElementById('motivation_file_input');
+			const lmLabel    = document.getElementById('motivation-drop-label');
+			const lmIcon     = document.getElementById('motivation-drop-icon');
+
+			const validatePDF = (file) => {
+				if (!file) return false;
+
+				const isPDF = file.type === 'application/pdf' ||
+						(file.name && file.name.toLowerCase().endsWith('.pdf'));
+
+				if (!isPDF) {
+					alert('Seuls les fichiers PDF sont accept�s.');
+					return false;
+				}
+
+				if (file.size > 2 * 1024 * 1024) {
+					alert('Le fichier d�passe la limite de 2 Mo.');
+					return false;
+				}
+
+				return true;
+			};
+
+			const resetDropZone = (icon, label, zone, defaultText) => {
+				icon.textContent = '?';
+				label.textContent = defaultText;
+				zone.classList.remove('active');
+			};
+
+			const setDropZoneSuccess = (icon, label, zone, fileName) => {
+				icon.textContent = '?';
+				label.textContent = fileName;
+				zone.classList.add('active');
+			};
+
+			async function loadExistingFiles(endpoint, selectEl, placeholderText) {
+				try {
+					const res = await fetch(endpoint, {
+						headers: { 'X-Requested-With': 'XMLHttpRequest' }
+					});
+
+					if (!res.ok) throw new Error('HTTP ' + res.status);
+
+					const files = await res.json();
+					selectEl.innerHTML = '';
+
+					if (!files || files.length === 0) {
+						selectEl.innerHTML = '<option value="" disabled selected>? Aucun fichier enregistr� ?</option>';
+						return;
+					}
+
+					const placeholder = document.createElement('option');
+					placeholder.value = '';
+					placeholder.selected = true;
+					placeholder.textContent = placeholderText;
+					selectEl.appendChild(placeholder);
+
+					files.forEach(item => {
+						const filePath = item.file_path || item.path || '';
+						if (!filePath) return;
+
+						const opt = document.createElement('option');
+						opt.value = filePath;
+						opt.textContent = filePath.split('/').pop();
+						selectEl.appendChild(opt);
+					});
+				} catch (error) {
+					selectEl.innerHTML = '<option value="" disabled selected>? Erreur de chargement ?</option>';
+				}
+			}
+
+			function bindDropZone(dropZone, input, select, icon, label, defaultText) {
+				input.addEventListener('change', (e) => {
+					const file = e.target.files[0];
+					if (!validatePDF(file)) {
+						input.value = '';
+						resetDropZone(icon, label, dropZone, defaultText);
+						return;
+					}
+					select.value = '';
+					setDropZoneSuccess(icon, label, dropZone, file.name);
+				});
+
+				select.addEventListener('change', () => {
+					if (select.value !== '') {
+						input.value = '';
+						resetDropZone(icon, label, dropZone, defaultText);
+					}
+				});
+
+				dropZone.addEventListener('dragover', (e) => {
+					e.preventDefault();
+					dropZone.classList.add('active');
+				});
+
+				dropZone.addEventListener('dragleave', (e) => {
+					e.preventDefault();
+					if (input.files.length === 0) {
+						resetDropZone(icon, label, dropZone, defaultText);
+					}
+				});
+
+				dropZone.addEventListener('drop', (e) => {
+					e.preventDefault();
+					if (!e.dataTransfer || e.dataTransfer.files.length === 0) return;
+
+					const file = e.dataTransfer.files[0];
+					if (!validatePDF(file)) return;
+
+					input.files = e.dataTransfer.files;
+					select.value = '';
+					setDropZoneSuccess(icon, label, dropZone, file.name);
+				});
+			}
+
+			// Initialization
+			loadExistingFiles('/api/profile/get-cvs', cvSelect, '? S�lectionner un CV ?');
+			loadExistingFiles('/api/profile/get-lms', lmSelect, '? S�lectionner une lettre ?');
+
+			bindDropZone(cvDropZone, cvInput, cvSelect, cvIcon, cvLabel, 'D�posez votre CV ici');
+			bindDropZone(lmDropZone, lmInput, lmSelect, lmIcon, lmLabel, 'D�posez votre lettre ici');
+
+			form.addEventListener('submit', (e) => {
+				if (cvSelect.value === '' && cvInput.files.length === 0) {
+					e.preventDefault();
+					alert('Veuillez fournir un CV.');
+					return;
+				}
+				if (lmSelect.value === '' && lmInput.files.length === 0) {
+					e.preventDefault();
+					alert('Veuillez fournir une lettre de motivation.');
+					return;
+				}
+				submitBtn.disabled = true;
+			});
+		});
+	</script>
+{% endblock %}
