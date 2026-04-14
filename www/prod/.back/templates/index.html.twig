@@ -11,68 +11,99 @@
                 </h1>
 
                 {% if currentRole == 'student' %}
-                    <p style="margin: 0; color: #666;">
-                        Retrouvez ici l’avancement de vos candidatures, votre wishlist et les dernières offres disponibles.
+                    <p style="margin: 0; color: var(--clr-text-muted);">
+                        Retrouvez ici l?avancement de vos candidatures, votre wishlist et les derni�res offres disponibles.
                     </p>
+
+                    {# Am�lioration UX 1 : actions rapides #}
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;">
+                        <a href="#student-progress" class="btn btn-outline">Mes candidatures</a>
+                        <a href="#offers-catalogue" class="btn btn-ghost">Voir les offres</a>
+                        <a href="/app/wishlist" class="btn btn-ghost">?? Ma wishlist</a>
+                    </div>
                 {% else %}
-                    <p style="margin: 0; color: #666;">
-                        Retrouvez ici un aperçu rapide des offres actuellement disponibles sur la plateforme.
+                    <p style="margin: 0; color: var(--clr-text-muted);">
+                        Retrouvez ici un aper�u rapide des offres actuellement disponibles sur la plateforme.
                     </p>
+
+                    <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;">
+                        <a href="#offers-catalogue" class="btn btn-outline">Voir le catalogue</a>
+
+                        {% if isPrivileged %}
+                            <a href="/app/offers/new" class="btn btn-primary">+ Publier une offre</a>
+                        {% endif %}
+                    </div>
                 {% endif %}
             {% else %}
                 <h1 style="margin: 0 0 0.75rem 0;">Bienvenue sur StageFlow !</h1>
-                <p style="margin: 0; color: #666;">
-                    Consultez les offres de stage et trouvez l’opportunité qui vous correspond.
+                <p style="margin: 0; color: var(--clr-text-muted);">
+                    Consultez les offres de stage et trouvez l?opportunit� qui vous correspond.
                 </p>
+
+                <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;">
+                    <a href="#offers-catalogue" class="btn btn-primary">D�couvrir les offres</a>
+                </div>
             {% endif %}
         </div>
     </section>
 
     {% if currentRole == 'student' %}
-        <section style="margin-bottom: 2rem;">
+        <section id="student-progress" style="margin-bottom: 2rem;">
             <div class="page-header" style="margin-bottom: 1rem;">
                 <div>
                     <h2 style="margin-bottom: 0.35rem;">Avancement de mes candidatures</h2>
-                    <p style="margin: 0; color: #666;">
-                        Suivez rapidement l'état des offres auxquelles vous avez postulé.
+                    <p style="margin: 0; color: var(--clr-text-muted);">
+                        Suivez rapidement l?�tat des offres auxquelles vous avez postul�.
                     </p>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: repeat(3, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
-                <div class="card" style="padding: 1.25rem;">
-                    <p style="margin: 0 0 0.35rem 0; color: #666;">En attente</p>
-                    <h3 style="margin: 0;">{{ studentProgress.pending|default(0) }}</h3>
+            {# Am�lioration UX 2 : KPI plus lisibles, grands et centr�s #}
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem;">
+                <div class="card" style="padding: 1.5rem; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <p style="margin: 0 0 0.5rem 0; color: var(--clr-text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem;">
+                        En attente
+                    </p>
+                    <h3 style="margin: 0; font-size: clamp(2rem, 6vw, 3rem); line-height: 1; color: var(--clr-text);">
+                        {{ studentProgress.pending|default(0) }}
+                    </h3>
                 </div>
 
-                <div class="card" style="padding: 1.25rem;">
-                    <p style="margin: 0 0 0.35rem 0; color: #666;">Acceptées</p>
-                    <h3 style="margin: 0;">{{ studentProgress.accepted|default(0) }}</h3>
+                <div class="card" style="padding: 1.5rem; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <p style="margin: 0 0 0.5rem 0; color: var(--clr-text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem;">
+                        Accept�es
+                    </p>
+                    <h3 style="margin: 0; font-size: clamp(2rem, 6vw, 3rem); line-height: 1; color: var(--clr-success);">
+                        {{ studentProgress.accepted|default(0) }}
+                    </h3>
                 </div>
 
-                <div class="card" style="padding: 1.25rem;">
-                    <p style="margin: 0 0 0.35rem 0; color: #666;">Refusées</p>
-                    <h3 style="margin: 0;">{{ studentProgress.rejected|default(0) }}</h3>
+                <div class="card" style="padding: 1.5rem; min-height: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
+                    <p style="margin: 0 0 0.5rem 0; color: var(--clr-text-muted); text-transform: uppercase; letter-spacing: 0.04em; font-size: 0.85rem;">
+                        Refus�es
+                    </p>
+                    <h3 style="margin: 0; font-size: clamp(2rem, 6vw, 3rem); line-height: 1; color: var(--clr-danger);">
+                        {{ studentProgress.rejected|default(0) }}
+                    </h3>
                 </div>
             </div>
 
             <div class="card" style="padding: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem;">
-                    <h3 style="margin: 0;">Dernières candidatures</h3>
-                    <a href="/app/wishlist" class="btn btn-ghost">❤️ Ma wishlist</a>
+                <div style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+                    <h3 style="margin: 0;">Derni�res candidatures</h3>
                 </div>
 
                 {% if recentApplications is not empty %}
                     <div style="display: grid; gap: 1rem;">
                         {% for application in recentApplications %}
-                            <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem;">
+                            <div style="display: flex; justify-content: space-between; gap: 1rem; align-items: center; border-bottom: 1px solid #e5e7eb; padding-bottom: 0.75rem; flex-wrap: wrap;">
                                 <div>
                                     <a href="/app/offers/show/{{ application.id_internship_offer }}?from=home" style="text-decoration: none; color: inherit;">
                                         <strong>{{ application.title_internship_offer }}</strong>
                                     </a><br>
-                                    <span style="color: #666;">{{ application.name_company }}</span><br>
+                                    <span style="color: var(--clr-text-muted);">{{ application.name_company }}</span><br>
                                     <small style="color: #888;">
-                                        Postulé le {{ application.applied_at_application|date('d/m/Y') }}
+                                        Postul� le {{ application.applied_at_application|date('d/m/Y') }}
                                     </small>
                                 </div>
 
@@ -80,7 +111,7 @@
                                     {% if application.status_application == 'accepted' %}
                                         tag-green
                                     {% elseif application.status_application == 'rejected' %}
-                                        tag-red
+                                        tag-amber
                                     {% else %}
                                         tag-slate
                                     {% endif %}
@@ -88,71 +119,85 @@
                                     {% if application.status_application == 'pending' %}
                                         En attente
                                     {% elseif application.status_application == 'accepted' %}
-                                        Acceptée
+                                        Accept�e
                                     {% else %}
-                                        Refusée
+                                        Refus�e
                                     {% endif %}
                                 </span>
                             </div>
                         {% endfor %}
                     </div>
                 {% else %}
-                    <p style="margin: 0; color: #666;">Vous n'avez encore postulé à aucune offre.</p>
+                    {# Am�lioration UX 3 : �tat vide plus utile avec CTA #}
+                    <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 0.85rem;">
+                        <p style="margin: 0; color: var(--clr-text-muted);">
+                            Vous n'avez encore postul� � aucune offre.
+                        </p>
+                        <a href="/app/offers" class="btn btn-primary">Voir les offres disponibles</a>
+                    </div>
                 {% endif %}
             </div>
         </section>
     {% endif %}
 
-    <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem;">
-        <div>
-            <h2 style="margin-bottom: 0.35rem;">Catalogue des offres</h2>
-            <p style="margin: 0; color: #666;">Gestion centrale des opportunités de stage et d'emploi.</p>
-        </div>
-
-        <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-            <a href="/app/offers" class="btn btn-ghost">🔍 Voir toutes les offres</a>
-
-            {% if currentRole == 'student' %}
-                <a href="/app/wishlist" class="btn btn-ghost">❤️ Ma wishlist</a>
-            {% endif %}
-
-            {% if isPrivileged %}
-                <a href="/app/offers/new" class="btn btn-primary">+ Publier</a>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="notice notice-info" style="margin-bottom: 1.5rem;">
-        <p>
-            Il y a actuellement
-            <strong>{{ totalOffers }} offre{{ totalOffers > 1 ? 's' : '' }}</strong>
-            enregistrée{{ totalOffers > 1 ? 's' : '' }}.
-        </p>
-    </div>
-
-    <div class="offer-list" style="display: grid; gap: 1.5rem;">
-        {% for offer in offers %}
-            {{ include('components/card_template.twig', { offer: offer, from: 'home' }) }}
-        {% else %}
-            <div class="empty-state card" style="padding: 2rem; text-align: center;">
-                <p>Aucune offre disponible pour le moment.</p>
+    <section id="offers-catalogue">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 2rem; flex-wrap: wrap;">
+            <div>
+                <h2 style="margin-bottom: 0.35rem;">Catalogue des offres</h2>
+                <p style="margin: 0; color: var(--clr-text-muted);">
+                    Gestion centrale des opportunit�s de stage et d'emploi.
+                </p>
             </div>
-        {% endfor %}
-    </div>
 
-    {% if totalPages > 1 %}
-        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center;">
-            {% if page > 1 %}
-                <a href="?page={{ page - 1 }}" class="btn btn-ghost">← Précédent</a>
-            {% endif %}
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <a href="/app/offers" class="btn btn-ghost">Voir toutes les offres</a>
 
-            <span class="page-info">
-                Page <strong>{{ page }}</strong> sur {{ totalPages }}
-            </span>
+                {% if currentRole == 'student' %}
+                    <a href="/app/wishlist" class="btn btn-ghost">?? Ma wishlist</a>
+                {% endif %}
 
-            {% if page < totalPages %}
-                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant →</a>
-            {% endif %}
+                {% if isPrivileged %}
+                    <a href="/app/offers/new" class="btn btn-primary">+ Publier</a>
+                {% endif %}
+            </div>
         </div>
-    {% endif %}
+
+        <div class="notice notice-info" style="margin-bottom: 1.5rem;">
+            <p>
+                Il y a actuellement
+                <strong>{{ totalOffers }} offre{{ totalOffers > 1 ? 's' : '' }}</strong>
+                enregistr�e{{ totalOffers > 1 ? 's' : '' }}.
+            </p>
+        </div>
+
+        <div class="offer-list" style="display: grid; gap: 1.5rem;">
+            {% for offer in offers %}
+                {{ include('components/card_template.twig', {'offer': offer, 'from': 'home'}) }}
+            {% else %}
+                <div class="empty-state card" style="padding: 2rem; text-align: center;">
+                    <p style="margin-bottom: 1rem;">Aucune offre disponible pour le moment.</p>
+
+                    {% if isPrivileged %}
+                        <a href="/app/offers/new" class="btn btn-primary">Publier la premi�re offre</a>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if totalPages > 1 %}
+            <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center; flex-wrap: wrap;">
+                {% if page > 1 %}
+                    <a href="?page={{ page - 1 }}" class="btn btn-ghost">Pr�c�dent</a>
+                {% endif %}
+
+                <span class="page-info">
+                    Page <strong>{{ page }}</strong> sur {{ totalPages }}
+                </span>
+
+                {% if page < totalPages %}
+                    <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant</a>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
 {% endblock %}
