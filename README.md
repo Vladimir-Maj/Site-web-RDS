@@ -181,7 +181,7 @@ docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p
 ### Vérifier l'import
 
 ```bash
-docker exec -it lamp-db mysql -u website-local -p1234 -e   "USE sql_db;    SELECT COUNT(*) AS users_count FROM users;    SELECT COUNT(*) AS offers_count FROM internship_offers;    SELECT COUNT(*) AS companies_count FROM company;    SELECT COUNT(*) AS wishlist_count FROM wishlist;"
+docker exec -it lamp-db mysql -u website-local -p1234 -e "USE sql_db; SELECT COUNT(*) AS users_count FROM user; SELECT COUNT(*) AS offers_count FROM internship_offer; SELECT COUNT(*) AS companies_count FROM company; SELECT COUNT(*) AS wishlist_count FROM wishlist;"
 ```
 
 ### Réinitialiser complètement
@@ -211,14 +211,14 @@ docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p
 
 | Action | Anonyme | Étudiant | Pilote | Admin |
 |---|:---:|:---:|:---:|:---:|
-| Voir les offres | ✅ | ✅ | ✅ | ✅ |
-| Voir les entreprises | ✅ | ✅ | ✅ | ✅ |
-| Se connecter / déconnecter | ✅ | ✅ | ✅ | ✅ |
-| Postuler à une offre | ❌ | ✅ | ❌ | ❌ |
-| Gérer sa wish-list | ❌ | ✅ | ❌ | ❌ |
-| Gérer les offres | ❌ | ❌ | ✅ | ✅ |
-| Gérer les entreprises | ❌ | ❌ | ✅ | ✅ |
-| Gérer les comptes | ❌ | ❌ | ❌ | ✅ |
+| Voir les offres | ? | ? | ? | ? |
+| Voir les entreprises | ? | ? | ? | ? |
+| Se connecter / déconnecter | ? | ? | ? | ? |
+| Postuler à une offre | ? | ? | ? | ? |
+| Gérer sa wish-list | ? | ? | ? | ? |
+| Gérer les offres | ? | ? | ? | ? |
+| Gérer les entreprises | ? | ? | ? | ? |
+| Gérer les comptes | ? | ? | ? | ? |
 
 ## ✅ État d'avancement
 
@@ -234,7 +234,7 @@ docker exec -i lamp-db mysql --default-character-set=utf8mb4 -u website-local -p
 - [x] Routage backend propre
 - [x] Intégration Twig sur les vues principales
 
-### En cours / À finaliser
+### En cours / à finaliser
 
 - [ ] Gestion complète des entreprises
 - [ ] Gestion complète des pilotes
@@ -370,9 +370,9 @@ bash scripts/wipe_volumes_clean.sh  # Réinitialise les volumes Docker (BDD comp
 
 
 #### Note légale
-```md
+
 > Le contenu juridique source est préparé dans `LEGAL_CONTENT.md`, mais il doit être adapté au contexte réel du projet StageFlow avant toute publication hors cadre pédagogique.
-```
+
 ## 📄 Licence
 
 Projet académique — **CESI Nancy**  
