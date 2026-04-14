@@ -367,7 +367,7 @@ bash scripts/wipe_volumes_clean.sh  # Réinitialise les volumes Docker (BDD comp
 #### Note légale
 ```md
 > Le contenu juridique source est préparé dans `LEGAL_CONTENT.md`, mais il doit être adapté au contexte réel du projet StageFlow avant toute publication hors cadre pédagogique.
-
+```
 ## 📄 Licence
 
 Projet académique — **CESI Nancy**  
