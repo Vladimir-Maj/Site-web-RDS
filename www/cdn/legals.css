@@ -73,7 +73,7 @@
     color: #0056b3;
     text-decoration: none;
     font-size: 0.95rem;
-    transition: color 0.2s;
+    transition: color 0.2s ease;
 }
 
 .legals-nav a:hover {
@@ -87,17 +87,49 @@
     font-size: 1rem;
 }
 
-.legal-section {
-    margin-bottom: 3rem;
-    padding-bottom: 2rem;
-    border-bottom: 1px solid #eee;
+.legals-content .legal-section,
+.legals-container > .legal-section {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+    margin-bottom: 2rem;
 }
 
-.legal-section:last-child {
-    border-bottom: none;
+.legals-content .legal-section:last-child,
+.legals-container > .legal-section:last-child {
+    margin-bottom: 0;
 }
 
-.legal-section h2 {
+.legals-content .legal-section > h2,
+.legals-content .legal-section > h3,
+.legals-content .legal-section > h4,
+.legals-content .legal-section > p,
+.legals-content .legal-section > ul,
+.legals-content .legal-section > ol,
+.legals-content .legal-section > dl,
+.legals-content .legal-section > address,
+.legals-content .legal-section > table,
+.legals-content .legal-section > .info-box,
+.legals-content .legal-section > .warning-box,
+.legals-content .legal-section > footer {
+    margin-left: 1.5rem;
+    margin-right: 1.5rem;
+}
+
+.legals-content .legal-section > h2:first-child,
+.legals-content .legal-section > h3:first-child,
+.legals-container > .legal-section > h2:first-child {
+    margin-top: 1.5rem;
+}
+
+.legals-content .legal-section > footer {
+    margin-bottom: 1.5rem;
+}
+
+.legals-content .legal-section h2,
+.legals-container > .legal-section h2 {
     font-size: 1.8rem;
     margin-bottom: 1.5rem;
     color: #0056b3;
@@ -105,56 +137,69 @@
     padding-bottom: 0.5rem;
 }
 
-.legal-section h3 {
+.legals-content .legal-section h3,
+.legals-container > .legal-section h3 {
     font-size: 1.3rem;
     margin-top: 1.5rem;
     margin-bottom: 0.8rem;
     color: #333;
 }
 
-.legal-section h4 {
+.legals-content .legal-section h4,
+.legals-container > .legal-section h4 {
     font-size: 1.1rem;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
     color: #555;
 }
 
-.legal-section ul,
-.legal-section ol {
-    margin-left: 2rem;
+.legals-content .legal-section ul,
+.legals-content .legal-section ol,
+.legals-container > .legal-section ul,
+.legals-container > .legal-section ol {
+    margin-left: 3rem;
     margin-bottom: 1rem;
 }
 
-.legal-section li {
+.legals-content .legal-section li,
+.legals-container > .legal-section li {
     margin-bottom: 0.5rem;
 }
 
-.legal-section dl {
+.legals-content .legal-section dl,
+.legals-container > .legal-section dl {
     margin-bottom: 1rem;
 }
 
-.legal-section dt {
+.legals-content .legal-section dt,
+.legals-container > .legal-section dt {
     font-weight: bold;
     color: #333;
     margin-top: 0.5rem;
 }
 
-.legal-section dd {
+.legals-content .legal-section dd,
+.legals-container > .legal-section dd {
     margin-left: 2rem;
     margin-bottom: 0.5rem;
     color: #666;
 }
 
-.legal-section address {
+.legals-content .legal-section address,
+.legals-container > .legal-section address {
     background: #f9f9f9;
     padding: 1rem;
     border-left: 4px solid #ffc107;
-    margin: 1rem 0;
+    margin: 1rem 1.5rem;
     font-style: normal;
     line-height: 1.8;
+    border-radius: 4px;
 }
 
-.legals-container .info-box {
+.legals-container .info-box,
+.data-rights-container .info-box,
+.delete-account-container .info-box,
+.confirmation-card .info-box {
     background: #e7f3ff;
     border-left: 4px solid #0056b3;
     padding: 1rem;
@@ -170,7 +215,8 @@
     border-radius: 3px;
 }
 
-.data-table {
+.legals-container .data-table,
+.data-rights-container .data-table {
     width: 100%;
     border-collapse: collapse;
     margin: 1rem 0;
@@ -178,24 +224,28 @@
     background: #fff;
 }
 
-.data-table thead {
+.legals-container .data-table thead,
+.data-rights-container .data-table thead {
     background: #f1f1f1;
     border-bottom: 2px solid #ddd;
 }
 
-.data-table th {
+.legals-container .data-table th,
+.data-rights-container .data-table th {
     padding: 0.8rem;
     text-align: left;
     font-weight: bold;
     color: #333;
 }
 
-.data-table td {
+.legals-container .data-table td,
+.data-rights-container .data-table td {
     padding: 0.8rem;
     border-bottom: 1px solid #eee;
 }
 
-.data-table tbody tr:hover {
+.legals-container .data-table tbody tr:hover,
+.data-rights-container .data-table tbody tr:hover {
     background: #f9f9f9;
 }
 
@@ -353,15 +403,6 @@
     margin-left: 1.5rem;
     margin-bottom: 0.5rem;
     color: #666;
-}
-
-.data-rights-container .info-box {
-    background: #e7f3ff;
-    border-left: 4px solid #0056b3;
-    padding: 0.8rem;
-    margin: 1rem 0;
-    border-radius: 4px;
-    font-size: 0.9rem;
 }
 
 .data-rights-container .warning-box {
@@ -670,16 +711,6 @@
     border: 1px solid #28a745;
 }
 
-.delete-account-container .info-box {
-    background: #e7f3ff;
-    border-left: 4px solid #0056b3;
-    padding: 1rem;
-    margin: 1rem 0;
-    border-radius: 4px;
-    color: #0056b3;
-    line-height: 1.6;
-}
-
 .delete-account-container .success-box {
     background: #d4edda;
     border-left: 4px solid #28a745;
@@ -861,15 +892,6 @@
     line-height: 1.6;
 }
 
-.confirmation-card .info-box {
-    background: #f0f7ff;
-    border-left: 4px solid #0056b3;
-    padding: 1.5rem;
-    border-radius: 8px;
-    margin: 2rem 0;
-    text-align: left;
-}
-
 .confirmation-card .info-box h2 {
     font-size: 1.1rem;
     color: #0056b3;
@@ -958,18 +980,10 @@
    BLOCS LEGAL SECTION REUTILISABLES
    ========================= */
 
-.legal-section {
-    background: var(--clr-surface, #fff);
-    border: 1px solid var(--clr-border, #e5e7eb);
-    border-radius: 18px;
-    box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
-    overflow: hidden;
-}
-
 .legal-section-header {
     padding: 1.5rem;
     background: linear-gradient(180deg, rgba(99, 102, 241, 0.08), rgba(99, 102, 241, 0.02));
-    border-bottom: 1px solid var(--clr-border, #e5e7eb);
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .legal-section-header h1,
@@ -1010,16 +1024,20 @@
         font-size: 1.8rem;
     }
 
-    .legal-section h2 {
+    .legals-content .legal-section h2,
+    .legals-container > .legal-section h2 {
         font-size: 1.4rem;
     }
 
-    .data-table {
+    .legals-container .data-table,
+    .data-rights-container .data-table {
         font-size: 0.85rem;
     }
 
-    .data-table th,
-    .data-table td {
+    .legals-container .data-table th,
+    .legals-container .data-table td,
+    .data-rights-container .data-table th,
+    .data-rights-container .data-table td {
         padding: 0.5rem;
     }
 
@@ -1093,11 +1111,13 @@
         page-break-after: avoid;
     }
 
-    .legal-section {
+    .legals-content .legal-section,
+    .legals-container > .legal-section {
         page-break-inside: avoid;
     }
 
-    .legal-section h2 {
+    .legals-content .legal-section h2,
+    .legals-container > .legal-section h2 {
         page-break-after: avoid;
     }
 
