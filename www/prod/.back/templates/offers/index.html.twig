@@ -1,65 +1,136 @@
-{# .back/views/offers/index.html.twig #}
 {% extends "dashboard/layout.html.twig" %}
 
 {% block title %}Catalogue des offres - StageFlow{% endblock %}
 
 {% block dashboard_content %}
-    <div class="page-header">
-        <div>
-            <h1>Catalogue des offres</h1>
-            <p>Gestion centrale des opportunit�s de stage et d'emploi.</p>
+    <section class="offers-hero">
+        <div class="offers-hero__content">
+            <div>
+                <h1>Catalogue des offres</h1>
+                <p>
+                    Explorez les opportunit�s disponibles, filtrez rapidement et acc�dez aux d�tails en un clic.
+                </p>
+            </div>
+
+            {% if isPrivileged %}
+                <div class="offers-hero__actions">
+                    <a href="/dashboard/offers/new" class="btn btn-primary">+ Publier une offre</a>
+                </div>
+            {% endif %}
+        </div>
+    </section>
+
+    <section class="offers-toolbar card">
+        <div class="offers-toolbar__top">
+            <div>
+                <h2>Rechercher une offre</h2>
+                <p>Affinez le catalogue par mot-cl� ou par localisation.</p>
+            </div>
+
+            <div class="offers-toolbar__stats">
+                <span class="offers-stat-pill">
+                    {{ offers|length }} r�sultat{{ offers|length > 1 ? 's' : '' }}
+                </span>
+
+                {% if totalPages > 1 %}
+                    <span class="offers-stat-pill">
+                        Page {{ page }} / {{ totalPages }}
+                    </span>
+                {% endif %}
+            </div>
         </div>
 
-        {% if isPrivileged %}
-            <div style="display: flex; gap: 10px;">
-                <a href="/dashboard/offers/new" class="btn btn-primary">+ Publier</a>
+        <form method="GET" action="/app/offers" class="offer-search-form">
+            <div class="form-group">
+                <label for="keyword">Mot-cl�</label>
+                <input
+                        id="keyword"
+                        type="text"
+                        name="keyword"
+                        placeholder="Titre, entreprise..."
+                        value="{{ filters.keyword|default('') }}"
+                >
+            </div>
+
+            <div class="form-group">
+                <label for="city">Localisation</label>
+                <input
+                        id="city"
+                        type="text"
+                        name="city"
+                        placeholder="Ville (ex : Nancy)"
+                        value="{{ filters.city|default('') }}"
+                >
+            </div>
+
+            <button type="submit" class="btn btn-primary">Filtrer</button>
+            <a href="/app/offers" class="btn btn-ghost">R�initialiser</a>
+        </form>
+
+        {% set hasKeyword = filters.keyword is defined and filters.keyword is not empty %}
+        {% set hasCity = filters.city is defined and filters.city is not empty %}
+
+        {% if hasKeyword or hasCity %}
+            <div class="offers-active-filters">
+                <span class="offers-active-filters__label">Filtres actifs :</span>
+
+                {% if hasKeyword %}
+                    <span class="offers-filter-chip">Mot-cl� : {{ filters.keyword }}</span>
+                {% endif %}
+
+                {% if hasCity %}
+                    <span class="offers-filter-chip">Ville : {{ filters.city }}</span>
+                {% endif %}
             </div>
         {% endif %}
-    </div>
+    </section>
 
-    <form method="GET" action="/app/offers" class="search-bar offer-search-form">
-        <div class="form-group">
-            <label for="keyword">Mots-cl�s</label>
-            <input id="keyword" type="text" name="keyword" placeholder="Titre, entreprise..." value="{{ filters.keyword|default('') }}">
-        </div>
-
-        <div class="form-group">
-            <label for="city">Localisation</label>
-            <input id="city" type="text" name="city" placeholder="Ville (ex : Nancy)" value="{{ filters.city|default('') }}">
-        </div>
-
-        <button type="submit" class="btn btn-primary">Filtrer</button>
-        <a href="/app/offers" class="btn btn-ghost">R�initialiser</a>
-    </form>
-
-    <div class="notice notice-info">
-        <div class="notice-icon">i</div>
+    <div class="notice notice-info offers-info-notice">
         <p>
-            Il y a actuellement <strong>{{ offers|length }} offre{{ offers|length > 1 ? 's' : '' }}</strong>
+            Il y a actuellement
+            <strong>{{ offers|length }} offre{{ offers|length > 1 ? 's' : '' }}</strong>
             correspondant � vos crit�res.
         </p>
     </div>
 
     <div class="offer-list">
         {% for offer in offers %}
-            {{ include('components/card_template.twig', {'offer': offer, 'isPrivileged': isPrivileged}) }}
+            {{ include('components/card_template.twig', {
+                'offer': offer,
+                'isPrivileged': isPrivileged
+            }) }}
         {% else %}
-            <div class="card" style="padding: 2rem; text-align: center;">
-                <p class="text-muted">Aucune offre ne correspond � votre recherche.</p>
+            <div class="card offers-empty-state">
+                <h3>Aucune offre ne correspond � votre recherche</h3>
+                <p>
+                    Essayez d?�largir vos crit�res ou r�initialisez les filtres pour afficher plus d?opportunit�s.
+                </p>
+
+                <div class="offers-empty-state__actions">
+                    <a href="/app/offers" class="btn btn-ghost">R�initialiser les filtres</a>
+
+                    {% if isPrivileged %}
+                        <a href="/dashboard/offers/new" class="btn btn-primary">Publier une offre</a>
+                    {% endif %}
+                </div>
             </div>
         {% endfor %}
     </div>
 
     {% if totalPages > 1 %}
-        <div class="pagination" style="display: flex; justify-content: center; gap: 15px; margin-top: 3rem; align-items: center; flex-wrap: wrap;">
+        <div class="pagination offers-pagination">
+            {% set queryPrefix = '?keyword=' ~ (filters.keyword|default('')|url_encode) ~ '&city=' ~ (filters.city|default('')|url_encode) ~ '&page=' %}
+
             {% if page > 1 %}
-                <a href="?page={{ page - 1 }}" class="btn btn-ghost">Pr�c�dent</a>
+                <a href="{{ queryPrefix ~ (page - 1) }}" class="btn btn-ghost">Pr�c�dent</a>
             {% endif %}
 
-            <span class="text-sm">Page <strong>{{ page }}</strong> sur {{ totalPages }}</span>
+            <span class="page-info">
+                Page <strong>{{ page }}</strong> sur {{ totalPages }}
+            </span>
 
             {% if page < totalPages %}
-                <a href="?page={{ page + 1 }}" class="btn btn-ghost">Suivant</a>
+                <a href="{{ queryPrefix ~ (page + 1) }}" class="btn btn-ghost">Suivant</a>
             {% endif %}
         </div>
     {% endif %}
