@@ -1,63 +1,110 @@
-/* 1. Core Foundations (Variables, Reset, Typography) */
+/* =========================================================
+   StageFlow - Main stylesheet loader
+   ========================================================= */
+
+/* 1. Core foundations */
 @import url('https://cdn.stageflow.fr/base.css');
-/*@import url('https://cdn.stageflow.fr/legals.css');*/
-/* 2. Structural Shell (Header, Footer, Main Grid) */
+
+/* 2. Structural shell */
 @import url('https://cdn.stageflow.fr/layout.css');
 
-/* 3. Reusable Atomic Elements (Buttons, Cards, Tags) */
+/* 3. Reusable components */
 @import url('https://cdn.stageflow.fr/components.css');
 
-/* 4. Specialized Data/Input Systems */
+/* 4. Forms & tables */
 @import url('https://cdn.stageflow.fr/forms.css');
 @import url('https://cdn.stageflow.fr/tables.css');
 
-/* 5. Specific App Logic / Complex UI Patterns */
+/* 5. Feature-specific UI */
 @import url('https://cdn.stageflow.fr/features.css');
 
+/*
+ * Legal pages intentionally load legals.css separately
+ * from the Twig template head block, to avoid polluting
+ * the rest of the application with legal-page-only styles.
+ *
+ * Example:
+ * <link rel="stylesheet" href="{{ cdn_url }}/legals.css">
+ */
+
+/* =========================================================
+   Global design tokens
+   ========================================================= */
+
 :root {
+    color-scheme: light dark;
+
+    /* Surface / background */
+    --clr-bg:          light-dark(#F8FAFC, #121826);
+    --clr-surface:     light-dark(#FFFFFF, #1E293B);
+    --clr-surface-alt: light-dark(#F1F5F9, #273449);
+
     /* Borders */
-    --clr-border: light-dark(#aaaaaa, #444444);
-    --clr-border-light: light-dark(#cccccc, #666666);
+    --clr-border:       light-dark(#CBD5E1, #475569);
+    --clr-border-light: light-dark(#E2E8F0, #64748B);
 
     /* Text */
-    --clr-text: light-dark(#1a1a1a, #e0e0e0);
-    --clr-text-muted: light-dark(#666666, #999999);
+    --clr-text:       light-dark(#0F172A, #F8FAFC);
+    --clr-text-muted: light-dark(#475569, #CBD5E1);
 
-    /* Accent */
-    --clr-accent: light-dark(#1a1a1a, #bb86fc);
-    --clr-accent-inv: light-dark(#f0f0f0, #121212);
+    /* Primary = structure / navigation */
+    --clr-primary:     light-dark(#1D4ED8, #60A5FA);
+    --clr-primary-inv: light-dark(#FFFFFF, #0F172A);
+    --clr-primary-rgb: light-dark(29 78 216, 96 165 250);
+
+    /* Action = CTA */
+    --clr-action:     light-dark(#10B981, #34D399);
+    --clr-action-inv: light-dark(#FFFFFF, #052E2B);
+    --clr-action-rgb: light-dark(16 185 129, 52 211 153);
+
+    /* Compatibilit� ancien syst�me */
+    --clr-accent:     var(--clr-primary);
+    --clr-accent-inv: var(--clr-primary-inv);
+    --clr-accent-rgb: var(--clr-primary-rgb);
 
     /* Tags */
-    --clr-tag-green: light-dark(#c8e6c9, #2e7d32);
-    --clr-tag-green-t: light-dark(#1b5e20, #c8e6c9);
-    --clr-tag-amber: light-dark(#fff3cd, #ffb74d);
-    --clr-tag-amber-t: light-dark(#6d4c00, #3e2723);
-    --clr-tag-slate: light-dark(#d6d6d6, #555555);
-    --clr-tag-slate-t: light-dark(#333333, #f0f0f0);
+    --clr-tag-green:   light-dark(#D1FAE5, #166534);
+    --clr-tag-green-t: light-dark(#166534, #D1FAE5);
+    --clr-tag-amber:   light-dark(#FEF3C7, #92400E);
+    --clr-tag-amber-t: light-dark(#92400E, #FEF3C7);
+    --clr-tag-slate:   light-dark(#E2E8F0, #475569);
+    --clr-tag-slate-t: light-dark(#334155, #F8FAFC);
 
     /* Status */
-    --clr-danger: light-dark(#b71c1c, #cf6679);
-    --clr-success: light-dark(#2e7d32, #81c784);
+    --clr-danger:  light-dark(#DC2626, #F87171);
+    --clr-success: light-dark(#10B981, #34D399);
+    --clr-warning: light-dark(#F59E0B, #FBBF24);
+    --clr-info:    light-dark(#2563EB, #60A5FA);
 
-    /* Borders / radii */
-    --border-width: 0.125rem;
-    --border-radius: 8px;
+    /* Layout */
+    --container-max-width: 1000px;
+
+    /* Borders / radius */
+    --border-width:      0.125rem;
+    --border-radius:     8px;
     --border-radius-btn: 6px;
 
-    --font: 'Noto Sans';
+    /* Typography */
+    --font: "Noto Sans", Arial, sans-serif;
 }
 
-[data-theme="light"] {
+/* Explicit theme overrides */
+html[data-theme="light"] {
     color-scheme: light;
 }
 
-[data-theme="dark"] {
+html[data-theme="dark"] {
     color-scheme: dark;
 }
 
-/* ---------- BASE ---------- */
+/* =========================================================
+   Minimal global fallback rules
+   Keep this file light: imported CSS owns most components.
+   ========================================================= */
+
 html {
     font-size: 15px;
+    scroll-behavior: smooth;
 }
 
 body {
@@ -71,30 +118,49 @@ body {
 }
 
 a {
-    color: var(--clr-accent);
+    color: var(--clr-primary);
     text-decoration: underline;
 }
 
 a:hover {
-    color: var(--clr-text-muted);
+    color: color-mix(in srgb, var(--clr-primary) 75%, black 25%);
 }
 
-h1, h2, h3, h4 {
+h1,
+h2,
+h3,
+h4 {
     font-family: var(--font);
-    font-weight: bold;
+    font-weight: 700;
     line-height: 1.3;
+    color: var(--clr-text);
 }
 
-h1 { font-size: 1.4rem; }
-h2 { font-size: 1.15rem; }
-h3 { font-size: 1rem; }
-h4 { font-size: .9rem; }
+h1 {
+    font-size: 1.4rem;
+}
 
-p, li {
+h2 {
+    font-size: 1.15rem;
+}
+
+h3 {
+    font-size: 1rem;
+}
+
+h4 {
+    font-size: 0.9rem;
+}
+
+p,
+li {
     color: var(--clr-text-muted);
 }
 
-/* ---------- LAYOUT ---------- */
+/* =========================================================
+   Generic layout fallback
+   ========================================================= */
+
 .page-wrapper {
     display: flex;
     flex-direction: column;
@@ -103,251 +169,29 @@ p, li {
 
 main {
     flex: 1;
-    max-width: 900px;
     width: 100%;
+    max-width: var(--container-max-width);
     margin: 0 auto;
     padding: 1.6rem 1.2rem;
 }
 
-/* ---------- HEADER ---------- */
-header {
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    border-bottom: 2px solid var(--clr-border);
-}
+/* =========================================================
+   Utility helpers
+   ========================================================= */
 
-.header-inner {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: .55rem 1.2rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1.4rem;
-}
-
-.logo {
-    font-size: .95rem;
-    color: var(--clr-accent-inv);
-    text-decoration: none;
-    letter-spacing: .02em;
-}
-
-.logo span {
-    padding: .1em .3em;
-    margin-right: .35em;
-    background-image: url('https://moodle.cesi.fr/pluginfile.php/1/theme_edutor/logo/1769693681/Logo%20One%20CESI.jpg');
-    filter: invert();
-    background-size: cover;
-    background-position: center;
-    width: 24px;
-    height: 24px;
-    color: transparent;
-}
-
-/* ---------- NAV ---------- */
-nav {
-    display: flex;
-    gap: .15rem;
-}
-
-nav a {
-    font-size: .82rem;
-    color: var(--clr-accent-inv);
-    text-decoration: none;
-    padding: .3rem .65rem;
-    border: 1px solid transparent;
-    opacity: .6;
-}
-
-nav a:hover {
-    opacity: 1;
-    border-color: var(--clr-accent-inv);
-}
-
-nav a.active {
-    opacity: 1;
-    background: var(--clr-accent-inv);
-    color: var(--clr-accent);
-    border-color: var(--clr-accent-inv);
-}
-
-/* ---------- BUTTONS ---------- */
-.btn {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    font-family: var(--font);
-    font-size: .8rem;
-    padding: .35rem .7rem;
-    border: 1px solid var(--clr-border);
-    background: var(--clr-surface);
-    color: var(--clr-text);
-    cursor: pointer;
-    text-decoration: none;
-    white-space: nowrap;
-    border-radius: var(--border-radius-btn);
-}
-
-.btn-primary {
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    border-color: var(--clr-accent);
-}
-
-/* ---------- CARDS ---------- */
-.card {
-    background: var(--clr-surface);
-    border: 1px solid var(--clr-border);
-    margin-bottom: .6rem;
-    border-radius: var(--border-radius);
-}
-
-.card-body {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    gap: 20px;
-    padding: 15px;
-}
-
-/* ---------- DASHBOARD SIDEBAR (v2) ---------- */
-.dashboard-shell {
-    display: grid;
-    grid-template-columns: 260px minmax(0, 1fr);
-    gap: 1rem;
-    align-items: start;
-}
-
-.dashboard-sidebar {
-    background: var(--clr-surface);
-    border: 1px solid var(--clr-border);
-    border-radius: var(--border-radius);
-    padding: 1rem;
-    position: sticky;
-    top: 1rem;
-}
-
-.dashboard-sidebar-title {
-    font-size: 1.05rem;
-    margin-bottom: .3rem;
-}
-
-.dashboard-role {
-    font-size: .76rem;
-    color: var(--clr-text-muted);
-    margin-bottom: .9rem;
-}
-
-.dashboard-menu {
-    display: flex;
-    flex-direction: column;
-    gap: .45rem;
-}
-
-.dashboard-menu-link {
-    display: block;
-    padding: .55rem .65rem;
-    border: 1px solid var(--clr-border-light);
-    border-radius: var(--border-radius-btn);
-    text-decoration: none;
-    color: var(--clr-text);
-    background: transparent;
-    width: 100%;
-    text-align: left;
-    transition: all 0.2s ease;
-}
-
-.dashboard-menu-link:hover {
-    border-color: var(--clr-accent);
-    color: var(--clr-accent);
-}
-
-.dashboard-menu-link.active {
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    border-color: var(--clr-accent);
-}
-
-/* Dashboard action buttons - consistent width */
-.dashboard-btn,
-.dashboard-action-btn {
-    display: block;
-    width: 100%;
-    padding: 0.75rem 1rem;
-    border: 1px solid var(--clr-border);
-    background: var(--clr-surface);
-    color: var(--clr-text);
-    text-decoration: none;
-    border-radius: var(--border-radius-btn);
-    cursor: pointer;
-    font-family: inherit;
-    font-size: 0.9rem;
-    text-align: center;
-    transition: all 0.2s ease;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.dashboard-btn:hover,
-.dashboard-action-btn:hover {
-    border-color: var(--clr-accent);
-    color: var(--clr-accent);
-    transform: translateY(-1px);
-}
-
-.dashboard-btn-primary,
-.dashboard-action-btn.primary {
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    border-color: var(--clr-accent);
-}
-
-.dashboard-btn-primary:hover,
-.dashboard-action-btn.primary:hover {
-    filter: brightness(1.2);
-    color: var(--clr-accent-inv);
-}
-
-.dashboard-btn-danger,
-.dashboard-action-btn.danger {
-    background: var(--clr-danger);
-    color: white;
-    border-color: var(--clr-danger);
-}
-
-.dashboard-btn-danger:hover,
-.dashboard-action-btn.danger:hover {
-    filter: brightness(0.9);
-    color: white;
-}
-
-.dashboard-main {
-    min-width: 0;
-}
-
-@media (max-width: 980px) {
-    .dashboard-shell {
-        grid-template-columns: 1fr;
-    }
-    .dashboard-sidebar {
-        position: static;
-    }
-}
-
-/* ---------- UTILITY ---------- */
-.mt-1 { margin-top: .5rem; }
+.mt-1 { margin-top: 0.5rem; }
 .mt-2 { margin-top: 1rem; }
+.mt-3 { margin-top: 1.5rem; }
 .mb-2 { margin-bottom: 1rem; }
 
-:root:has(html[data-theme="light"]),
-html[data-theme="light"] :root {
-    color-scheme: light;
-}
+.text-xs    { font-size: 0.75rem; }
+.text-sm    { font-size: 0.875rem; }
+.text-muted { color: var(--clr-text-muted); }
 
-:root:has(html[data-theme="dark"]),
-html[data-theme="dark"] :root {
-    color-scheme: dark;
-}
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+.p-0 { padding: 0; }
+.p-4 { padding: 1.5rem; }
+
+.overflow-hidden { overflow: hidden; }
