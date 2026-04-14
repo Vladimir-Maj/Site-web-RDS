@@ -1,9 +1,9 @@
-version: "3.9"
-
 services:
+  # --- BASE DE DONN�ES ---
   db:
     image: mysql:8.0
     container_name: lamp-db
+    restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: sql_db
@@ -15,9 +15,11 @@ services:
     networks:
       - lamp-network
 
+  # --- SERVEUR WEB (APACHE + PHP) ---
   web:
-    image: php:8.2-apache
+    build: .
     container_name: lamp-web
+    restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
@@ -28,23 +30,24 @@ services:
     networks:
       - lamp-network
 
+  # --- RUNNER DE TESTS (PHPUNIT) ---
   phpunit:
     build: .
-    image: php:8.2-apache
     container_name: lamp-tests
+    working_dir: /var/www/html/prod
     volumes:
       - ./www:/var/www/html
     environment:
-      - DB_DSN=mysql:host=db;dbname=test_db
-      - DB_USER=root
-      - DB_PASS=password
+      DB_DSN: mysql:host=db;port=3306;dbname=sql_db;charset=utf8mb4
+      DB_USER: website-local
+      DB_PASS: 1234
     depends_on:
       - db
-    # This command runs tests and then stops the container
-    entrypoint: ["/var/www/html/prod/vendor/bin/phpunit", "/var/www/html/tests"]
+    entrypoint: ["/var/www/html/prod/vendor/bin/phpunit", "/var/www/html/prod/tests"]
     networks:
       - lamp-network
 
+# --- R�SEAUX ET VOLUMES ---
 networks:
   lamp-network:
     driver: bridge
