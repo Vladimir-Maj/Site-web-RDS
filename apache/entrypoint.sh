@@ -5,12 +5,15 @@ DOMAIN="stageflow.fr"
 CERT="/etc/ssl/certs/${DOMAIN}.crt"
 KEY="/etc/ssl/private/${DOMAIN}.key"
 CONF="/etc/ssl/openssl-san.cnf"
+PROD_DIR="/var/www/html/prod"
 
-echo "▶ HTTPS entrypoint starting"
+echo "? HTTPS entrypoint starting"
 
-# --- 1. SSL Certificate Generation ---
+# ------------------------------------------------------------------
+# 1. Generate self-signed certificate if missing
+# ------------------------------------------------------------------
 if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
-    echo "▶ Generating self-signed SSL certificate"
+    echo "? Generating self-signed SSL certificate"
 
     cat > "$CONF" <<'EOF'
 [req]
@@ -22,9 +25,9 @@ distinguished_name = dn
 
 [dn]
 C = FR
-ST = Loire-Atlantique
-L = Saint-Nazaire
-O = Stage Flow
+ST = Meurthe-et-Moselle
+L = Nancy
+O = StageFlow
 CN = stageflow.fr
 
 [req_ext]
@@ -45,26 +48,35 @@ EOF
 
     chmod 600 "$KEY"
 else
-    echo "▶ SSL certificate already exists"
+    echo "? SSL certificate already exists"
 fi
 
-# --- 2. Composer Dependency Management ---
-# We target the directory containing your composer.json
-PROD_DIR="/var/www/html/prod"
-
+# ------------------------------------------------------------------
+# 2. Composer dependencies inside container
+# ------------------------------------------------------------------
 if [ -f "$PROD_DIR/composer.json" ]; then
-    echo "▶ Found composer.json in $PROD_DIR. Checking dependencies..."
-    
-    # We run as root here, but we'll fix permissions after.
-    # --no-interaction is key for automated scripts.
-    composer install --working-dir="$PROD_DIR" --no-interaction --optimize-autoloader
-    
-    # Fix ownership so the web server (www-data) can read the vendor folder
-    chown -R www-data:www-data "$PROD_DIR/vendor"
+    echo "? Found composer.json in $PROD_DIR. Checking dependencies..."
+
+    composer install \
+        --working-dir="$PROD_DIR" \
+        --no-interaction \
+        --optimize-autoloader
+
+    if [ -d "$PROD_DIR/vendor" ]; then
+        chown -R www-data:www-data "$PROD_DIR/vendor"
+    fi
 else
-    echo "▶ No composer.json found in $PROD_DIR, skipping installation."
+    echo "? No composer.json found in $PROD_DIR, skipping installation."
 fi
 
-# --- 3. Start Apache ---
-echo "▶ Starting Apache..."
+# ------------------------------------------------------------------
+# 3. Ensure useful runtime folders exist
+# ------------------------------------------------------------------
+mkdir -p /var/log/apache2
+chown -R www-data:www-data /var/log/apache2 || true
+
+# ------------------------------------------------------------------
+# 4. Start Apache
+# ------------------------------------------------------------------
+echo "? Starting Apache..."
 exec apache2-foreground
