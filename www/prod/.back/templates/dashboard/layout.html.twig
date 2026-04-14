@@ -2,51 +2,52 @@
 {% extends "base.html.twig" %}
 
 {% block body %}
-    {# Compatibility: Robust role detection handles both BackedEnums and raw strings #}
+    {# Compatibilit� : gestion robuste des r�les en BackedEnum ou string brut #}
     {% set role = user.role.value|default(user.role|default('guest')) %}
 
     <div class="dashboard-shell">
         <aside class="dashboard-sidebar">
-            <h2 class="dashboard-sidebar-title">Dashboard</h2>
-            <p class="dashboard-role">Role: {{ role|upper }}</p>
-            
-            <nav class="dashboard-menu">
-                {# Global Access or Common Links #}
+            <div class="dashboard-sidebar-header">
+                <h1 class="dashboard-sidebar-title">Dashboard</h1>
+                <p class="dashboard-role">R�le : {{ role|upper }}</p>
+            </div>
+
+            <nav class="dashboard-menu" aria-label="Navigation du tableau de bord">
                 <a href="/dashboard/offers" class="dashboard-menu-link {{ sidebar_active|default('') == 'offers' ? 'active' : '' }}">
-                    Gestion des offres
+                    <span class="dashboard-menu-link-label">Gestion des offres</span>
                 </a>
 
-                {# Admin & Pilote Permissions #}
                 {% if role in ['admin', 'pilote'] %}
                     <a href="/dashboard/companies" class="dashboard-menu-link {{ sidebar_active|default('') == 'companies' ? 'active' : '' }}">
-                        Gestion des entreprises
+                        <span class="dashboard-menu-link-label">Gestion des entreprises</span>
                     </a>
+
                     <a href="/dashboard/etudiants" class="dashboard-menu-link {{ sidebar_active|default('') == 'students' ? 'active' : '' }}">
-                        Gestion des étudiants
+                        <span class="dashboard-menu-link-label">Gestion des �tudiants</span>
                     </a>
                 {% endif %}
 
-                {# Admin Specific #}
                 {% if role == 'admin' %}
                     <a href="/dashboard/pilotes" class="dashboard-menu-link {{ sidebar_active|default('') == 'pilots' ? 'active' : '' }}">
-                        Gestion des pilotes
-                    </a>
-                    <a href="/dashboard/campus" class="dashboard-menu-link {{ sidebar_active|default('') == 'campuses' ? 'active' : '' }}">
-                        Gestion des campus
-                    </a>
-                    <a href="/dashboard/skills" class="dashboard-menu-link {{ sidebar_active|default('') == 'skills' ? 'active' : '' }}">
-                        Gestion des compétences
+                        <span class="dashboard-menu-link-label">Gestion des pilotes</span>
                     </a>
 
+                    <a href="/dashboard/campus" class="dashboard-menu-link {{ sidebar_active|default('') == 'campuses' ? 'active' : '' }}">
+                        <span class="dashboard-menu-link-label">Gestion des campus</span>
+                    </a>
+
+                    <a href="/dashboard/skills" class="dashboard-menu-link {{ sidebar_active|default('') == 'skills' ? 'active' : '' }}">
+                        <span class="dashboard-menu-link-label">Gestion des comp�tences</span>
+                    </a>
                 {% endif %}
 
-                {# Student Specific #}
                 {% if role == 'student' %}
                     <a href="/dashboard/applications" class="dashboard-menu-link {{ sidebar_active|default('') == 'applications' ? 'active' : '' }}">
-                        Mes candidatures
+                        <span class="dashboard-menu-link-label">Mes candidatures</span>
                     </a>
+
                     <a href="/dashboard/wishlist" class="dashboard-menu-link {{ sidebar_active|default('') == 'wishlist' ? 'active' : '' }}">
-                        Ma liste de souhaits
+                        <span class="dashboard-menu-link-label">Ma liste de souhaits</span>
                     </a>
                 {% endif %}
             </nav>
