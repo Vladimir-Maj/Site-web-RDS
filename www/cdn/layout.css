@@ -1,225 +1,91 @@
 /* ===================================================
-   STAGEFLOW — LAYOUT.CSS
-   Header, Footer, Navigation, and Core Structure
-   === FULLY RESPONSIVE DESIGN ===
+   STAGEFLOW ? LAYOUT.CSS
+   Structural layout: wrapper, main, page headers, profile grid, footer
    =================================================== */
 
-/* ---------- MAIN WRAPPERS ---------- */
 .page-wrapper {
     display: flex;
     flex-direction: column;
-    min-height: 100vh;
     flex: 1;
 }
 
 main {
     flex: 1;
-    max-width: 900px;
     width: 100%;
-    margin: 0 auto;
-    padding: clamp(1rem, 3vw, 1.6rem) clamp(0.75rem, 2vw, 1.2rem);
 }
 
-/* ---------- HEADER & BRANDING ---------- */
-header {
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    border-bottom: 2px solid var(--clr-border);
+#page-header {
     position: sticky;
     top: 0;
-    z-index: 1000;
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    background: rgba(var(--clr-accent-rgb), 0.9);
+    z-index: 5000;
 }
 
-.header-inner {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: clamp(0.4rem, 2vw, 0.55rem) clamp(0.75rem, 2vw, 1.2rem);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: clamp(0.75rem, 2vw, 1.4rem);
-    flex-wrap: wrap;
-}
-
-.logo {
-    display: flex;
-    align-items: center;
-    font-size: clamp(0.8rem, 2vw, 0.95rem);
-    color: var(--clr-accent-inv);
-    text-decoration: none;
-    letter-spacing: .02em;
-    flex: 0 0 auto;
-    min-height: 44px;
-    padding: 0.25rem 0;
-}
-
-.logo span {
-    display: inline-block;
-    padding: .1em .3em;
-    margin-right: .35em;
-    background-image: url('https://moodle.cesi.fr/pluginfile.php/1/theme_edutor/logo/1769693681/Logo%20One%20CESI.jpg');
-    filter: invert();
-    background-size: cover;
-    background-position: center;
-    width: clamp(20px, 4vw, 24px);
-    height: clamp(20px, 4vw, 24px);
-    color: transparent;
-}
-
-/* ---------- NAVIGATION ---------- */
-nav {
-    display: flex;
-    gap: clamp(0.1rem, 1vw, 0.15rem);
-    flex-wrap: wrap;
-    align-items: center;
-}
-
-nav a {
-    font-size: clamp(0.7rem, 1.5vw, 0.82rem);
-    color: var(--clr-accent-inv);
-    text-decoration: none;
-    padding: clamp(0.25rem, 1vw, 0.3rem) clamp(0.5rem, 1.5vw, 0.65rem);
-    border: 1px solid transparent;
-    opacity: .6;
-    transition: opacity 0.2s, border-color 0.2s;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-}
-
-nav a:hover {
-    opacity: 1;
-    border-color: var(--clr-accent-inv);
-}
-
-nav a.active {
-    opacity: 1;
-    background: var(--clr-accent-inv);
-    color: var(--clr-accent);
-    border-color: var(--clr-accent-inv);
-}
-
-/* Mobile-friendly hamburger menu toggle */
-.nav-toggle {
-    display: none;
-    background: none;
-    border: none;
-    color: var(--clr-accent-inv);
-    cursor: pointer;
-    padding: 0.5rem;
-    min-height: 44px;
-    min-width: 44px;
-    align-items: center;
-    justify-content: center;
-}
-
-@media (max-width: 640px) {
-    .nav-toggle {
-        display: flex;
-    }
-
-    nav {
-        position: absolute;
-        top: 100%;
-        left: 0;
-        right: 0;
-        flex-direction: column;
-        background: var(--clr-accent);
-        max-height: 0;
-        overflow: hidden;
-        transition: max-height 0.3s ease;
-    }
-
-    nav.active {
-        max-height: 500px;
-    }
-
-    nav a {
-        width: 100%;
-        border-right: 1px solid rgba(var(--clr-accent-inv), 0.1);
-    }
-}
-
-/* ---------- PAGE HEADERS ---------- */
 .page-header {
     display: flex;
     align-items: flex-end;
     justify-content: space-between;
-    gap: clamp(0.5rem, 2vw, 1rem);
-    margin-bottom: clamp(1rem, 3vw, 1.4rem);
-    padding-bottom: clamp(0.5rem, 1.5vw, 0.7rem);
-    border-bottom: 1px solid var(--clr-border);
+    gap: 1rem;
     flex-wrap: wrap;
+    margin-bottom: 1.4rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--clr-border);
 }
 
-.page-header h1 {
+.page-header h1,
+.page-header h2 {
     margin: 0;
-    flex: 1 1 auto;
-    min-width: 200px;
 }
 
 .page-header p {
-    font-size: clamp(0.75rem, 1.5vw, 0.82rem);
-    margin-top: .2rem;
-    flex: 0 1 auto;
-    text-align: left;
-    padding-left: .5rem;
+    margin: 0.2rem 0 0;
+    color: var(--clr-text-muted);
 }
 
-/* ---------- SPECIFIC PAGE LAYOUTS ---------- */
-/* Profile Page Grid - Responsive Stacking */
 .profile-layout {
     display: grid;
     grid-template-columns: 1fr;
-    gap: clamp(1.5rem, 4vw, 2rem);
-    margin-top: clamp(1.5rem, 4vw, 2rem);
+    gap: 1.5rem;
+    margin-top: 1.5rem;
 }
 
 @media (min-width: 768px) {
     .profile-layout {
-        grid-template-columns: 300px 1fr;
+        grid-template-columns: minmax(260px, 320px) 1fr;
         gap: 2rem;
     }
 }
 
 @media (min-width: 1200px) {
     .profile-layout {
-        grid-template-columns: 350px 1fr;
-        gap: 2.5rem;
+        grid-template-columns: 340px 1fr;
     }
 }
 
-/* ---------- FOOTER ---------- */
 footer {
+    margin-top: auto;
     border-top: 2px solid var(--clr-border);
     background: var(--clr-accent);
     color: var(--clr-accent-inv);
-    margin-top: auto;
 }
 
 .footer-inner {
-    max-width: 900px;
+    max-width: var(--container-max-width);
     margin: 0 auto;
-    padding: clamp(0.5rem, 2vw, 1rem) clamp(0.75rem, 2vw, 1.2rem);
+    padding: 0.75rem 1.2rem;
     display: flex;
     flex-direction: column;
-    gap: clamp(0.5rem, 2vw, 1rem);
+    gap: 0.75rem;
     justify-content: space-between;
     align-items: stretch;
-    font-size: clamp(0.65rem, 1.5vw, 0.75rem);
+    font-size: 0.82rem;
 }
 
 .footer-inner a {
     color: var(--clr-accent-inv);
-    opacity: .7;
+    opacity: 0.78;
     text-decoration: underline;
-    transition: opacity 0.2s;
     min-height: 44px;
-    display: flex;
+    display: inline-flex;
     align-items: center;
 }
 
@@ -232,84 +98,4 @@ footer {
         flex-direction: row;
         align-items: center;
     }
-}
-
-@media (min-width: 1024px) {
-    .footer-inner {
-        padding: 0.75rem 1.5rem;
-    }
-}
-
-#page-header {
-    z-index: 5000;
-}
-
-/* ---------- PAGE HEADERS ---------- */
-.page-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 1.4rem;
-    padding-bottom: .7rem;
-    border-bottom: 1px solid var(--clr-border);
-}
-
-.page-header h1 {
-    margin: 0;
-}
-
-.page-header p {
-    font-size: .82rem;
-    margin-top: .2rem;
-    text-align: left;
-    padding-left: .5rem;
-}
-
-/* ---------- SPECIFIC PAGE LAYOUTS ---------- */
-/* Profile Page Grid */
-.profile-layout {
-    display: grid;
-    grid-template-columns: 300px 1fr;
-    gap: 2rem;
-    margin-top: 2rem;
-}
-
-@media (max-width: 768px) {
-    .profile-layout {
-        grid-template-columns: 1fr;
-    }
-}
-
-/* ---------- FOOTER ---------- */
-footer {
-    border-top: 2px solid var(--clr-border);
-    background: var(--clr-accent);
-    color: var(--clr-accent-inv);
-    margin-top: auto;
-}
-
-.footer-inner {
-    max-width: 900px;
-    margin: 0 auto;
-    padding: .5rem 1.2rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: .75rem;
-}
-
-.footer-inner a {
-    color: var(--clr-accent-inv);
-    opacity: .7;
-    text-decoration: underline;
-}
-
-.footer-inner a:hover {
-    opacity: 1;
-}
-
-#page-header {
-    z-index: 5000;
-    /* Ensure it stays above all content */
 }
